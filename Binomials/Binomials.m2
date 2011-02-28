@@ -509,19 +509,19 @@ saturatePChar = (pc) -> (
 	  new PartialCharacter from {J => pc#J, L => S, c => result#i}));
      )
 
-satIdeals = (va, A, d) -> (
+satIdeals = (pc) -> (
      -- Computes all the ideals belonging to saturations of  
      -- a given partial character.
-     satpc := saturatePChar(va, A, d);
-     scan (satpc#0, (v -> v = local v));     
+     satpc := saturatePChar(pc);
+     scan (satpc#0#J, (v -> v = local v));     
      -- The following should be the smallest ring containing all new
      -- coefficients but not smaller than QQ
-     F := ring satpc#2#0#0;
+     F := ring satpc#0#c#0;
      if F === ZZ then F = QQ;
-     Q := F[satpc#0];
-     satideals := apply (satpc#2 , (c) -> (
-	       -- print {Q, satpc#1, c};
-	       idealFromCharacter(Q,satpc#1,c)));
+     Q := F[satpc#0#J];
+     satideals := apply (satpc , (spc) -> (
+	       -- print {Q, satpc#0#L, spc#c};
+	       idealFromCharacter(Q,satpc#0#L,spc#c)));
      return satideals;
      )
 
