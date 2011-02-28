@@ -1,4 +1,4 @@
-doc ///
+{*doc ///
    Key
    Headline
    Usage
@@ -15,7 +15,7 @@ doc ///
    Caveat
    SeeAlso
 ///
-
+*}
 
 
 
@@ -76,9 +76,9 @@ L = partition(p -> p/(i -> i%d), last degrees bN);
 --replace each value by itself normalized then divided by d, 
 --with a twist to show the amount of normalization.
 L1 = applyValues(L,LL -> (
-	  degLL0 = sum LL_0//d;
+	  degLL0 = (sum LL_0)//d;
 --	  degLL = (min(LL/sum))//d;
-	  LL1 = LL / (l -> (l - LL_0)/d);
+	  LL1 = LL / (l -> (apply(l - LL_0,j->j//d)));
 	  mins = apply(#LL_0, i -> min apply(LL1, l -> l#i));
 	  {LL1 / (l -> l-mins), degLL0}
      ));
@@ -86,8 +86,8 @@ a := local a;
 T = kk[a_0..a_(m-1)];
 --Now make ideals in T by grouping the degrees in genDegs by congruence class.
 applyValues(L1, LL->( 
-	  
-     (ideal apply(first LL, m->T_0^(first m)*T_1^(last m)))*(T^{-last LL}))
+	  LLf = first LL;
+     (ideal apply(LLf, mm->product(apply(#mm, i-> T_i^(mm_i)))))*(T^{-last LL}))
 	  )
 )
 
@@ -125,16 +125,9 @@ monomialAlgebraIdeal = (R,B) -> (
      
 ///
 restart
-load "~/src/Goettingen-2011/monomialRings.m2"
-A = {{1,2},{3,0}, {0,4},{0,5}} -- increasing integers, initial zero implied
-S = kk[a,b,c,d,e]
-monomialAlgebra (S,homog A)
-B
-homog B
-M = transpose matrix B
-gens gb image M
---decomposeMonomialAlgebra A
-
+load "~/src/Goettingen-2011/MonomialAlgebras/monomialRings.m2"
+A = {{1,2},{3,0}, {0,4},{0,5}}
+decomposeMonomialAlgebra (A)
 ///
 
 
@@ -144,7 +137,7 @@ maxNumGens = H -> max ((values H)/numgens)
 end
 
 restart
-load "~/src/Goettingen-2011/monomialRings.m2"
+load "~/src/Goettingen-2011/MonomialAlgebras/monomialRings.m2"
 A = {1,3,4} -- increasing integers, initial zero implied
 decomposeMonomialCurve A
 for d from 4 to 10 do (
