@@ -38,6 +38,7 @@ export {schurRing, SchurRing, symmRing,
      scalarProduct, internalProduct,
      SchurRingIndexedVariableTable, EHPSVariables,
      ClassFunction, schurLevel,
+     schurResolution,
      
      Memoize, Schur, EorH,
      eVariable, pVariable, hVariable, getSchur
@@ -616,6 +617,73 @@ EtoH = (m,R) -> (
 ---------------------------------------------------------------
 
 ---------------------------------------------------------------
+-------------Schur Resolutions---------------------------------
+---------------------------------------------------------------
+
+recsyz = method()
+recsyz (Thing) := (el) -> min(el,0)
+recsyz (RingElement) := (el) ->
+(
+     T := ring el;
+     listForm el/((u,v)->T_u*recsyz(v))//sum
+     )
+
+schurResolution = method()
+schurResolution(RingElement,List,ZZ,ZZ) := (rep,M,d,c) ->
+(
+     schurRes(rep,M,d,c)
+     )
+
+schurResolution(RingElement,List,ZZ) := (rep,M,d) ->
+(
+     schurRes(rep,M,d,0)
+     )
+
+schurRes = method()
+schurRes(RingElement,List,ZZ,ZZ) := (rep,M,d,c) ->
+(
+     T := ring rep;
+     n := schurLevel T;
+     plets := new MutableList;
+     plets#0 = 1_T;
+     for i from 1 to d do plets#i = plethysm({i},rep);
+     
+     mods := new MutableList from (M | toList((d+1-#M):0));
+     notdone := true;
+     k := 0;
+     syzy := new MutableList;
+     syzy#k = {};
+     local mo;
+     local newsyz;
+     
+     while notdone do
+     (
+	  for i from 0 to d do
+	  (
+     	       mo = 0_T;	       
+	       for sy in syzy#k do
+	       	    if sy#0 <= i then mo = mo + sy#1 * plets#(i-sy#0)
+		    else break;
+	       mo = mo - mods#i;
+	       newsyz = recsyz(mo);
+	       if newsyz != 0 then syzy#k = syzy#k | {(i,-newsyz)};
+	       mods#i = mo - newsyz;
+	       );
+     	  if c == 0 then notdone = not (syzy#k == {})
+	  else notdone = (k<c);
+     	  k = k + 1;
+--	  print k;
+	  syzy#k = {};
+ 	  );
+     select(toList syzy,i-> i != {})
+     )
+					      
+---------------------------------------------------------------
+-------------end Schur Resolutions-----------------------------
+---------------------------------------------------------------
+
+
+---------------------------------------------------------------
 --------------Characters of Symmetric Group--------------------
 ---------------------------------------------------------------
 
@@ -1041,7 +1109,8 @@ dimSchur(Thing,List) := (n,lambda) -> dimSchur(n, new Partition from lambda)
 dimSchur(Thing,Partition) := (n, lambda) -> (
      -- lambda is a list {a0,a1,...,a(r-1)}, a0 >= a1 >= ... >= a(r-1) > 0
      -- n can be a number or a symbol
-     powers := new MutableList from toList(lambda#0 + #lambda - 1 : 0);
+--     powers := new MutableList from toList(lambda#0 + #lambda - 1 : 0);
+     powers := new MutableList from toList((if lambda#?0 then lambda#0 else 0) + #lambda - 1 : 0);
      base := 1 - #lambda;
      for i from 0 to #lambda-1 do
        for j from 0 to lambda#i-1 do
@@ -1519,18 +1588,13 @@ Description
     the ring of {\tt g}.
     
   Example
-    R = symmRing(QQ,10);
+    R = symmRing(QQ,5);
     p = plethysm(h_2,h_5)
     toS p
     S = schurRing(QQ,q,3);
     plethysm(h_2,q_{2,1})
     plethysm(q_{2,1},q_{2,1})
     
-  Text
-    
-    An error is returned if {\tt g} is an element of a Symmetric ring {\tt R}
-    and the product of the degrees of {\tt f} and {\tt g} is
-    smaller than the dimension of {\tt R}.
 ///
 
 doc ///
@@ -1556,10 +1620,98 @@ Description
     or virtual character. This is the most commonly used form of plethysm.
 
   Example
-    R = symmRing(QQ,6)
+    R = symmRing(QQ,3)
     S = schurRing(QQ,q,3)
     plethysm({2,1},e_2)
     plethysm({2,1,1},q_{1,1}) 
+///
+
+doc ///
+Key
+  (exteriorPower,ZZ,RingElement)
+Headline
+  Exterior power of a representation
+Usage
+  ep = exteriorPower(n,rep)
+Inputs
+  n:ZZ
+  rep:RingElement
+      an element of a SchurRing
+Outputs
+  ep:RingElement
+Description
+  Text
+  
+     Given a representation {\tt rep} of a product of general linear
+     groups, and a positive integer {\tt n}, the function returns the
+     {\tt n}-th exterior power of this representation.
+     
+  Example
+     S = schurRing(QQ,s,2)
+     T = schurRing(S,t,3)
+     exteriorPower(4,s_{1}+t_{1})
+///
+
+doc ///
+Key
+  (symmetricPower,ZZ,RingElement)
+Headline
+  Symmetric power of a representation
+Usage
+  ep = symmetricPower(n,rep)
+Inputs
+  n:ZZ
+  rep:RingElement
+      an element of a SchurRing
+Outputs
+  ep:RingElement
+Description
+  Text
+  
+     Given a representation {\tt rep} of a product of general linear
+     groups, and a positive integer {\tt n}, the function returns the
+     {\tt n}-th symmetric power of this representation.
+     
+  Example
+     S = schurRing(QQ,s,2)
+     T = schurRing(S,t,3)
+     symmetricPower(4,s_{1}+t_{1})
+///
+
+doc ///
+Key
+  schurResolution
+  (schurResolution,RingElement,List,ZZ)
+--  (schurResolution,RingElement,List,ZZ,ZZ)
+Headline
+  Computes an ``approximate'' equivariant resolution of a module.
+Usage
+  resol = schurResolution(rep,M,d)
+Inputs
+  rep:RingElement
+  M:List
+  d:ZZ
+Outputs
+  resol:List
+Description
+  Text
+  
+     Given a representation {\tt rep} of a (product of) general linear
+     group(s) {\tt G}, we consider the symmetric algebra {\tt S = Sym(rep)}
+     and a {\tt G}-module {\tt M} which is also an {\tt S}-module. We
+     are interested in computing an equivariant resolution of {\tt M}.
+     This depends on the {\tt S}-module structure of {\tt M} in general,
+     but in many examples that occur in practice, the syzygy modules in the
+     resolution are characterized (as {\tt G}-modules) by the following
+     maximality property: the differentials have maximal rank among all
+     {\tt G}-equivariant maps. This description sucks..     
+  
+  Example
+    S = schurRing(QQ,s,3)
+    rep = s_{2}
+    M = {1_S,s_{2},s_{4},s_{6},s_{8},s_{10}}
+    d = 6
+    schurResolution(rep,M,d)
 ///
 
 doc ///
@@ -2117,6 +2269,7 @@ restart
 uninstallPackage "SchurRings"
 installPackage "SchurRings"
 check SchurRings
+help SchurRings
 viewHelp SchurRings
 --print docTemplate
 end
@@ -2293,7 +2446,7 @@ p
 restart
 loadPackage"SchurRings"
 
-n = 6
+n = 30
 time R = symmRing(QQ,n)
 time ple = plethysm(h_5,h_6);
 
@@ -2320,6 +2473,61 @@ toP oo
 toS oo
 
 viewHelp symmetricPower 
+
+restart
+loadPackage"SchurRings"
+
+d = 11
+
+mul = method()
+mul(List,List,List,List) := (lam,mu,nu,del) ->
+(
+     	 m := sum lam;
+	 (llam,lmu,lnu,ldel) := (lam,mu,nu,del);
+     	 if not llam#?1 then llam = llam | {0};
+     	 if not lmu#?1 then lmu = lmu | {0};
+     	 if not lnu#?1 then lnu = lnu | {0};
+     	 if not ldel#?1 then ldel = ldel | {0};	 	 	 
+	 e := llam#1 + lmu#1 + lnu#1 + ldel#1;
+	 f := max(llam#1, lmu#1, lnu#1, ldel#1);
+      	 local rez;
+	 if e>=m-1 then
+    	   (
+         	rez = m//2 - f + 1;
+	  	if e%2 == 1 and m%2 == 0 then rez = rez - 1;
+		)
+     	 else
+          (
+	  rez = (e+1)//2 - f + 1;
+          if e%2 == 1 then rez = rez - 1;
+	  );
+         max(0,rez)
+     )
+
+T_1 = schurRing(QQ,t1,2);
+
+l = {(T_1)_{1}}
+for i from 2 to 4 do
+(
+    T_i = schurRing(T_(i-1),value concatenate("t",toString i),2);
+    l = l | {(T_i)_{1}};
+)
+rep = product l
+
+mods = new MutableList;
+mods#0 = 1_(T_4)
+
+for i from 1 to d do
+(
+       pars = {{i}} | apply(splice{1..(i//2)},j->{i-j,j});
+       mods#i = sum (for p in (toList (set pars)^**4) list
+       mul(p#0,p#1,p#2,p#3)*(T_1)_(p#0)*(T_2)_(p#1)*(T_3)_(p#2)*(T_4)_(p#3));
+)
+M = toList mods		  
+
+
+resol = schurResolution(rep,M,d)
+resol/(i->(sum apply(i,j->dim(last j))))				    						  											    																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																													 											    
 
 -- Local Variables:
 -- compile-command: "make -C $M2BUILDDIR/Macaulay2/packages PACKAGES=SchurRings pre-install"

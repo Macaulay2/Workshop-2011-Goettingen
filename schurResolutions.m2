@@ -9,7 +9,6 @@ recsyz (RingElement) := (el) ->
      )
 
 schurResolution = method()
-
 schurResolution(RingElement,List,ZZ,ZZ) := (rep,M,d,c) ->
 (
      schurRes(rep,M,d,c)
@@ -30,7 +29,6 @@ schurRes(RingElement,List,ZZ,ZZ) := (rep,M,d,c) ->
      for i from 1 to d do plets#i = plethysm({i},rep);
      
      mods := new MutableList from (M | toList((d+1-#M):0));
-     
      notdone := true;
      k := 0;
      syzy := new MutableList;
