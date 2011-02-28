@@ -68,11 +68,15 @@ doc ///
       {\bf What's new:}
 
       {\it Version 0.01:}
-      
+
+      First version.
 
       {\bf Overview:}
       
-      We write algebras as direct sum of ideals
+      Consider a semigroup A in \mathbb{N}^m and a subsemigroup B \subset A
+      such that rank(G(B))=rank(G(A)).
+      
+      We decompose k[A] as a K[B]-module into a direct sum of ideals of K[B].
       
       {\bf Setup:}
 
@@ -102,12 +106,13 @@ doc ///
     decomposeMonomialCurve(I)
   Inputs
     L:List
-        a semigroup
+        containing generators of A
   Outputs
     :List
   Description
    Text
-        Compute the decomposition for a curve.
+        Compute the decomposition for a curve parametrized by the monomials t^a with a \in A
+        and B given by the first and the last element of A.
 
    Example
      A = {1,3,4};
