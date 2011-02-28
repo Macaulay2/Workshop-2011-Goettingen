@@ -120,3 +120,10 @@ L = apply( L, l -> apply( l, i -> i + 1) )
 R = ZZ/2[x_1..x_n, apply( L, l -> c_l), apply( L, l -> b_l) ]
 QR = R / ideal apply(gens R, x -> x^2-x)
 ideal apply(L, S-> ncfIdeal(S,n,QR) )
+variableCount=n
+ nlist=apply(variableCount,i->i+1)
+ mons = apply(subsets nlist,i->product apply(i,j->x_j))
+  B=ZZ/2[apply(subsets nlist,i->b_i)]
+  alternativeR=ZZ/2[x_1..x_n]
+  altQR= alternativeR/ideal(apply(gens alternativeR, x-> x^2-x))
+ BQR=B**altQR
