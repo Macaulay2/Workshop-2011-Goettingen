@@ -69,17 +69,17 @@ imageUnderRationalMap(Ideal,Matrix):=(J,L)->(
      ideal mingens ker map(RJ,S,sub(L,RJ))     
      )
 
-randomDistinctPlanePoints=method(TypicalValue=>Ideal,Options=>{Certify=>false,Attempts=>0})
+randomDistinctPlanePoints=method(TypicalValue=>Ideal,Options=>{Certify=>false,Attempts=>infinity})
 randomDistinctPlanePoints(ZZ,PolynomialRing):=opt->(k,R)->(
      if dim R != 3 then error "expected a polynomial ring in three variables";
      if degrees R !={{1}, {1}, {1}} then error "polynomial ring is not standard graded";
-     if not ( instance(opts.Attempts, ZZ) and opts.Attempts > 0 or opts.Attempts === infinity )
-     then error "Attempts: expected a positive integer or infinity";
+     if not ( instance(opt.Attempts, ZZ) and opt.Attempts > 0 or opt.Attempts === infinity )
+          then error "Attempts: expected a positive integer or infinity";
      n := ceiling((-3+sqrt(9.0+8*k))/2); 
      eps := k-binomial(n+1,2);
      for i from 1 do (
-	  if i > opts.Attempts then error "failed to find distinct points";
-	  -- a random Hilbert-Birch matrix:
+	  if i > opt.Attempts then error "failed to find distinct points";
+	  -- a random Hilbert-Burch matrix:
 	  B := random(R^{n+1-eps:0,2*eps-n:-1},R^{n-2*eps:-1,eps:-2});
 	  I := minors(rank source B,B);
      	  if not opt.Certify or distinctPlanePoints I then return I; 
@@ -89,10 +89,12 @@ distinctPlanePoints=method(TypicalValue=>Boolean);
 distinctPlanePoints Ideal:= I-> dim I==1 and dim (I+minors(2,jacobian I))<=0
 distinctPlanePoints List:= L-> degree intersect L == sum(L,I->degree I)
 
-randomNodalPlaneCurve=method(TypicalValue=>Ideal,Options=>{Certify=>false,Attempts=>0})
+randomNodalPlaneCurve=method(TypicalValue=>Ideal,Options=>{Certify=>false,Attempts=>infinity})
 randomNodalPlaneCurve(ZZ,ZZ,PolynomialRing):=opt->(d,delta,R)->(
      if dim R != 3 then error "expected a polynomial ring in three variables";
      if degrees R !={{1}, {1}, {1}} then error "polynomial ring is not standard graded";
+     if not ( instance(opt.Attempts, ZZ) and opt.Attempts > 0 or opt.Attempts === infinity )
+          then error "Attempts: expected a positive integer or infinity";
      -- choose delta distinct random plane points
      I:= (
 	  if opt.Certify then randomDistinctPlanePoints(delta,R,Certify=>true) 
@@ -1255,33 +1257,42 @@ doc ///
       accordingly.
 ///
 
+-------------- TESTS --------------------
+
+
 TEST ///
-     setRandomSeed"alpha"
+     assert(nextprime(100)==101);
+///
+
+
+
+TEST ///
+     setRandomSeed"alpha";
      p=nextPrime(10000)
-     kk=ZZ/p 
-     R=kk[x_0..x_2]
+     kk=ZZ/p ;
+     R=kk[x_0..x_2];
      I=ideal(random(4,R)); 
      time randomRationalPoint I     
 ///
 	  
 TEST ///
-setRandomSeed"alpha";
-kk=ZZ/101;
-R=kk[x_0..x_2];
-I=randomDistinctPlanePoints(5,R,Certify=>true);
-assert(degree I == 5 or I==ideal 0_R);
-I=randomDistinctPlanePoints(5,R,Attempts=>infinity);
-assert(degree I == 5);
+     setRandomSeed"alpha";
+     kk=ZZ/101;
+     R=kk[x_0..x_2];
+     I=randomDistinctPlanePoints(5,R,Certify=>true);
+     assert(degree I == 5 or I==ideal 0_R);
+     I=randomDistinctPlanePoints(5,R,Attempts=>infinity);
+     assert(degree I == 5);
 ///
 
 TEST ///
-setRandomSeed"alpha";
-kk=ZZ/2;
-R=kk[x_0..x_2];
-I=randomNodalPlaneCurve(5,6,R,Attempts=>10);
-singI=I + ideal jacobian I;
-assert((degree singI,dim singI,distinctPlanePoints singI )==(1,3,false) or 
-     (degree singI,dim singI,distinctPlanePoints singI )==(6,1,true))
+    setRandomSeed"alpha";
+    kk=ZZ/2;
+    R=kk[x_0..x_2];
+    I=randomNodalPlaneCurve(5,6,R,Attempts=>10);
+    singI=I + ideal jacobian I;
+    assert((degree singI,dim singI,distinctPlanePoints singI)==(1,3,false) or 
+           (degree singI,dim singI,distinctPlanePoints singI)==(6,1,true))
 kk=ZZ/101;
 R=kk[x_0..x_2];
 I=randomNodalPlaneCurve(5,6,R,Certify=>true);
