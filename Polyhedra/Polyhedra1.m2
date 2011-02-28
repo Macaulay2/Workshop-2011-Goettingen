@@ -2806,16 +2806,16 @@ newMinkSum = (P,Q) -> (
      V := matrix {unique flatten apply(numColumns vertices P, i -> apply(numColumns vertices Q, j -> (vertices P)_{i}+(vertices Q)_{j}))};
      if V==0 then V = map(ZZ^(ambDim P),ZZ^1,0);
      R := promote(rays P | rays Q,QQ) | map(target promote(V,QQ),QQ^1,0);
-     print R;
      V = (map(QQ^1,source promote(V,QQ),(i,j)->1) || promote(V,QQ)) | (map(QQ^1,source R,0) || R);
-     print V;
      HS = sort makePrimitiveMatrix transpose(-(HS#1)|HS#0);
      HS = uniqueColumns HS;
      HP = sort makePrimitiveMatrix transpose(-(HP#1)|HP#0);-- else HP = map(ZZ^(numColumns HP#0 + 1),ZZ^0,0);
      
      HP = uniqueColumns HP;
+         
+     --print sort matrix {unique apply(apply(numColumns V,i->V_{i}), makePrimitiveMatrix)};
      W := fMReplacement(V,HS,HP);
-     print W;
+     --print W;
      polyhedronBuilder reverse W
      )
 
@@ -3407,9 +3407,13 @@ fMReplacement = (R,HS,HP) -> (
 	  HS = CHS * HS);
      HS = if HS == 0 then map(ZZ^(numRows HS),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix HS;
      R = apply(numColumns R, i -> R_{i});
+     
+     -- Might fix the bug. Not sure though.
+     alpha = rank HS;
+     
      R = select(R, r -> (r != 0 and (
 		    pos := positions(flatten entries((transpose HS) * r), e -> e == 0);
-		    #pos >= n-alpha-beta-1 and (n <= 3 or rank HS_pos >= n-alpha-beta-1))));
+		    #pos >= n-alpha-beta-1 and (n <= 3 or rank HS_pos >= n-alpha-beta-1))));     
      if R == {} then R = map(ZZ^(numRows LS),ZZ^0,0) else R = sort matrix {unique apply(R, makePrimitiveMatrix)};
      LS = if LS == 0 then map(ZZ^(numRows LS),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix LS;
      HP = if HP == 0 then map(ZZ^(numRows HP),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix HP;
