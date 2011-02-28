@@ -207,9 +207,9 @@ doc ///
   Headline
     Decomposition for the monomial curve.
   Usage
-    decomposeMonomialCurve(L)
+    decomposeMonomialAlgebra(A)
   Inputs
-    L:List
+    A:List
         containing generators of A
   Outputs
     :List
