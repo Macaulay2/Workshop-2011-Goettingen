@@ -68,6 +68,7 @@ I := monomialAlgebraIdeal(S, B);
 N := S^1/(ideal(x_0..x_(m-1))+I);
 bN := basis N;
 L := partition(p -> p/(i -> i%d), last degrees bN);
+print L;
 --replace each value by itself normalized then divided by d, 
 --with a twist to show the amount of normalization.
 L1 := applyValues(L,LL -> (
@@ -75,7 +76,7 @@ L1 := applyValues(L,LL -> (
 --	  degLL = (min(LL/sum))//d;
 	  LL1 := LL / (l -> (apply(l - LL_0,j->j//d)));
 	  mins := apply(#LL_0, i -> min apply(LL1, l -> l#i));
-	  {LL1 / (l -> l-mins), degLL0}
+	  {LL1 / (l -> l-mins), degLL0 + sum(mins)}
      ));
 a := local a;
 T := kk[a_0..a_(m-1)];
