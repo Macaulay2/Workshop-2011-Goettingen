@@ -94,7 +94,7 @@ monomialAlgebra = (R,A) -> (
      
 ///
 restart
-load "monomialRings.m2"
+load "~/src/Goettingen-2011/monomialRings.m2"
 A = {{1,2},{3,0}, {0,4},{0,5}} -- increasing integers, initial zero implied
 S = kk[a,b,c,d,e]
 monomialAlgebra (S,A)
@@ -113,7 +113,7 @@ maxNumGens = H -> max ((values H)/numgens)
 end
 
 restart
-load "monomialRings.m2"
+load "~/src/Goettingen-2011/monomialRings.m2"
 A = {1,3,4} -- increasing integers, initial zero implied
 decomposeMonomialCurve A
 for d from 4 to 10 do (
