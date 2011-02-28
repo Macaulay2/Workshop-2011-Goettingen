@@ -73,24 +73,17 @@ randomDistinctPlanePoints=method(TypicalValue=>Ideal,Options=>{Certify=>false,At
 randomDistinctPlanePoints(ZZ,PolynomialRing):=opt->(k,R)->(
      if dim R != 3 then error "expected a polynomial ring in three variables";
      if degrees R !={{1}, {1}, {1}} then error "polynomial ring is not standard graded";
-     n:=ceiling((-3+sqrt(9.0+8*k))/2); 
-     eps:=k-binomial(n+1,2);
-     -- B a random Hilbert-Birch matrix
-     B:=if n-2*eps>=0 then random(R^(n+1-eps),R^{n-2*eps:-1,eps:-2}) 
-     	  else random(R^{n+1-eps:0,2*eps-n:-1},R^{eps:-2});
-     I:=minors(rank source B,B); 
-     if opt.Certify or opt.Attempts>0 then (
-	  distinct:=distinctPlanePoints I;
-     	  count:=1;
-	  while not distinct and count<opt.Attempts do (
-	        count=count+1;
-		B=if 2-2*eps>=0 then random(R^(n+1-eps),R^{n-2*eps:-1,eps:-2}) 
-		else random(R^{n+1-eps:0,2*eps-n:-1},R^{eps:-2});
-		I=minors(rank source B,B);
-		distinct=distinctPlanePoints I;);
-	  if not distinct then I=ideal 0_R;
-	  );
-     I)
+     if not ( instance(opts.Attempts, ZZ) and opts.Attempts > 0 or opts.Attempts === infinity )
+     then error "Attempts: expected a positive integer or infinity";
+     n := ceiling((-3+sqrt(9.0+8*k))/2); 
+     eps := k-binomial(n+1,2);
+     for i from 1 do (
+	  if i > opts.Attempts then error "failed to find distinct points";
+	  -- a random Hilbert-Birch matrix:
+	  B := random(R^{n+1-eps:0,2*eps-n:-1},R^{n-2*eps:-1,eps:-2});
+	  I := minors(rank source B,B);
+     	  if not opt.Certify or distinctPlanePoints I then return I; 
+	  ))
 
 distinctPlanePoints=method(TypicalValue=>Boolean);
 distinctPlanePoints Ideal:= I-> dim I==1 and dim (I+minors(2,jacobian I))<=0
