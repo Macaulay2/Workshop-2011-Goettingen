@@ -8,15 +8,22 @@ newPackage(
     DebuggingMode => true
     )
 
-export
-{}
+export{g, IdealofPoints}
  -- Actual code here!
 
-g=method 
+g=method() 
 g (HashTable, Ring) := (T,R)->
  (--T is a HashTable
     sum (keys T, A->T#A*product(numgens R,i->(1-((gens R)_i-A_i))))
     ) 
+
+IdealofPoints=method()
+IdealofPoints (HashTable, Ring) := (T,R) -> 
+     (-- T is a HashTable
+	  ideal(
+	  product (keys T, A->1-product(numgens R,i->(1-((gens R)_i-A_i))))
+	  )
+     )
 
 beginDocumentation()
 
@@ -74,6 +81,8 @@ T#{0,0}=0
 
 R=ZZ/2[x1,x2]/ideal(x1^2-x1,x2^2-x2)
 
+g(T,R)
+IdealofPoints(T,R)
 peek T
 -- Polynomial Formating 3.1                                                                                                                                                        
 keys T
