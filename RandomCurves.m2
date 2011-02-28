@@ -63,8 +63,8 @@ imageUnderRationalMap=method()
 imageUnderRationalMap(Ideal,Matrix):=(J,L)->(
      if not same degrees source L then error "expected homogeneous forms of a single degree";
      kk:=coefficientRing ring J;
-     x:= local x;
-     S:=kk[x_0..x_(rank source L-1)];
+     x := getSymbol x;
+     S:=kk(monoid [x_0..x_(rank source L-1)]);
      RJ:=ring J/J;
      ideal mingens ker map(RJ,S,sub(L,RJ))     
      )
