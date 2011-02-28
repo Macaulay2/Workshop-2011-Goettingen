@@ -75,6 +75,7 @@ randomDistinctPlanePoints(ZZ,PolynomialRing):=opt->(k,R)->(
      if degrees R !={{1}, {1}, {1}} then error "polynomial ring is not standard graded";
      if not ( instance(opt.Attempts, ZZ) and opt.Attempts > 0 or opt.Attempts === infinity )
           then error "Attempts: expected a positive integer or infinity";
+	  
      n := ceiling((-3+sqrt(9.0+8*k))/2); 
      eps := k-binomial(n+1,2);
      for i from 1 do (
@@ -1255,6 +1256,18 @@ doc ///
       attempts to find the desired object. For a search algorithm, the option {\tt InCodim=>c} computes the expected 
       running time of a search algorithm assuming that the codimension of M in G is c, and bounds the number of attempts
       accordingly.
+///
+
+doc ///
+  Key
+    "randomObject"
+  Headline
+    Guideline for the implementation of random objects
+  Description
+    Text
+     Given a unirational moduli space $M$ together with a map $U \rightarrow M$
+     of objects the function randomObject returns a random point in an open subset of $M$ or null.
+     
 ///
 
 -------------- TESTS --------------------
