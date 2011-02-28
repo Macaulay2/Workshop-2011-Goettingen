@@ -97,7 +97,7 @@ export {
      --Keys for PartialCharacter type
      J,
      L,--lattice
-     c,--hom to multiplicative group     
+     c--hom to multiplicative group     
      }
 
 needsPackage "FourTiTwo";
@@ -478,20 +478,20 @@ latticeBasisIdeal = (R,L) -> (
      return ideal binomials;
      )
 
-saturatePChar = (va, A, c) -> (
+saturatePChar = (pc) -> (
      -- This function saturates a partial character.  A saturated character is distinguished from its saturation as the
      -- saturation has a list as third entry.  
      
      -- If the lattice is saturated, the character is saturated
      -- Note that this shortcircuits all problems with c being non-constant.
-     if image Lsat A == image A then (
-	  return (va, A, {c});
+     if image Lsat pc#L == image pc#L then (
+	  return (pc);
 	  );
      
      -- The saturated lattice
-     S := Lsat(A);
+     S := Lsat(pc#L);
      -- The coefficient matrix :
-     K := A // S;
+     K := pc#L // S;
      
      -- print K;
      -- Now we find the (binomial) equations for the saturated character:
@@ -499,10 +499,14 @@ saturatePChar = (va, A, c) -> (
      varlist := for i in 0..numvars-1 list value ("m"|i);
      scan (varlist, (v -> v = local v));
      Q := QQ[varlist];
-     eqs := idealFromCharacter(Q,K,c);
+     eqs := idealFromCharacter(Q,K,pc#c);
      
      result := binomialSolve eqs;
-     return (va, S, result);
+     r := #result;
+     i := 0;
+     
+     return(for i from 0 to r-1 list(
+	  new PartialCharacter from {J => pc#J, L => S, c => result#i}));
      )
 
 satIdeals = (va, A, d) -> (
@@ -1107,18 +1111,18 @@ binomialQuotient = {cellVariables => null} >> o -> (I,b) -> (
 	  pc = partialCharacter (quot, cellVariables=>cv);
 	  	  
 	  --determine whether the exponents of b are in the saturated lattice
-	  if isSubset (bexpim, image Lsat pc#1) then (
+	  if isSubset (bexpim, image Lsat pc#L) then (
      	       U' = U' | {m};
 	       i := 1;
 	       -- Computing the order of bexp in Lsat / L
 	       while true do (
-		    if isSubset (image transpose matrix {i * bexp} , image pc#1) then (
+		    if isSubset (image transpose matrix {i * bexp} , image pc#L) then (
 			 D = D | {i};
 			 break;
 			 )
 		    else i = i+1;
 		    );
-	       -- print ("The order of " | toString bexp | "in " | toString image pc#1 | "is " | toString i);
+	       -- print ("The order of " | toString bexp | "in " | toString image pc#L | "is " | toString i);
 	       -- print D;
 	       );
 	  ); -- loop over monomials
