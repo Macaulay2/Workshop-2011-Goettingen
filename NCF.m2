@@ -4,16 +4,17 @@ newPackage(
     Version => "0.1", 
     Date => "",
     Authors => {{Name => "", Email => "", HomePage => ""}},
-    Headline => "",
+    Headline => "Inferring nested canalyzing functions for given time-course
+    data",
     DebuggingMode => true
-    )
+)
 
-export{g, IdealofPoints, ncfIdeal}
- -- Actual code here!
+export{interpolate, idealOfPoints, ncfIdeal, kernPhi}
 
-
+-- construct the generators for the ideal that encodes the relation of
+--coefficients for ncf
 -- ideal with relation of coefficients for nested canalyzing functions
--- 3.8
+-- equation 3.8 in Jarrah et al
 -- given a subset S \subseteq [n], return the relation of that generator
 ncfIdeal = method()
 ncfIdeal (List, ZZ, Ring) := RingElement => (S, n, QR) -> (
@@ -31,51 +32,71 @@ ncfIdeal (List, ZZ, Ring) := RingElement => (S, n, QR) -> (
 )
 
   
+-- generate a function that interpolates a given time course
+-- T is a Hash table, with T#Input(t)=Output(t+1)
+interpolate = method() 
+interpolate (HashTable, Ring) := (T, R) -> (
+  sum (keys T, A -> T#A * product(numgens R, i -> ( 1- ( (gens R)_i - A_i) )))
+) 
 
-g=method() 
-g (HashTable, Ring) := (T,R)->
- (--T is a HashTable
-    sum (keys T, A->T#A*product(numgens R,i->(1-((gens R)_i-A_i))))
-    ) 
 
-IdealofPoints=method()
-IdealofPoints (HashTable, Ring) := (T,R) -> 
-     (-- T is a HashTable
-	  ideal(
-	  product (keys T, A->1-product(numgens R,i->(1-((gens R)_i-A_i))))
-	  )
-     )
+-- construct generator for the ideal that vanishes on all given time points
+idealOfPoints = method()
+idealOfPoints(HashTable, Ring) := (T,R) -> (
+  product (keys T, A -> 
+    1 - product(numgens R, i -> (1 - ((gens R)_i - A_i))) 
+  )
+)
+
+kernPhi = method()
+kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, R) -> (
+  n := numgens R;
+  L := subsets n;
+  L = apply( L, l -> apply( l, i -> i + 1) );
+  B := ZZ/2[ apply( L, l -> (getSymbol "b")_l) ];
+  C := ZZ/2[ apply( L, l -> (getSymbol "c")_l) ];
+  largeR := C**B**R;
+  largeQR := largeR / ideal apply( gens largeR, x -> x^2-x);
+  p := sum( subsets gens R, gens B, (x,b) -> sub(product x, largeQR) *  sub(b, largeQR) );
+  c := sum( subsets gens R, gens C, (x,c) -> sub(product x, largeQR) *  sub(c, largeQR) );
+  f := sub(g, largeQR) + p* sub(h, largeQR);
+  cCoff := apply( subsets gens R, x -> coefficients( sub(product x, largeQR), f) );
+
+
+)
+
+
 
 beginDocumentation()
 
-  doc
-  ///
-  Key
+doc ///
+Key
   NCF
-  Headline
-  Description
+Headline
+  Inferring nested canalyzing functions for given time-course data
+Description
   Text
   Example
-  Caveat
-  SeeAlso
-  ///
+Caveat
+SeeAlso
+///
 
-  doc
-  ///
-  Key
-  Headline
-  Usage
-  Inputs
-  Outputs
-  Consequences
-  Description
+doc ///
+Key
+  interpolate 
+Headline
+  construct polynomial that interpolates the data
+Usage
+  interpolate HashTable
+Consequences
+Description
   Text
   Example
   Code
   Pre
-  Caveat
-  SeeAlso
-  ///
+Caveat
+SeeAlso
+///
 
 TEST ///
   -- test code and assertions here
@@ -100,14 +121,31 @@ end
 restart 
 loadPackage "NCF"
 check "NCF"
-
-
-
 T=new MutableHashTable	   
 T#{1,1}=1
 T#{1,0}=0
 T#{0,1}=0
 T#{0,0}=0
+n = 2
+L = subsets n
+L = apply( L, l -> apply( l, i -> i + 1) ) 
+R = ZZ/2[x_1..x_n]
+
+QR = R / ideal apply(gens R, x -> x^2-x)
+B = ZZ/2[apply( L, l -> b_l)]
+C = ZZ/2[apply( L, l -> c_l)]
+B**R
+gens oo
+C**B**R
+QR = R / ideal apply(gens R, x -> x^2-x)
+
+coefficients( x_1, Monomials => apply(subsets gens R, product)
+g := interpolate(T,QR)
+h := idealOfPoints(T,QR)
+kernPhi(g,h,R)
+
+
+
 
 R=ZZ/2[x1,x2]/ideal(x1^2-x1,x2^2-x2)
 
@@ -120,6 +158,8 @@ L = apply( L, l -> apply( l, i -> i + 1) )
 R = ZZ/2[x_1..x_n, apply( L, l -> c_l), apply( L, l -> b_l) ]
 QR = R / ideal apply(gens R, x -> x^2-x)
 ideal apply(L, S-> ncfIdeal(S,n,QR) )
+
+
 variableCount=n
  nlist=apply(variableCount,i->i+1)
  mons = apply(subsets nlist,i->product apply(i,j->x_j))
@@ -127,3 +167,6 @@ variableCount=n
   alternativeR=ZZ/2[x_1..x_n]
   altQR= alternativeR/ideal(apply(gens alternativeR, x-> x^2-x))
  BQR=B**altQR
+
+restart 
+loadPackage "NCF"
