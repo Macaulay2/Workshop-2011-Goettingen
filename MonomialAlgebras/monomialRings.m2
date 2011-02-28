@@ -1,3 +1,24 @@
+doc ///
+   Key
+   Headline
+   Usage
+   Inputs
+   Outputs
+   Consequences
+    Item
+   Description
+    Text
+    Code
+    Pre
+    Example
+   Subnodes
+   Caveat
+   SeeAlso
+///
+
+
+
+
 --next case to write: Simplicial semigroups, any dimension.
 
 --In general, if a ``base''
