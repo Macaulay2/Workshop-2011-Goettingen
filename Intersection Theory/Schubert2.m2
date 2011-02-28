@@ -631,6 +631,7 @@ map(FlagBundle,AbstractVariety,AbstractSheaf) := opts -> (P,X,L) -> (
      if not #P.Bundles == 2 then error "expected a projective bundle";
      if not (P.BundleRanks#0 == 1 or P.BundleRanks#1 == 1) then error "expected a projective bundle";
      if not (rank L == 1) then error "expected a line bundle";
+     if not (variety L === X) then error "expected a line bundle on the source variety; did you mix up source and target?"; 
      fulton := (P.BundleRanks#0 == 1); --Fulton-style notation?
      RB := intersectionRing B;
      RX := intersectionRing X;
