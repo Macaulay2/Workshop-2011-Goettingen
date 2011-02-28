@@ -2755,6 +2755,7 @@ newMinkSum = (P,Q) -> (
      LP = LP | toList(max(0,d-#LP):{});
      LQ := reverse apply(dim Q + 1, k -> facePairBuilder(k,Q));
      LQ = LQ | toList(max(0,d-#LQ):{});
+     << "HP done." << endl;
      HS := unique flatten apply(d, i -> (
 	       if i == 0 then flatten for f in LQ#(d-1) list (
 		    if f#1 == {} then (
@@ -2814,7 +2815,9 @@ newMinkSum = (P,Q) -> (
      HP = uniqueColumns HP;
          
      --print sort matrix {unique apply(apply(numColumns V,i->V_{i}), makePrimitiveMatrix)};
+     << "V:" << V << endl;
      W := fMReplacement(V,HS,HP);
+     << "FM done." << endl;
      --print W;
      polyhedronBuilder reverse W
      )
@@ -3391,34 +3394,28 @@ makePrimitiveMatrix = M -> if M != 0 then lift(transpose matrix apply(entries tr
 
 fMReplacement = (R,HS,HP) -> (
      uniqueColumns := M -> matrix{(unique apply(numColumns M, i -> M_{i}))};
+     R1 := R;
+     HS1 := HS;
+     HP1 := HP;
      n := numRows R;
      LS := mingens ker transpose(HS|HP);
      alpha := rank LS;
-     --<< "R:" << R << endl;
-     --if fixme then error("Fix me");
      if alpha > 0 then (
-	  LS = lift(gens gb promote(LS,QQ[]),QQ);
-	  CR := mingens ker transpose LS;
-	  CR = CR * (inverse(LS|CR))^{alpha..n-1};
-	  R = CR * R);
+          LS = lift(gens gb promote(LS,QQ[]),QQ);
+          CR := mingens ker transpose LS;
+          CR = CR * (inverse(LS|CR))^{alpha..n-1};
+          R = CR * R);
      beta := rank HP;
      if beta > 0 then (
-	  HP = lift(gens gb promote(HP,QQ[]),QQ);
-	  CHS := mingens ker transpose HP;
-	  CHS = CHS * (inverse(HP|CHS))^{beta..n-1};
-	  HS = CHS * HS);
+          HP = lift(gens gb promote(HP,QQ[]),QQ);
+          CHS := mingens ker transpose HP;
+          CHS = CHS * (inverse(HP|CHS))^{beta..n-1};
+          HS = CHS * HS);
      HS = if HS == 0 then map(ZZ^(numRows HS),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix HS;
      R = apply(numColumns R, i -> R_{i});
-     
-     
-     -- Doesn't fix the bug, but makes it better.
-     --alpha1 = rank HS;
-     --beta1 = rank HP;
-     
-     --if fixme then error("Fix me");
      R = select(R, r -> (r != 0 and (
-		    pos := positions(flatten entries((transpose HS) * r), e -> e == 0);
-		    #pos >= n - alpha - beta -1  and (n <= 3 or rank HS_pos >= n-alpha-beta-1))));     
+                    pos := positions(flatten entries((transpose HS) * r), e -> e == 0);
+                    #pos >= n-alpha-beta-1 and (n <= 3 or rank HS_pos >= n-alpha-beta-1))));
      if R == {} then R = map(ZZ^(numRows LS),ZZ^0,0) else R = sort matrix {unique apply(R, makePrimitiveMatrix)};
      LS = if LS == 0 then map(ZZ^(numRows LS),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix LS;
      HP = if HP == 0 then map(ZZ^(numRows HP),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix HP;
