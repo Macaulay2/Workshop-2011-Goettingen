@@ -30,7 +30,6 @@ Foo = new RandomObject from {
      Certify => CertifyFoo
      }
 
-
 beginDocumentation()
 
 doc ///
