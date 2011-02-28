@@ -49,8 +49,7 @@ beginDocumentation()
   SeeAlso
   ///
 
-  TEST
-  ///
+  TEST ///
   -- test code and assertions here
   -- may have as many TEST sections as needed
   ///
