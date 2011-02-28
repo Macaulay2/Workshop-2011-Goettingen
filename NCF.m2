@@ -8,8 +8,29 @@ newPackage(
     DebuggingMode => true
     )
 
-export{g, IdealofPoints}
+export{g, IdealofPoints, ncfIdeal}
  -- Actual code here!
+
+
+-- ideal with relation of coefficients for nested canalyzing functions
+-- 3.8
+-- given a subset S \subseteq [n], return the relation of that generator
+ncfIdeal = method()
+ncfIdeal (List, ZZ, Ring) := RingElement => (S, n, QR) -> (
+  -- c_{ l } = (gens QR)#indeces#l
+  indeces := new MutableHashTable;
+  L := subsets n;
+  L = apply( L, l -> apply( l, i -> i + 1 ));
+  apply( #L, i -> indeces#(L#i) = i+n );
+  rS := max S;
+  compl := toList (set( 1..rS)  -  set S);
+  (gens QR)#(indeces#S) - (gens QR)#(indeces#(toList (1..rS))) *
+    product( compl, i -> 
+      (gens QR)#( indeces#(toList (set (1..n) - set {i} ) ))
+    )
+)
+
+  
 
 g=method() 
 g (HashTable, Ring) := (T,R)->
@@ -56,10 +77,18 @@ beginDocumentation()
   SeeAlso
   ///
 
-  TEST ///
+TEST ///
   -- test code and assertions here
   -- may have as many TEST sections as needed
-  ///
+  n = 5
+  L = subsets n
+  L = apply( L, l -> apply( l, i -> i + 1) ) 
+  R = ZZ/2[x_1..x_n, apply( L, l -> c_l), apply( L, l -> b_l) ]
+  QR = R / ideal apply(gens R, x -> x^2-x)
+  S = {1,2,4};
+  p = ncfIdeal(S,n,QR) 
+  assert( p == c_{1,2,4} - c_{1,2,3,4}*c_{1,2,4,5} )
+///
 
 
 
@@ -70,6 +99,7 @@ end
 
 restart 
 loadPackage "NCF"
+check "NCF"
 
 
 
@@ -81,9 +111,12 @@ T#{0,0}=0
 
 R=ZZ/2[x1,x2]/ideal(x1^2-x1,x2^2-x2)
 
-g(T,R)
-IdealofPoints(T,R)
-peek T
--- Polynomial Formating 3.1                                                                                                                                                        
-keys T
 
+restart 
+loadPackage "NCF"
+n = 5
+L = subsets n
+L = apply( L, l -> apply( l, i -> i + 1) ) 
+R = ZZ/2[x_1..x_n, apply( L, l -> c_l), apply( L, l -> b_l) ]
+QR = R / ideal apply(gens R, x -> x^2-x)
+ideal apply(L, S-> ncfIdeal(S,n,QR) )
