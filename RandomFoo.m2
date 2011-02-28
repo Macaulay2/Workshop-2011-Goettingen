@@ -19,9 +19,9 @@ newPackage(
 export { "Foo", "Color", "Blue" }
 needsPackage "RandomObjects"
 
-CreateFoo = opts -> (genus -> (random 10 + genus))
+CreateFoo = opts -> genus -> random 10 + genus
 
-CertifyFoo =  (opts, args, object) -> (object > 5)
+CertifyFoo =  (opts, args, object) -> object > 5
 
 Foo = new RandomObject from {
      Types => ZZ,
@@ -34,20 +34,30 @@ beginDocumentation()
 
 doc ///
   Key
-     Foo
+     "Foo"
   Headline
      Create a random foo
   Usage
-    f=(random Foo)(n)
+    (random Foo) n
   Inputs
     n : ZZ
        a number
   Outputs
-    f : ZZ
+    : ZZ
        a number
   Description
     Text 
-     adds a random number in the range 0..9 to n 
+     This function adds a random number, in the range 0..9, to {\tt n} and returns the result.
+    Example
+     (random Foo) 14
+    Text
+     If a foo of another color is desired, then add an optional argument of the form { \tt Color => thecolor }.
+    Example
+     (random Foo)(14, Color => Ochre)
+    Text
+     If certification is desired, which means the result is greater than 5, then add { \tt Certify => true }.
+    Example
+     (random Foo)(14, Certify => true)
   SeeAlso  
 ///
 end
