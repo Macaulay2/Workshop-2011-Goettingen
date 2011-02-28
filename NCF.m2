@@ -1,28 +1,16 @@
 
-
 newPackage(
     "NCF",
     Version => "0.1", 
     Date => "",
-    Authors => {{Name =>
-    "", 
-    Email
-    =>
-    "", 
-    HomePage
-    =>
-    ""}},
-    Headline
-    =>
-    "",
-    DebuggingMode
-    =>
-    true
+    Authors => {{Name => "", Email => "", HomePage => ""}},
+    Headline => "",
+    DebuggingMode => true
     )
 
 export
 {}
-
+ -- Actual code here!
 --
 
 beginDocumentation()
@@ -58,21 +46,8 @@ beginDocumentation()
 
   TEST
   ///
-  --
-  test
-  code
-  and
-  assertions
-  here
-  --
-  may
-  have
-  as
-  many
-  TEST
-  sections
-  as
-  needed
+  -- test code and assertions here
+  -- may have as many TEST sections as needed
   ///
 
 
@@ -85,5 +60,4 @@ end
 restart 
 loadPackage "NCF"
 
-2+2
 
