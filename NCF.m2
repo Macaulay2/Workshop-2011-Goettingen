@@ -11,23 +11,13 @@ newPackage(
 export
 {}
  -- Actual code here!
---
-T=new MutableHashTable
-T#{1,1}=1 
-T#{1,0}=0
-T#{0,1}=0
-T#{0,0}=0
 
-R=ZZ/2[x1,x2]/ideal(x1^2-x1,x2^2-x2)
-
-peek T
--- Polynomial Formating 3.1
-keys T
-
-g=T->(--T is a HashTable
+g=method 
+g (HashTable, Ring) := (T,R)->
+ (--T is a HashTable
     sum (keys T, A->T#A*product(numgens R,i->(1-((gens R)_i-A_i))))
     ) 
-g T
+
 beginDocumentation()
 
   doc
@@ -75,4 +65,17 @@ end
 restart 
 loadPackage "NCF"
 
+
+
+T=new MutableHashTable	   
+T#{1,1}=1
+T#{1,0}=0
+T#{0,1}=0
+T#{0,0}=0
+
+R=ZZ/2[x1,x2]/ideal(x1^2-x1,x2^2-x2)
+
+peek T
+-- Polynomial Formating 3.1                                                                                                                                                        
+keys T
 
