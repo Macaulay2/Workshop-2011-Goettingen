@@ -2732,7 +2732,9 @@ newMinkSum = (P,Q) -> (
 	  apply(L, l -> (
 		    l = (toList l#0,toList l#1);
 		    (l,select(HS, hs -> all(l#0, v -> (hs#0)*v - hs#1 == 0) and all(l#1, r -> (hs#0)*r == 0))))));
-     uniqueColumns := M -> matrix{(unique apply(numColumns M, i -> M_{i}))};
+     uniqueColumns := M -> (
+	  if M!=0 then matrix{(unique apply(numColumns M, i -> M_{i}))} else map(ZZ^(numRows M),ZZ^0,0)
+	  );
      n := ambDim P;
      HPP := hyperplanes P;
      HPQ := hyperplanes Q;
@@ -2799,15 +2801,23 @@ newMinkSum = (P,Q) -> (
 			      else if all(flatten entries(newHS#0 *(vertices P)), e -> e >= checkValueP) and all(flatten entries(newHS#0 *(vertices Q)), e -> e >= checkValueQ) then (
 				   if all(Pface#0#1, r -> (newHS#0 *r)_(0,0) >= 0) and all(Qface#0#1, r -> (newHS*r)_(0,0) >= 0) then (-(newHS#0),-(newHS#1)) else continue) 
 			      else continue)))));
+     
      HS = (matrix apply(HS, e -> {first e}),matrix apply(HS, e -> {last e}));
      V := matrix {unique flatten apply(numColumns vertices P, i -> apply(numColumns vertices Q, j -> (vertices P)_{i}+(vertices Q)_{j}))};
-     R := promote(rays P | rays Q,QQ) | map(target V,QQ^1,0);
-     V = (map(QQ^1,source V,(i,j)->1) || V) | (map(QQ^1,source R,0) || R);
+     if V==0 then V = map(ZZ^(ambDim P),ZZ^1,0);
+     R := promote(rays P | rays Q,QQ) | map(target promote(V,QQ),QQ^1,0);
+     print R;
+     V = (map(QQ^1,source promote(V,QQ),(i,j)->1) || promote(V,QQ)) | (map(QQ^1,source R,0) || R);
+     print V;
      HS = sort makePrimitiveMatrix transpose(-(HS#1)|HS#0);
      HS = uniqueColumns HS;
-     HP = sort makePrimitiveMatrix transpose(-(HP#1)|HP#0);
+     HP = sort makePrimitiveMatrix transpose(-(HP#1)|HP#0);-- else HP = map(ZZ^(numColumns HP#0 + 1),ZZ^0,0);
+     
      HP = uniqueColumns HP;
-     polyhedronBuilder reverse fMReplacement(V,HS,HP))
+     W := fMReplacement(V,HS,HP);
+     print W;
+     polyhedronBuilder reverse W
+     )
 
 
 --   INPUT : '(C1,C2)',  two cones
