@@ -3394,6 +3394,8 @@ fMReplacement = (R,HS,HP) -> (
      n := numRows R;
      LS := mingens ker transpose(HS|HP);
      alpha := rank LS;
+     --<< "R:" << R << endl;
+     --if fixme then error("Fix me");
      if alpha > 0 then (
 	  LS = lift(gens gb promote(LS,QQ[]),QQ);
 	  CR := mingens ker transpose LS;
@@ -3408,17 +3410,26 @@ fMReplacement = (R,HS,HP) -> (
      HS = if HS == 0 then map(ZZ^(numRows HS),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix HS;
      R = apply(numColumns R, i -> R_{i});
      
-     -- Might fix the bug. Not sure though.
-     alpha = rank HS;
      
+     -- Doesn't fix the bug, but makes it better.
+     --alpha1 = rank HS;
+     --beta1 = rank HP;
+     
+     --if fixme then error("Fix me");
      R = select(R, r -> (r != 0 and (
 		    pos := positions(flatten entries((transpose HS) * r), e -> e == 0);
-		    #pos >= n-alpha-beta-1 and (n <= 3 or rank HS_pos >= n-alpha-beta-1))));     
+		    #pos >= n - alpha - beta -1  and (n <= 3 or rank HS_pos >= n-alpha-beta-1))));     
      if R == {} then R = map(ZZ^(numRows LS),ZZ^0,0) else R = sort matrix {unique apply(R, makePrimitiveMatrix)};
      LS = if LS == 0 then map(ZZ^(numRows LS),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix LS;
      HP = if HP == 0 then map(ZZ^(numRows HP),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix HP;
-     ((R,LS),(HS,HP)))
-
+     ans := ((R,LS),(HS,HP));
+     m1 := fourierMotzkin ans#0;
+     m2 := fourierMotzkin fourierMotzkin ans#1;
+     if m1#0 != m2#0 or m1#1 != m2#1 then error("Failed") else print "ok";
+     ans
+     )
+   
+    
 
 faceBuilder = (k,P) -> (
      --Checking for input errors
