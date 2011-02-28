@@ -90,7 +90,14 @@ export {
      returnPrimes, -- for binomialIsPrimary 
      returnPChars, -- for binomialIsPrimary
      returnCellVars, -- for binomialCellularDecomposition
-     verbose -- produce more output
+     verbose, -- produce more output
+     
+     --Types
+     PartialCharacter,--HashTable
+     --Keys for PartialCharacter type
+     J,
+     L,--lattice
+     c,--hom to multiplicative group     
      }
 
 needsPackage "FourTiTwo";
@@ -204,6 +211,9 @@ cellVars Ideal := Ideal => o -> I -> (
      else return ((i) -> sub(i, ring I)) \ o#cellVariables;
      )
 
+PartialCharacter = new Type of HashTable;
+     --Setting up the PartialCharacter Type
+
 partialCharacter = method (Options => {cellVariables => null})
 partialCharacter Ideal := Ideal => o -> I -> (
      -- Will compute the partial character associated to a cellular binomial Ideal.
@@ -280,10 +290,13 @@ partialCharacter Ideal := Ideal => o -> I -> (
 	  );
      
      use R;
-     return (cv, transpose matrix vs , cl);
+     
+
+     
+     return (new PartialCharacter from {J=>cv,L=> transpose matrix vs , c=>cl});
      )
 
-randomBinomialIdeal = (R,numge,maxdeg, maxwidth, homog) -> (
+randomBinomialIdeal = (R,numge,maxdeg, maxwidth, homog) -> (	 
      -- Generate 'random' ideals for testing purposes. The distribution is completely heuristic and designed to serve
      -- internal purposes 
      -- Inputs: a ring R, the number of generators numgen, the maximal degree of each variable maxded,
@@ -530,7 +543,7 @@ cellularBinomialRadical Ideal := Ideal => o -> I -> (
      scan (gens R, (v -> v = local v));
      -- Get the partial character of I
      pc := partialCharacter(I, cellVariables=>cv);
-     noncellvars := toList(set (gens R) - pc#0);
+     noncellvars := toList(set (gens R) - pc#J);
      	       
      M := sub (ideal (noncellvars),R);
      
@@ -572,7 +585,7 @@ binomialIsPrimary Ideal := Ideal => o -> I -> (
      rad := prerad + M;
      
      -- If the partial character is not saturated, the radical is not prime
-     if image Lsat pc#1 != image pc#1 then (
+     if image Lsat pc#L != image pc#L then (
 	  print "The radical is not prime, as the character is not saturated";
 	  satpc := saturatePChar pc;
 	  if o#returnPChars then (
@@ -647,7 +660,7 @@ binomialIsPrime Ideal := Ideal => o -> I -> (
      	  );
 
      -- Is the partial character saturated ???     
-     if image Lsat pc#1 != image pc#1 then return false;
+     if image Lsat pc#L != image pc#L then return false;
      
      -- all tests passed:
      return true;
@@ -713,7 +726,7 @@ binomialMinimalPrimes Ideal := Ideal => o -> I -> (
 	  ME := ideal(toList(set (gens R) - a#1));
 	  pc := partialCharacter (a#0, cellVariables=>a#1);
 	  -- Check whether we have a radical ideal already:
-	  if image Lsat pc#1 == image pc#1 then (
+	  if image Lsat pc#L == image pc#L then (
 	       si = {a#0};
 	       )
 	  else (
@@ -798,11 +811,11 @@ cellularBinomialAssociatedPrimes Ideal := Ideal => o -> I -> (
 	  -- Skip if we already had this character
 	  if seenpc#?pC then continue
 	  else seenpc#pC = true;
-	  if pC#1 == 0 then (
+	  if pC#L == 0 then (
 	       primes = primes | {ideal(0_R)}; 
 	       continue;
 	       );
-	  if image Lsat pC#1 == image pC#1 then (
+	  if image Lsat pC#L == image pC#L then (
 	       sat = {Im};
 	       )
 	  else (
@@ -882,18 +895,18 @@ cellularAssociatedLattices Ideal := Ideal => o -> I -> (
 	  -- We already know the cell variables in the following computation
 	  pc = partialCharacter(Im, cellVariables=>cv);
 	  if #lats == 0 then (
-	       lats = {pc#1};
-	       coeffs = {pc#2};
+	       lats = {pc#L};
+	       coeffs = {pc#c};
 	       continue;
 	       )
 	  else (
 	       redundant = false;
-	       scan (lats, (l -> (if image l == image pc#1 then redundant = true)))
+	       scan (lats, (l -> (if image l == image pc#L then redundant = true)))
      	       );
 	  if redundant then continue
 	  else (
-	       lats = lats | {pc#1};
-	       coeffs = coeffs | {pc#2};
+	       lats = lats | {pc#L};
+	       coeffs = coeffs | {pc#c};
 	       );
       	  ); -- for m in ml	    
      return {cv, lats, coeffs};
@@ -939,7 +952,7 @@ cellularEmbeddedLatticeWitnesses Ideal := Ideal => o -> I -> (
 	  -- We already know the cell variables in the following computation
 	  pc = partialCharacter(Im, cellVariables=>cv);
 	  -- test if we have an embedded lattice at m:
-	  if (image pc#1 == image bottomlattice#1) then continue
+	  if (image pc#L == image bottomlattice#L) then continue
 	  else witnesses = witnesses | {m};
 	  ); -- for m in ml
      return witnesses;
