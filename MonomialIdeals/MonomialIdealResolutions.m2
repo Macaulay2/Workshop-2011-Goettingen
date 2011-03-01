@@ -1,4 +1,13 @@
-newPackage ("MonomialIdealResolutions", Version=>"0.1", Date => "march 2011")
+newPackage (
+  "MonomialIdealResolutions",
+  Version=>"0.1",
+  Date => "march 2011",
+  Authors => {{Name => "Eduardo Saenz De Cabezon Irigara", Email => "eduardo.saenz-de-cabezon@unirioja.es"},
+              {Name => "Oscar Fernandez-Ramos", Email => "caribefresno@gmail.com"},
+              {Name => "Christof Söger", Email => "csoeger@uos.de"}},
+  Headline => "various decomposability routines for simplicial complexes",
+  DebuggingMode => false
+)
 
 -------------------
 -- Exports
@@ -166,6 +175,7 @@ doc ///
 doc ///
    Key
        isElement
+		 (isElement, RingElement, MonomialIdeal)
    Headline
        check whether an element of the ring is in the monomial ideal or not
    Usage
@@ -192,6 +202,7 @@ doc ///
 doc ///
    Key
        EK
+       (EK,ZZ,MonomialIdeal)
    Headline
        e
    Usage
@@ -213,6 +224,7 @@ doc ///
 doc ///
    Key
        EKResolution
+		 (EKResolution,MonomialIdeal)
    Headline
        constructs the minimal free resolution given by S. Eliahou and M. Kervaire in [EK] for a stable monomial ideal. 
    Usage
@@ -233,3 +245,30 @@ doc ///
       ChainComplex
       res
 ///
+
+
+-------------------
+-- Tests
+-------------------
+
+-- Tests isElement
+TEST ///
+R = QQ[x,y,z];
+I = monomialIdeal(x^3,x^2*y,x*y^2,y^3);
+assert(isElement(x^3+x^6-x*y^3, I));
+assert(isElement(y^3, I));
+assert(not isElement(x^2, I));
+assert(not isElement(x*y, I));
+assert(not isElement(x*y*z, I));
+///
+
+
+-- Tests isStable
+TEST ///
+R = QQ[x,y,z];
+I = monomialIdeal(x^3,x^2*y,x*y^2,y^3);
+assert(isStable I);
+J = monomialIdeal(x^3,x*y^2,y^3);
+assert(not isStable J);
+///
+
