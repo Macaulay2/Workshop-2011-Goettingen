@@ -7,13 +7,12 @@ export {
   isStable,
   isElement,
   EK,
-  EKresolution  
+  EKResolution  
 }
 
 -------------------
 -- Exported Code
 -------------------
-
 
 EK = method()
 EK(ZZ,MonomialIdeal):= (n,I)->(
@@ -45,10 +44,8 @@ EK(ZZ,MonomialIdeal):= (n,I)->(
 
 EKResolution=method();
 EKResolution(MonomialIdeal):=(I)->(
-    chainComplex(apply(numgens(ring I), i -> EK(i,I)))
+    chainComplex(apply((0..numgens(ring I)-1), i -> EK(i,I)))
 )
-
-
 
 isElement = method();
 isElement(RingElement, MonomialIdeal) := Boolean => (f,I) -> (
@@ -79,29 +76,24 @@ isStable(MonomialIdeal) := Boolean => (I) -> (
 -- Local-Only Code
 -------------------
 
---
---
-
 admissibleSymbolsMonomial=method();
 admissibleSymbolsMonomial(RingElement):=(m)->(
-     lista:=subsets toList(0..maxVar(m));
-     R:=ring(m);
+	  R:=ring m;
+     lista:=subsets toList(0..maxVar(m)-1);
      mySubsets:=apply (lista, i->product(apply(i,j->R_j)));
      apply(mySubsets,i->(i,m))    
      )
 
 admissibleSymbols=method();
 admissibleSymbols(MonomialIdeal):=(M)->(
-     apply(first entries gens M,i->admissibleSymbolsMonomial(i))
+     flatten apply(first entries gens M,i->admissibleSymbolsMonomial(i))
      )
 
 -- Given a monomial 'm' in the ideal I, returns the unique monomial 'u' in the minimal generating system of the monomial ideal, G(I),
---    satisfying m=u*m' with max(u)<=min(m'). The map from the set of monomials of I, M(I), to G(I) defined by this function is called
---    the canonical decomposition in [EK]
-
+-- satisfying m=u*m' with max(u)<=min(m'). The map from the set of monomials of I, M(I), to G(I) defined by this function is called
+-- the canonical decomposition in [EK]
 canonicalDecomp=method();
-canonicalDecomp(RingElement,List):=(m,G)->(
- 
+canonicalDecomp(RingElement,List):=(m,G)->( 
      vm:=flatten exponents m;  
      vG:=apply(G,g->flatten exponents g);
      n:=length vm-1;
@@ -114,6 +106,7 @@ canonicalDecomp(RingElement,List):=(m,G)->(
      );	
      return("Error: this monomial does not belong to the ideal")  
 )
+
 --
 --
 
@@ -189,8 +182,9 @@ doc ///
          R=QQ[x,y,z];
          f=x*y^2+x^3*y*z+z^2;
          g=x^2*y+x*y*z+x^3*z^3;
-         I=ideal(x*y,x^3*z);
+         I=monomialIdeal(x*y,x^3*z);
          isElement(f,I)
+         isElement(g,I)
    SeeAlso
       isSubset
 ///
@@ -213,7 +207,7 @@ doc ///
        Example
         
    SeeAlso
-      e
+      
 ///
 
 doc ///
@@ -232,8 +226,8 @@ doc ///
          It computes degrees of modules and differencials in the minimal resolution of I  
        Example
          R=QQ[x,y,z];
-	 I=ideal(x^2,x*y,y^2,y*z);
-	 EKResolution(I)
+         I=monomialIdeal(x^2,x*y,y^2,y*z);
+         EKResolution(I)
    SeeAlso
       MonomialIdeal
       ChainComplex
