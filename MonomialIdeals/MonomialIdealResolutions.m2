@@ -159,7 +159,7 @@ doc ///
 		   returns true if and only if I is stable
    Description
        Text
-           Determines if the monomial ideal I is stable. It uses the ordering of variables given bythe ring of I. 
+           Determines if the monomial ideal I is stable. It uses the ordering of variables given by the ring of I. 
        Example
            R = QQ[x,y,z];
 			  I = monomialIdeal(x^3,x^2*y,x*y^2,y^3);
@@ -188,7 +188,11 @@ doc ///
        Text
            This function check if f belongs to I
        Example
-        
+         R=QQ[x,y,z];
+	 f=x*y^2+x^3*y*z+z^2;
+	 g=x^2*y+x*y*z+x^3*z^3;
+	 I=ideal(x*y,x^3*z);
+	 isElement(f,I)
    SeeAlso
       isSubset
 ///
@@ -197,38 +201,42 @@ doc ///
    Key
        EK
    Headline
-       
+       e
    Usage
        a
    Inputs
-       
+       e
    Outputs
-       
+       e
    Description
        Text
-         
+        e 
        Example
         
    SeeAlso
-      
+      e
 ///
 
 doc ///
    Key
-       EKresolution
+       EKResolution
    Headline
-       constructs the minimal free resolution given by S. Eliahou and M. Kervaire for a stable monomial ideal. 
+       constructs the minimal free resolution given by S. Eliahou and M. Kervaire in [EK] for a stable monomial ideal. 
    Usage
-       a
+       EKResolution I
    Inputs
-       
+       I: MonomialIdeal
    Outputs
-       
+       C: ChainComplex
    Description
        Text
-         
+         It computes degrees of modules and differencials in the minimal resolution of I  
        Example
-        
+         R=QQ[x,y,z];
+	 I=ideal(x^2,x*y,y^2,y*z);
+	 EKResolution(I)
    SeeAlso
-      
+      MonomialIdeal
+      ChainComplex
+      res
 ///
