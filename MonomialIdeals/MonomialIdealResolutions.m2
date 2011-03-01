@@ -52,8 +52,11 @@ EKResolution(MonomialIdeal):=(I)->(
 
 isElement = method();
 isElement(RingElement, MonomialIdeal) := Boolean => (f,I) -> (
-  any(#I_*, i -> liftable(f/I_i,ring I))
+  all (exponents f,
+    fexp -> any(I_*, g -> all(fexp, flatten exponents g, (fe,ge) -> fe >= ge ))
+  )
 );
+
 
 -- PURPOSE: check if a monomial ideal is stable
 -- INPUT:   a monomial ideal
@@ -152,17 +155,16 @@ doc ///
        I: MonomialIdeal
    Outputs
        B: Boolean
-		   returns true if and only if I is stable
+           returns true if and only if I is stable
    Description
        Text
            Determines if the monomial ideal I is stable. It uses the ordering of variables given by the ring of I. 
        Example
            R = QQ[x,y,z];
-			  I = monomialIdeal(x^3,x^2*y,x*y^2,y^3);
-			  isStable I
-			  J = monomialIdeal(x^3,x*y^2,y^3);
-			  isStable J
-
+           I = monomialIdeal(x^3,x^2*y,x*y^2,y^3);
+           isStable I
+           J = monomialIdeal(x^3,x*y^2,y^3);
+           isStable J
    SeeAlso
      MonomialIdeal
 	  isElement 
@@ -172,7 +174,7 @@ doc ///
    Key
        isElement
    Headline
-       check whether an element of the ring is in the ideal or not
+       check whether an element of the ring is in the monomial ideal or not
    Usage
        isElement(f,I)
    Inputs
@@ -185,10 +187,10 @@ doc ///
            This function check if f belongs to I
        Example
          R=QQ[x,y,z];
-	 f=x*y^2+x^3*y*z+z^2;
-	 g=x^2*y+x*y*z+x^3*z^3;
-	 I=ideal(x*y,x^3*z);
-	 isElement(f,I)
+         f=x*y^2+x^3*y*z+z^2;
+         g=x^2*y+x*y*z+x^3*z^3;
+         I=ideal(x*y,x^3*z);
+         isElement(f,I)
    SeeAlso
       isSubset
 ///
@@ -201,9 +203,10 @@ doc ///
    Usage
        a
    Inputs
-       e
+       n: ZZ
+		 I: MonomialIdeal
    Outputs
-       e
+       m: 
    Description
        Text
         e 
