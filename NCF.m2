@@ -66,6 +66,7 @@ kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, QB) -> (
 
 
 
+
 beginDocumentation()
 
 doc ///
@@ -135,10 +136,14 @@ h := idealOfPoints(T,QR);
 C = QR[apply( L, l -> c_l)];
 QC = C /ideal apply(gens C, x -> x^2-x);
 S := {1};
-ncf := ncfIdeal( S, QC);
+ncf := ideal(apply( L, t -> ncfIdeal( t, QC))|{c_(toList(1..n))-1})
 B = QC[apply( L, l -> b_l)]
-QB = B / ideal apply(gens B, x -> x^2-x);
+QB = B / ideal apply(gens B, x -> x^2-x)
 describe QB
 coefficientRing QB
 coefficientRing coefficientRing QB
 kernP := kernPhi(g,h,QB)
+peek kernP
+primaryDecomposition(ideal(kernP)+ncf)
+installPackage "NCF"
+viewHelp NCF
