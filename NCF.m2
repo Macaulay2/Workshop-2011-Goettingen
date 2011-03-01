@@ -52,15 +52,16 @@ idealOfPoints(HashTable, Ring) := (T,R) -> (
 kernPhi = method()
 kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, QB) -> (
   C := gens coefficientRing QB;
-  X := gens coefficientRing coefficientRing QB;
+  QR := coefficientRing coefficientRing QB;
+  X := gens QR;
   n := #X;
-  p := sum( subsets X, gens QB, (x,b) -> (product x) * b);
-  L := subsets n;
-  L = apply( L, l -> apply( l, i -> i + 1) );
-  --f := sub(g, largeQR) + p* sub(h, largeQR);
-  --cCoff := apply( subsets gens R, x -> coefficients( sub(product x, largeQR), f) );
-
-
+  pp := sum( subsets X, gens QB, (x,b) -> (product x) * b);
+  f := g + pp*h;
+  coeff := apply( subsets X, xx -> (
+    m := (product xx)_QR;
+    coefficient( m, f) )
+  );
+  coeff - C
 )
 
 
