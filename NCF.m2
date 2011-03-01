@@ -50,18 +50,15 @@ idealOfPoints(HashTable, Ring) := (T,R) -> (
 )
 
 kernPhi = method()
-kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, R) -> (
-  n := numgens R;
+kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, QB) -> (
+  C := gens coefficientRing QB;
+  X := gens coefficientRing coefficientRing QB;
+  n := #X;
+  p := sum( subsets X, B, (x,b) -> (product x) * b);
   L := subsets n;
   L = apply( L, l -> apply( l, i -> i + 1) );
-  B := ZZ/2[ apply( L, l -> (getSymbol "b")_l) ];
-  C := ZZ/2[ apply( L, l -> (getSymbol "c")_l) ];
-  largeR := C**B**R;
-  largeQR := largeR / ideal apply( gens largeR, x -> x^2-x);
-  p := sum( subsets gens R, gens B, (x,b) -> sub(product x, largeQR) *  sub(b, largeQR) );
-  c := sum( subsets gens R, gens C, (x,c) -> sub(product x, largeQR) *  sub(c, largeQR) );
-  f := sub(g, largeQR) + p* sub(h, largeQR);
-  cCoff := apply( subsets gens R, x -> coefficients( sub(product x, largeQR), f) );
+  --f := sub(g, largeQR) + p* sub(h, largeQR);
+  --cCoff := apply( subsets gens R, x -> coefficients( sub(product x, largeQR), f) );
 
 
 )
@@ -134,49 +131,15 @@ R = ZZ/2[x_1..x_n];
 QR = R / ideal apply(gens R, x -> x^2-x);
 g := interpolate(T,QR);
 h := idealOfPoints(T,QR);
-
-C = R[apply( L, l -> c_l)];
+C = QR[apply( L, l -> c_l)];
+QC = C /ideal apply(gens C, x -> x^2-x);
 S := {1};
-ncf := ncfIdeal( S, C);
+ncf := ncfIdeal( S, QC);
+B = QC[apply( L, l -> b_l)]
+QB = B / ideal apply(gens B, x -> x^2-x);
 
-B = C[apply( L, l -> b_l)]
 kernP := kernPhi(g,h,R)
 
-
-B = ZZ/2[apply( L, l -> b_l)]
-C = ZZ/2[apply( L, l -> c_l)]
-B**R
-gens oo
-C**B**R
-QR = R / ideal apply(gens R, x -> x^2-x)
-
-coefficients( x_1, Monomials => apply(subsets gens R, product)
-h := idealOfPoints(T,QR)
-kernPhi(g,h,R)
-
-
-
-
-R=ZZ/2[x1,x2]/ideal(x1^2-x1,x2^2-x2)
-
-
-restart 
-loadPackage "NCF"
-n = 5
-L = subsets n
-L = apply( L, l -> apply( l, i -> i + 1) ) 
-R = ZZ/2[x_1..x_n, apply( L, l -> c_l), apply( L, l -> b_l) ]
-QR = R / ideal apply(gens R, x -> x^2-x)
-ideal apply(L, S-> ncfIdeal(S,n,QR) )
-
-
-variableCount=n
- nlist=apply(variableCount,i->i+1)
- mons = apply(subsets nlist,i->product apply(i,j->x_j))
-  B=ZZ/2[apply(subsets nlist,i->b_i)]
-  alternativeR=ZZ/2[x_1..x_n]
-  altQR= alternativeR/ideal(apply(gens alternativeR, x-> x^2-x))
- BQR=B**altQR
-
-restart 
-loadPackage "NCF"
+C = gens coefficientRing QB;
+X := gens coefficientRing coefficientRing C;
+n := #X;
