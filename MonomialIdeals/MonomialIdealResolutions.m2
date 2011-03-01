@@ -14,6 +14,46 @@ export {
 -- Exported Code
 -------------------
 
+
+EK = method()
+EK(ZZ,MonomialIdeal):= (n,I)->(
+   --- create the nth differential in Eliahou-Kervaire's resolution
+   retVal := Nothing;
+   if (n == 0) then 
+      retVal = gens I
+   else
+   {
+      R := ring I;
+      symbolsList:=admissibleSymbols(I);
+      sourceList:=symbolsList_(positions (symbolsList,i->first degree(promote(i_0,R))==n));
+      targetList:=symbolsList_(positions (symbolsList,i->first degree(promote(i_0,R))==n-1));
+  
+      getCoeff := (i,j) -> if (liftable(sourceList_j_0//targetList_i_0,R) and (targetList_i_1==sourceList_j_1)) then
+                             (-1)^(position(positions(coefficients(sourceList_j_0),r->r!=0),s->s==position(first entries vars R,t->t==sourceList_j_0/targetList_i_0)))
+			   else if  (liftable(sourceList_j_0//targetList_i_0,R) and (canonicalDecomp(lift(sourceList_j_0//targetList_i_0,R)*sourceList_j_1,first entries gens I)==targetList_i_1)) then
+                             (-1)^(1+position(positions(coefficients(sourceList_j_0),r->r!=0),s->s==position(first entries vars R,t->t==sourceList_j_0/targetList_i_0)))
+			   else 0_R;
+       myFn := (i,j) -> (tempElt := sourceList_j_0 // targetList_i_0;
+	    	      	 tempElt2:=(lift(tempElt,R)*sourceList_j_1)//canonicalDecomp(lift(tempElt,R)*sourceList_j_1,first entries gens I);
+	                if (liftable(tempElt,R) and (targetList_i_1==sourceList_j_1) ) then  getCoeff(i,j)*lift(tempElt,R)
+			  else if (liftable(tempElt,R) and (targetList_i_1==canonicalDecomp(lift(tempElt,R)*sourceList_j_1,first entries gens I))) then 
+			       getCoeff(i,j)*(tempElt2)
+			 else 0_R);   
+      print "Source: ";print sourceList;
+      print "Target: ";print targetList;   
+      retVal = map(R^(-apply(targetList, i -> (degree(promote(i_1,R))))), R^(-apply(sourceList, i -> (degree(promote(i_1,R))))), myFn);
+   };
+   retVal
+)
+
+EKResolution=method();
+EKResolution(MonomialIdeal):=(I)->(
+    chainComplex(apply((1..2), i -> EK(i,I)))
+)
+
+
+
+
 isElement = method();
 isElement(RingElement, MonomialIdeal) := Boolean => (f,I) -> (
   any(#I_*, i -> f%I_i == 0)
@@ -103,6 +143,7 @@ doc ///
 
            [EK] S. Eliahou and M. Kervaire, "Minimal Resolutions of Some Monomial Ideals"
 	    J. Algebra 129 (1990), 1--25.
+///
 
 doc ///
    Key
@@ -128,16 +169,17 @@ doc ///
    Key
        isElement
    Headline
-       
+       check whether an element of the ring is in the ideal or not
    Usage
-       
+       isElement(f,I)
    Inputs
-       
+       f:RingElement 
+       I:MonomialIdeal
    Outputs
-       
+       Boolean
    Description
        Text
-         
+         This function check if f belongs to I
        Example
         
    SeeAlso
@@ -168,7 +210,7 @@ doc ///
    Key
        EKresolution
    Headline
-       
+       constructs the minimal free resolution given by S. Eliahou and M. Kervaire for a stable monomial ideal. 
    Usage
        
    Inputs
