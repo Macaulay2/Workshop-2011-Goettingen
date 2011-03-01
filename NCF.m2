@@ -243,3 +243,22 @@ installPackage "RationalPoints"
 --viewHelp RationalPoints
 apply( solutions, I -> rationalPoints I)
 rationalPoints first solutions
+
+
+
+R = QQ[a,b,c,d,e]
+QR = R / ideal product gens R
+
+I = ideal( a*b*(a*b-c), d*(d-e) )
+J = ideal( c*(a*b-c), e*(d-e) )
+decompose( I + ideal product gens R) 
+traps = decompose( J + ideal product gens R) 
+traps#0 + traps#1
+decompose( oo + ideal product gens R)
+
+apply( apply( subsets traps, tt -> if tt == {} then ideal 0 else ideal gens gb sum tt), union -> decompose(union + ideal product gens R) )
+netList oo
+
+
+
+

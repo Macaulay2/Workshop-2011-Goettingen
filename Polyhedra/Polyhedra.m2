@@ -6,7 +6,7 @@
 -- UPDATE HISTORY : April 2008, December 2008, March 2009, Juli 2009,
 --     	    	    September 2009, October 2009, January 2010
 ---------------------------------------------------------------------------
-newPackage("Polyhedra",
+newPackage("Polyhedra", 
     Headline => "A package for computations with convex polyhedra",
     Version => "1.1",
     Date => "January 20, 2010",
@@ -8911,3 +8911,14 @@ assert isVeryAmple P
 ///
 
 end
+
+restart 
+load "./Polyhedra/Polyhedra.m2" 
+
+
+
+
+
+
+
+
