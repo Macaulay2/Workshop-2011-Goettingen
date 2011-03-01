@@ -51,18 +51,16 @@ idealOfPoints(HashTable, Ring) := (T,R) -> (
 )
 
 kernPhi = method()
-kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, QB) -> (
-  C := gens coefficientRing QB;
-  QR := coefficientRing coefficientRing QB;
-  X := gens QR;
-  n := #X;
-  pp := sum( subsets X, gens QB, (x,b) -> (product x) * b);
+kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, QR) -> (
+  n := numgens QR;
+  B := gens coefficientRing QR;
+  C := gens coefficientRing coefficientRing QR;
+  pp := sum( subsets gens QR, B, (x,b) -> (product x) * b);
   f := g + pp*h;
-  coeff := apply( subsets X, xx -> (
-    m := (product xx)_QR;
-    coefficient( m, f) )
+  coeff := apply( subsets gens QR, xx -> (
+    m := (product xx);
+    coefficient( m_QR, f) )
   );
-  error "debug";
   coeff - C
 )
 
@@ -139,14 +137,20 @@ L = subsets n
 L = apply( L, l -> apply( l, i -> i + 1) ) ;
 C = ZZ/2[apply( L, l -> c_l)];
 QC = C /ideal apply(gens C, x -> x^2-x)
-B = QC[apply( L, l -> b_l)]
+B = QC[apply( L, l -> b_l), MonomialOrder => Eliminate 2^n]
 QB = B / ideal apply(gens B, x -> x^2-x)
 R = QB[x_1..x_n];
-QR = R / ideal apply(gens R, x -> x^2-x);
-g := interpolate(T,QR);
-h := idealOfPoints(T,QR);
+QR = R / ideal apply(gens R, x -> x^2-x)
+g := interpolate(T,QR)
+h := idealOfPoints(T,QR)
 ncf := ideal(apply( L, t -> ncfIdeal( t, QR))|{c_(toList(1..n))-1})
 kernP := kernPhi(g,h,QR)
+selectInSubring (1, gens gb ideal kernP)
+
+
+
+
+
 primaryDecomposition(ideal(kernP)+ncf)
 
 
