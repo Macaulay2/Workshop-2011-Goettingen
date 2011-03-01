@@ -38,18 +38,25 @@ export {
 
 RandomObject = new Type of MutableHashTable
 globalAssignment RandomObject
-random RandomObject := randomopts -> Object -> (
-     if Object.?Function then return Object.Function;
-     Object.Function = f := method ( Options => join(Object#Options, { Certify => false, Attempts => infinity }) );
-     parameters := Object.ParameterTypes;
-     f parameters := opts -> args -> for i from 1 do (
-	  if i > opts.Attempts then return null;
-	  object := (Object.Construction opts) args;
+random RandomObject := randomopts -> Object -> args -> (
+     if not instance(args, Sequence) then args = 1:args;
+     cert := false;
+     att := infinity;
+     args = for x in args list (
+	  if instance(x,Option) then (
+	       if x#0 === Certify then (cert = x#1 ; continue )
+	       else
+	       if x#0 === Attempts then (att = x#1 ; continue )
+	       else x
+	       )
+	  else x);
+     for i from 1 do (
+	  if i > att then return null;
+	  object := Object.Construction args;
 	  if object === null then continue;
-	  if not opts.Certify then return object;
-	  if Object.Certification(opts, args, object) then return object;
-	  );
-     f)
+	  if not cert then return object;
+	  if Object.Certification prepend(object, args) then return object;
+	  ))
 
 isImplementedRandom=method()
 isImplementedRandom RandomObject:= randomopts -> Object -> Object.isImplemented
