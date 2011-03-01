@@ -137,9 +137,15 @@ S := {1};
 ncf := ncfIdeal( S, QC);
 B = QC[apply( L, l -> b_l)]
 QB = B / ideal apply(gens B, x -> x^2-x);
+describe QB
+coefficientRing B
+coefficientRing coefficientRing B
+
 
 kernP := kernPhi(g,h,R)
 
 C = gens coefficientRing QB;
 X := gens coefficientRing coefficientRing C;
 n := #X;
+
+
