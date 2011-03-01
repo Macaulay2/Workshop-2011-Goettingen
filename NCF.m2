@@ -1,4 +1,6 @@
 
+
+
 newPackage(
     "NCF",
     Version => "0.1", 
@@ -9,27 +11,50 @@ newPackage(
     DebuggingMode => true
 )
 
-export{interpolate, idealOfPoints, ncfIdeal, kernPhi}
+export{interpolate, idealOfPoints, ncfIdeal, kernPhi, ncfMain}
+
+ncfMain = method()
+ncfMain (MutableHashTable, List, RingElement) := List --List of Nested Canalyzing Functions polynomials 
+=> (MHT,Permutation, fieldChar) -> ( --MHT is the table with the expermental data, permutation is a list with the wanted permutation
+     installPackage "RationalPoints";
+     n := #first keys MHT;
+     L := subsets n;
+     L = apply( L, l -> apply( l, i -> i + 1) ) ;
+     C := ZZ/fieldChar[apply( L, l -> c_l)];
+     QC := C /ideal apply(gens C, x ->x^fieldChar-x);
+     B := QC[apply( L, l -> b_l), MonomialOrder => Eliminate 2^n];
+     QB := B / ideal apply(gens B, x -> x^fieldChar-x);
+     R := QB[x_1..x_n];
+     QR := R / ideal apply(gens R, x -> x^fieldChar-x);
+     g := interpolate(MHT,QR);
+     h := idealOfPoints(MHT,QR) ;
+     ncf := ideal flatten entries gens gb ideal(apply( L, t -> ncfIdeal( t, QR, Permutation))|{c_(toList(1..n))-1});
+     ncf = lift(ncf, C);
+     G := kernPhi(g,h,QR);
+     solutions := primaryDecomposition(G+ncf)
+    -- s := apply( solutions, I -> rationalPoints I )
+    -- apply( s, ss -> sum ( subsets gens R, flatten ss, (x, c) -> c*(product x) ) )   
+   )
 
 -- construct the generators for the ideal that encodes the relation of
---coefficients for ncf
+-- coefficients for ncf
 -- ideal with relation of coefficients for nested canalyzing functions
 -- equation 3.8 in Jarrah et al
 -- given a subset S \subseteq [n], return the relation of that generator
 ncfIdeal = method()
-ncfIdeal (List, Ring) := RingElement => (S, QR) -> (
+ncfIdeal (List, Ring, List) := RingElement => (S, QR, Sigma) -> (
   n := numgens QR;
   -- c_{ l } = (gens QR)#indeces#l
   indeces := new MutableHashTable;
   L := subsets n;
   L = apply( L, l -> apply( l, i -> i + 1 ));
-  apply( #L, i -> indeces#(L#i) = i );
+  apply( #L, i -> indeces#(L#i) = Sigma#i );
   rS := max S;
   compl := toList (set( 1..rS)  -  set S);
   C := gens coefficientRing coefficientRing QR;
   C#(indeces#S) - C#(indeces#(toList (1..rS))) *
     product( compl, i -> 
-      C#( indeces#(toList (set (1..n) - set {i} ) ))
+      C#( indeces#(toList (set (1..n) - set {Sigma#i} ) ))
     )
 )
 
@@ -40,7 +65,6 @@ interpolate = method()
 interpolate (HashTable, Ring) := (T, R) -> (
   sum (keys T, A -> T#A * product(numgens R, i -> ( 1- ( (gens R)_i - A_i) )))
 ) 
-
 
 -- construct generator for the ideal that vanishes on all given time points
 idealOfPoints = method()
@@ -64,8 +88,8 @@ kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, QR) -> (
   ideal lift( selectInSubring(1, gens gb ideal (W - C) ), ambient coefficientRing coefficientRing QR)
 )
 
-
-
+-- G=gb( , MonomialOrder => Weights => #:0)
+     
 
 beginDocumentation()
 
@@ -134,7 +158,7 @@ g := interpolate(T,QR)
 assert( g == x_1*x_2)
 h := idealOfPoints(T,QR)
 assert( h == 0 ) 
-ncf := ideal flatten entries gens gb ideal(apply( L, t -> ncfIdeal( t, QR))|{c_(toList(1..n))-1})
+ncf := ideal flatten entries gens gb ideal(apply( L, t -> ncfIdeal( t, QR, {0,2,1,3}))|{c_(toList(1..n))-1})
 ncf = lift(ncf, C)
 installPackage "RationalPoints"
 assert( rationalPoints ncf ==  {{0, 0, 0, 1}, {1, 0, 0, 1}, {0, 1, 0, 1}, {1,
@@ -224,6 +248,7 @@ T#{0,1}=0
 T#{0,0}=0
 T=new MutableHashTable	   
 T#{1,1}=1
+permutation = {0,2,1,3};
 n = 2
 L = subsets n
 L = apply( L, l -> apply( l, i -> i + 1) ) ;
@@ -235,7 +260,7 @@ R = QB[x_1..x_n];
 QR = R / ideal apply(gens R, x -> x^2-x)
 g := interpolate(T,QR)
 h := idealOfPoints(T,QR)
-ncf := ideal(apply( L, t -> ncfIdeal( t, QR))|{c_(toList(1..n))-1})
+ncf := ideal(apply( L, t -> ncfIdeal( t, QR, permutation))|{c_(toList(1..n))-1})
 ncf = lift(ncf, C)
 G := kernPhi(g,h,QR)
 solutions := primaryDecomposition(G+ncf)
@@ -244,21 +269,21 @@ installPackage "RationalPoints"
 apply( solutions, I -> rationalPoints I)
 rationalPoints first solutions
 
+list sigma 
 
-
-R = QQ[a,b,c,d,e]
-QR = R / ideal product gens R
-
-I = ideal( a*b*(a*b-c), d*(d-e) )
-J = ideal( c*(a*b-c), e*(d-e) )
-decompose( I + ideal product gens R) 
-traps = decompose( J + ideal product gens R) 
-traps#0 + traps#1
-decompose( oo + ideal product gens R)
-
-apply( apply( subsets traps, tt -> if tt == {} then ideal 0 else ideal gens gb sum tt), union -> decompose(union + ideal product gens R) )
-netList oo
-
-
-
-
+ncfIdeal = method()
+ncfIdeal (List, Ring, List) := RingElement => (S, QR, sigma) -> (
+  n := numgens QR;
+  -- c_{ l } = (gens QR)#indeces#l
+  indeces := new MutableHashTable;
+  L := subsets n;
+  L = apply( L, l -> apply( l, i -> i + 1 ));
+  apply( #L, i -> indeces#(L#i) = sigma#i );
+  rS := max S;
+  compl := toList (set( 1..rS)  -  set S);
+  C := gens coefficientRing coefficientRing QR;
+  C#(indeces#S) - C#(indeces#(toList (1..rS))) *
+    product( compl, i -> 
+      C#( indeces#(toList (set (1..n) - set {sigam#i} ) ))
+    )
+)
