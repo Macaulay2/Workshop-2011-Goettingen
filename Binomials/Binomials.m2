@@ -1979,9 +1979,7 @@ document {
      Inputs => {
           "I" => { "a cellular binomial ideal"} },
      Outputs => {
-          "cv" => {"the cellular variables"},
-	  "L" => {"A matrix whose columns are generators for the lattice supporting the character"},
-	  "c" => {"The values that the character takes on the generator"}},
+          "pc" => {"the ", TO PartialCharacter, }},
      "If the cell variables are known, they can be given via the option ", TO cellVariables, " otherwise they are computed.",
      EXAMPLE {
 	  "R = QQ[x,y]",
@@ -2087,6 +2085,11 @@ document {
      Headline => "generate informative output",
      "If this option is set, functions will generate additional output. Defaults to true"
      }
+
+document {
+     Key => PartialCharacter,
+     
+
 
 
 --     -- tests
