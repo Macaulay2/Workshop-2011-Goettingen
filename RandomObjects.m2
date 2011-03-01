@@ -23,14 +23,25 @@ newPackage ("RandomObjects",
      
      
      
-export {"Certify", "RandomObject", "Attempts", "Certification", "Construction", "Parameters" }
+export {
+     "Certify", 
+     "RandomObject", 
+     "isImplemtedRandom",
+     "isImplemented",
+     "Attempts", 
+     "Certification", 
+     "Construction", 
+     "ParameterTypes",
+     "constructRandomObject",
+     "randomObjectViaStrategy",
+     "randomObjectViaStrategyIsImplemented" }
 
 RandomObject = new Type of MutableHashTable
 globalAssignment RandomObject
 random RandomObject := randomopts -> Object -> (
      if Object.?Function then return Object.Function;
      Object.Function = f := method ( Options => join(Object#Options, { Certify => false, Attempts => infinity }) );
-     parameters := Object.Parameters;
+     parameters := Object.ParameterTypes;
      f parameters := opts -> args -> for i from 1 do (
 	  if i > opts.Attempts then return null;
 	  object := (Object.Construction opts) args;
@@ -39,6 +50,13 @@ random RandomObject := randomopts -> Object -> (
 	  if Object.Certification(opts, args, object) then return object;
 	  );
      f)
+
+isImplementedRandom=method()
+isImplementedRandom RandomObject:= randomopts -> Object -> Object.isImplemented
+     
+
+
+
 
 doc ///
 Key
@@ -51,15 +69,13 @@ Description
     
     RandomObject has MutableHashTable as ancestor and needs to have the following keys:
     
-    * Parameters: defines parameter types that specify the moduli space M (e.g. ZZ for the genus g in the case of the moduli space of curves)
+    * ParameterTypes: defines parameter types that specify the moduli space M (e.g. ZZ for the genus g in the case of the moduli space of curves)
     
     * Options: Options for the construction of the random objects 
     
     * Construction: the function assigned to this key contains a unirationality construction.
     
     * Certification: the certification function is used to check whether the constructed object fulfills certain conditions.
-    
-    
     
     In the following simple example we construct plane curves of degree $d$. The Certification checks whether they are irreducible.
     
@@ -69,7 +85,7 @@ Description
     certifyPlaneCurve = (opts, args, object) -> #decompose object==1
 
     planeCurve = new RandomObject from {
-	 Parameters => (ZZ,Ring),
+	 ParameterTypes => (ZZ,Ring),
      	 Options    => {Color => Blue},
      	 Construction => constructPlaneCurve,
      	 Certification => certifyPlaneCurve
@@ -95,6 +111,23 @@ Description
  Example
     tally apply(3^4,i->(random planeCurve)(2,R,Certify=>true,Attempts=>1) === null)
      
+///
+
+
+doc ///
+  Key
+    "(myrandom,RandomObject)"
+  Headline
+    constructs a random object of type object
+  Usage
+    o=random(randomObjectClass)
+  Inputs
+    randomObjectClass : RandomObject 
+  Outputs
+    o : Thing
+  Description
+    Text 
+  SeeAlso  
 ///
 
 end
