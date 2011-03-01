@@ -3412,6 +3412,7 @@ fMReplacement = (R,HS,HP) -> (
           CHS = CHS * (inverse(HP|CHS))^{beta..n-1};
           HS = CHS * HS);
      HS = if HS == 0 then map(ZZ^(numRows HS),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix HS;
+     << "R after prep: " << R << endl;
      R = apply(numColumns R, i -> R_{i});
      R = select(R, r -> (r != 0 and (
                     pos := positions(flatten entries((transpose HS) * r), e -> e == 0);
@@ -3420,8 +3421,8 @@ fMReplacement = (R,HS,HP) -> (
      LS = if LS == 0 then map(ZZ^(numRows LS),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix LS;
      HP = if HP == 0 then map(ZZ^(numRows HP),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix HP;
      ans := ((R,LS),(HS,HP));
-     m1 := fourierMotzkin ans#0;
-     m2 := fourierMotzkin fourierMotzkin ans#1;
+     m1 := fourierMotzkin fourierMotzkin ans#0;
+     m2 := fourierMotzkin fourierMotzkin fourierMotzkin ans#1;
      if m1#0 != m2#0 or m1#1 != m2#1 then error("Failed") else print "ok";
      ans
      )

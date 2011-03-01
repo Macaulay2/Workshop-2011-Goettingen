@@ -46,3 +46,8 @@ p = minkowskiSum(p,r6)
 restart
 installPackage "Polyhedra2"
 check "Polyhedra2"
+
+R = QQ[a]
+S = R[x]
+f = a*x
+coefficients(f)
