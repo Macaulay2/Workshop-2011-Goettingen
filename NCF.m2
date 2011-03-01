@@ -54,7 +54,7 @@ kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, QB) -> (
   C := gens coefficientRing QB;
   X := gens coefficientRing coefficientRing QB;
   n := #X;
-  p := sum( subsets X, B, (x,b) -> (product x) * b);
+  p := sum( subsets X, gens QB, (x,b) -> (product x) * b);
   L := subsets n;
   L = apply( L, l -> apply( l, i -> i + 1) );
   --f := sub(g, largeQR) + p* sub(h, largeQR);
@@ -138,14 +138,6 @@ ncf := ncfIdeal( S, QC);
 B = QC[apply( L, l -> b_l)]
 QB = B / ideal apply(gens B, x -> x^2-x);
 describe QB
-coefficientRing B
-coefficientRing coefficientRing B
-
-
-kernP := kernPhi(g,h,R)
-
-C = gens coefficientRing QB;
-X := gens coefficientRing coefficientRing C;
-n := #X;
-
-
+coefficientRing QB
+coefficientRing coefficientRing QB
+kernP := kernPhi(g,h,QB)
