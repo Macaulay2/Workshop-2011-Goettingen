@@ -161,26 +161,21 @@ doc ///
   Key
     MonomialAlgebras
   Headline
-    Monomial Algebras.
+    Decompose a monomial algebra as a module over a subalgebra.
   Description
     Text
-      {\bf What's new:}
-
-      {\it Version 0.01:}
-
-      First version.
-
       {\bf Overview:}
       
       Consider a semigroup A in \mathbb{N}^m and a subsemigroup B \subset A.
-      such that rank(G(B))=rank(G(A)).
+      such that K[A] is finite over K[B].
       
       The corresponding monomial algebra K[A] is decomposed as a direct sum of ideals in K[B]. In
       
       Le Tuan Hoa, Juergen Stueckrad: Castelnuovo–Mumford regularity of simplicial toric rings.
       
       it is shown that this decomposition exists in the case that K[B] is isomorphic to a polynomial ring
-      and is the Noether normalization of K[A] (the simplicial case).
+      and is the Noether normalization of K[A] (the simplicial case). It is easy to see that the same is true
+      in the general case.
       
       {\bf Setup:}
 
@@ -204,23 +199,27 @@ doc ///
     decomposeMonomialCurve(A)
   Inputs
     A:List
-        containing generators of A
+        of integers containing (dehomogenized) generators of A
   Outputs
-    :List
+    :HashTable
   Description
    Text
+     This is a convenient special case of the general function @TO decomposeMonomialAlgebra@.  
+
      The list A is expected to contain dehomogenized generators of a semigroup.
      This function transforms A into a homogeneous semigroup containing
      powers of the variables. The corresponding monomial algebra
      is decomposed as a direct sum of ideals in its Noether normalization.
 
-     Here we compute the decomposition for a curve parametrized by the monomials t^a with a \in A
-     and B given by the first and the last element of A.
+     For example the homogeneous coordinate ring of the smooth rational quartic decomposes
+     as follows:
 
    Example
      A = {1,3,4};
      decomposeMonomialCurve A
    Text
+
+     Some more smooth space curves:
 
    Example
      for d from 4 to 10 do (A = {1,d-1,d};print(A,decomposeMonomialCurve A));
@@ -267,23 +266,34 @@ doc ///
         between multihomogenous polynomial rings
   Outputs
     :HashTable
+       Let A be the degree monoid of the @TO target@ of f and analogously B for the @TO source@.
+       The @TO keys@ are representatives of congruence classes in ZZ*A / ZZ*B.
+       The value associated to a key k is a submodule of a rank 1 free module over
+       K[B] isomorphic to the K[B]-submodule of K[A] consisting of elements in the class k.
   Description
    Text
-     The list A contains dehomogenized generators of a semigroup.
-     This function transforms A into a homogeneous semigroup containing
-     powers of the variables. The corresponding monomial algebra
-     is decomposed as a direct sum of ideals in its Noether normalization.
+
+     Let K[A] be the monomial algebra of the degree monoid of the @TO target@ of f and 
+     let analogously K[B] for @TO source@ of f. Assume that K[A] is finite as a K[B]-module.
+     
+     The monomial algebra K[A] is decomposed as a direct sum of ideals in K[B].
      
    Example
-      A = {{1,2},{3,0},{0,4},{0,5}}
-      decomposeSimplicialHomogeneousMonomialAlgebra (A)
+      A = {{4,2},{10,6},{3,7},{3,6}}
+      B = {{4,2},{10,6},{3,7}}
+      S = ZZ/101[x_0..x_(#A-1), Degrees=>A];
+      P = ZZ/101[x_0..x_(#B-1), Degrees=>B];     
+      f = map(S,P)
+      decomposeMonomialAlgebra f
    Text
-     Using "decomposeMonomialAlgebra" we could do the same example as follows:
+   
+      Some simpler examples:
+
    Example
-      B = adjoinPurePowers homogenizeSemigroup A
-      C = adjoinPurePowers homogenizeSemigroup {{0,5}}
-      S = ZZ/101[x_0..x_(#B-1), Degrees=>B]
-      P = ZZ/101[x_0..x_(#C-1), Degrees=>C]      
+      A = adjoinPurePowers homogenizeSemigroup {{1,2},{3,0},{0,4},{0,5}}
+      B = adjoinPurePowers homogenizeSemigroup {{0,5}}
+      S = ZZ/101[x_0..x_(#A-1), Degrees=>A];
+      P = ZZ/101[x_0..x_(#B-1), Degrees=>B];     
       f = map(S,P)
       decomposeMonomialAlgebra f      
    Text
@@ -293,12 +303,17 @@ doc ///
     $$
      (s,t) \mapsto (s^d, s^{d-1}t, st^{d-1} t^d)\in P^3.
     $$
-   
+
    Example
-     for d from 4 to 10 do (A = {{d,0},{d-1,1},{1,d-1},{0,d}}; print decomposeSimplicialHomogeneousMonomialAlgebra A)
+     kk=ZZ/101;
+     L= for d from 4 to 10 list (f= map(kk[x_0..x_3,Degrees=>{{d,0},{d-1,1},{1,d-1},{0,d}}], kk[x_0,x_3,Degrees=>{{d,0},{0,d}}]));
+     (L/decomposeMonomialAlgebra)/print
    Text
-     The case of homogeneous monomial curves can be done with simpler notation using 
-     the command @TO decomposeMonomialCurve@
+     
+     Using @TO decomposeMonomialCurve@ the same example is:
+        
+   Example
+     for d from 4 to 10 do (decomposeMonomialCurve{1,d-1,d})     
 ///
 
 
@@ -315,7 +330,11 @@ doc ///
     A:List
         containing generators of A
   Outputs
-    :List
+    :HashTable
+       The @TO keys@ are representatives of congruence classes in ZZ*A
+       modulo the subgroup generated by the degrees of the Noether normalization T.
+       The value associated to a key k is a submodule of a rank 1 free module over
+       T isomorphic to the T-submodule of K[A] consisting of elements in the class k.
   Description
    Text
      The list A contains dehomogenized generators of a semigroup.
