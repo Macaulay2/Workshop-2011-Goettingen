@@ -93,11 +93,7 @@ export {
      verbose, -- produce more output
      
      --Types
-     PartialCharacter,--HashTable
-     --Keys for PartialCharacter type
-     J,
-     L,--lattice
-     c--hom to multiplicative group     
+     PartialCharacter--HashTable
      }
 
 needsPackage "FourTiTwo";
@@ -235,7 +231,7 @@ partialCharacter Ideal := Ideal => o -> I -> (
      -- If there are no cellular variables, 
      -- the ideal is monomial and the partial character is zero:
      if cv == {} then (
-	  return ({}, matrix "0", {1});
+	  return new PartialCharacter from {"J"=>{}, "L"=>matrix "0", "c"=>{1}};
 	  );
      
      -- We need to construct this ring to properly extract coefficients below
@@ -254,7 +250,7 @@ partialCharacter Ideal := Ideal => o -> I -> (
      if ( II == 0 ) then (
 	  for i in cv do vs = vs | { 0_ZZ };
 	  cl = {1_ZZ};
-	  return (cv, transpose matrix {vs}, cl);
+	  return new PartialCharacter from {"J"=>cv, "L"=>transpose matrix {vs}, "c"=>cl};
 	  );
      
      -- So, II is not zero:
@@ -293,7 +289,7 @@ partialCharacter Ideal := Ideal => o -> I -> (
      
 
      
-     return (new PartialCharacter from {J=>cv,L=> transpose matrix vs , c=>cl});
+     return (new PartialCharacter from {"J"=>cv, "L"=> transpose matrix vs , "c"=>cl});
      )
 
 randomBinomialIdeal = (R,numge,maxdeg, maxwidth, homog) -> (	 
@@ -484,14 +480,14 @@ saturatePChar = (pc) -> (
      
      -- If the lattice is saturated, the character is saturated
      -- Note that this shortcircuits all problems with c being non-constant.
-     if image Lsat pc#L == image pc#L then (
+     if image Lsat pc#"L" == image pc#"L" then (
 	  return (pc);
 	  );
      
      -- The saturated lattice
-     S := Lsat(pc#L);
+     S := Lsat(pc#"L");
      -- The coefficient matrix :
-     K := pc#L // S;
+     K := pc#"L" // S;
      
      -- print K;
      -- Now we find the (binomial) equations for the saturated character:
@@ -499,29 +495,29 @@ saturatePChar = (pc) -> (
      varlist := for i in 0..numvars-1 list value ("m"|i);
      scan (varlist, (v -> v = local v));
      Q := QQ[varlist];
-     eqs := idealFromCharacter(Q,K,pc#c);
+     eqs := idealFromCharacter(Q,K,pc#"c");
      
      result := binomialSolve eqs;
      r := #result;
      i := 0;
      
      return(for i from 0 to r-1 list(
-	  new PartialCharacter from {J => pc#J, L => S, c => result#i}));
+	  new PartialCharacter from {"J" => pc#"J", "L" => S, "c" => result#i}));
      )
 
 satIdeals = (pc) -> (
      -- Computes all the ideals belonging to saturations of  
      -- a given partial character.
      satpc := saturatePChar(pc);
-     scan (satpc#0#J, (v -> v = local v));     
+     scan (satpc#0#"J", (v -> v = local v));     
      -- The following should be the smallest ring containing all new
      -- coefficients but not smaller than QQ
-     F := ring satpc#0#c#0;
+     F := ring satpc#0#"c"#0;
      if F === ZZ then F = QQ;
-     Q := F[satpc#0#J];
+     Q := F[satpc#0#"J"];
      satideals := apply (satpc , (spc) -> (
-	       -- print {Q, satpc#0#L, spc#c};
-	       idealFromCharacter(Q,satpc#0#L,spc#c)));
+	       -- print {Q, satpc#0#"L", spc#"c"};
+	       idealFromCharacter(Q,satpc#0#"L",spc#"c")));
      return satideals;
      )
 
@@ -547,7 +543,7 @@ cellularBinomialRadical Ideal := Ideal => o -> I -> (
      scan (gens R, (v -> v = local v));
      -- Get the partial character of I
      pc := partialCharacter(I, cellVariables=>cv);
-     noncellvars := toList(set (gens R) - pc#J);
+     noncellvars := toList(set (gens R) - pc#"J");
      	       
      M := sub (ideal (noncellvars),R);
      
@@ -589,19 +585,19 @@ binomialIsPrimary Ideal := Ideal => o -> I -> (
      rad := prerad + M;
      
      -- If the partial character is not saturated, the radical is not prime
-     if image Lsat pc#L != image pc#L then (
+     if image Lsat pc#"L" != image pc#"L" then (
 	  print "The radical is not prime, as the character is not saturated";
 	  satpc := saturatePChar pc;
 	  if o#returnPChars then (
 	       -- This one is the fastest, so check it first
-	       return {{satpc#0#J,satpc#0#L,satpc#0#c}, {satpc#0#J,satpc#0#L,satpc#1#c}}
+	       return {{satpc#0#"J",satpc#0#"L",satpc#0#"c"}, {satpc#0#"J",satpc#0#"L",satpc#1#"c"}}
 	       );
 	  if o#returnPrimes then (
-     	       F := ring satpc#0#c#0;
-     	       S := F[satpc#0#J];
+     	       F := ring satpc#0#"c"#0;
+     	       S := F[satpc#0#"J"];
 	       M = sub(M,S);
-	       ap1 := idealFromCharacter (S,satpc#0#L,satpc#0#c) + M;
-	       ap2 := idealFromCharacter (S,satpc#0#L,satpc#1#c) + M;
+	       ap1 := idealFromCharacter (S,satpc#0#"L",satpc#0#"c") + M;
+	       ap2 := idealFromCharacter (S,satpc#0#"L",satpc#1#"c") + M;
 	       -- Return two distinct associated primes:
 	       use R;
 	       return {ap1,ap2};
@@ -626,13 +622,13 @@ binomialIsPrimary Ideal := Ideal => o -> I -> (
 	       -- creating some local names:
 	       satqchar := saturatePChar partialCharacter (q,cellVariables=>cv);
 	       if o#returnPChars then(
-		    return {pc, {satqchar#0#J,satqchar#0#L,satqchar#0#c}}
+		    return {pc, {satqchar#0#"J",satqchar#0#"L",satqchar#0#"c"}}
 		    );
 	       if o#returnPrimes then (
-		    F := ring satqchar#0#c#0;
-     	       	    S := F[satqchar#0#J];
+		    F := ring satqchar#0#"c"#0;
+     	       	    S := F[satqchar#0#"J"];
 	       	    M = sub(M,S);
-		    ap2 := idealFromCharacter (S,satqchar#0#L,satqchar#0#c);
+		    ap2 := idealFromCharacter (S,satqchar#0#"L",satqchar#0#"c");
 		    use R;
 		    return {rad, ap2 + M};
      	       	    )
@@ -664,7 +660,7 @@ binomialIsPrime Ideal := Ideal => o -> I -> (
      	  );
 
      -- Is the partial character saturated ???     
-     if image Lsat pc#L != image pc#L then return false;
+     if image Lsat pc#"L" != image pc#"L" then return false;
      
      -- all tests passed:
      return true;
@@ -730,7 +726,7 @@ binomialMinimalPrimes Ideal := Ideal => o -> I -> (
 	  ME := ideal(toList(set (gens R) - a#1));
 	  pc := partialCharacter (a#0, cellVariables=>a#1);
 	  -- Check whether we have a radical ideal already:
-	  if image Lsat pc#L == image pc#L then (
+	  if image Lsat pc#"L" == image pc#"L" then (
 	       si = {a#0};
 	       )
 	  else (
@@ -815,11 +811,11 @@ cellularBinomialAssociatedPrimes Ideal := Ideal => o -> I -> (
 	  -- Skip if we already had this character
 	  if seenpc#?pC then continue
 	  else seenpc#pC = true;
-	  if pC#L == 0 then (
+	  if pC#"L" == 0 then (
 	       primes = primes | {ideal(0_R)}; 
 	       continue;
 	       );
-	  if image Lsat pC#L == image pC#L then (
+	  if image Lsat pC#"L" == image pC#"L" then (
 	       sat = {Im};
 	       )
 	  else (
@@ -899,18 +895,18 @@ cellularAssociatedLattices Ideal := Ideal => o -> I -> (
 	  -- We already know the cell variables in the following computation
 	  pc = partialCharacter(Im, cellVariables=>cv);
 	  if #lats == 0 then (
-	       lats = {pc#L};
-	       coeffs = {pc#c};
+	       lats = {pc#"L"};
+	       coeffs = {pc#"c"};
 	       continue;
 	       )
 	  else (
 	       redundant = false;
-	       scan (lats, (l -> (if image l == image pc#L then redundant = true)))
+	       scan (lats, (l -> (if image l == image pc#"L" then redundant = true)))
      	       );
 	  if redundant then continue
 	  else (
-	       lats = lats | {pc#L};
-	       coeffs = coeffs | {pc#c};
+	       lats = lats | {pc#"L"};
+	       coeffs = coeffs | {pc#"c"};
 	       );
       	  ); -- for m in ml	    
      return {cv, lats, coeffs};
@@ -956,7 +952,7 @@ cellularEmbeddedLatticeWitnesses Ideal := Ideal => o -> I -> (
 	  -- We already know the cell variables in the following computation
 	  pc = partialCharacter(Im, cellVariables=>cv);
 	  -- test if we have an embedded lattice at m:
-	  if (image pc#L == image bottomlattice#L) then continue
+	  if (image pc#"L" == image bottomlattice#"L") then continue
 	  else witnesses = witnesses | {m};
 	  ); -- for m in ml
      return witnesses;
@@ -1111,18 +1107,18 @@ binomialQuotient = {cellVariables => null} >> o -> (I,b) -> (
 	  pc = partialCharacter (quot, cellVariables=>cv);
 	  	  
 	  --determine whether the exponents of b are in the saturated lattice
-	  if isSubset (bexpim, image Lsat pc#L) then (
+	  if isSubset (bexpim, image Lsat pc#"L") then (
      	       U' = U' | {m};
 	       i := 1;
 	       -- Computing the order of bexp in Lsat / L
 	       while true do (
-		    if isSubset (image transpose matrix {i * bexp} , image pc#L) then (
+		    if isSubset (image transpose matrix {i * bexp} , image pc#"L") then (
 			 D = D | {i};
 			 break;
 			 )
 		    else i = i+1;
 		    );
-	       -- print ("The order of " | toString bexp | "in " | toString image pc#L | "is " | toString i);
+	       -- print ("The order of " | toString bexp | "in " | toString image pc#"L" | "is " | toString i);
 	       -- print D;
 	       );
 	  ); -- loop over monomials
@@ -2086,11 +2082,6 @@ document {
      "If this option is set, functions will generate additional output. Defaults to true"
      }
 
-document {
-     Key => PartialCharacter,
-     
-
-
 
 --     -- tests
 
@@ -2115,4 +2106,27 @@ I = ideal (U00*R01-R00*U10,R01*D11-D01*R00,D11*L10-L11*D01,
 	   D12*L11-L12*D02,L11*U01-U11*L12);
 bpd = BPD I;
 assert (intersect bpd == I)
+///
+
+TEST ///
+R = QQ[a..h]
+I = ideal(d*g*h-e*g*h,a*b*g-c*f*h,a*b*c-e*g*h,c*f*h^2-d*f,e^2*g*h-d*h,b*d*f*h-c*g,a*d*f*g-c*e,b*c*e*g-a*f,a*b*e*f-c*d);
+bpd = binomialPrimaryDecomposition (I,verbose=>false);
+assert (intersect bpd == I); 
+///
+
+TEST ///
+-- Cyclotomic stuff
+R = QQ[x,y,z]; I = ideal (x^2*y-z^2, x^2-z^3, y^4-1); 
+bpd = BPD (I,verbose=>false);
+assert (intersect bpd == sub(I, ring bpd#0));
+///
+
+TEST ///
+-- Unmixed Decomposition
+R = QQ[x,y,z];
+I = ideal (x^2, y^2, x*y, x*(z^3-1), y*(z^2-1))
+bud = BUD (I, verbose=>false);
+assert(intersect bud == I);
+assert(dim \ flatten (associatedPrimes \ bud) == {1,0,0,0})
 ///
