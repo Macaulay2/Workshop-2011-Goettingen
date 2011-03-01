@@ -17,12 +17,13 @@ export({decomposeMonomialCurve,
 	  decomposeSimplicialHomogeneousMonomialAlgebra,
 	  homogenizeSemigroup,
 	  adjoinPurePowers,
-	  monomialAlgebraIdeal})
+	  monomialAlgebraIdeal,
+	  CoefficientField})
 
 
-decomposeMonomialCurve=method()
-decomposeMonomialCurve(List):= A -> (
-   kk:=QQ;
+decomposeMonomialCurve=method(Options=>{CoefficientField=>ZZ/101})
+decomposeMonomialCurve(List):= opts ->A -> (
+   kk := opts.CoefficientField;
    x:=symbol x;
    s:=symbol s;
    t:=symbol t;
@@ -44,9 +45,9 @@ decomposeMonomialCurve(List):= A -> (
 	  min2 := min(LL/last);
 	  LL1 := {LL/(p->{(first p - min1)//d, (last p - min2)//d}),  (min1+min2)//d}
      ));
-   a:=local a;
-   b:=local b;
-   T := kk[a,b];
+   a:=getSymbol "a";
+   b:=getSymbol "b";  
+   T := kk(monoid[a,b]);
    --Now make ideals in T by grouping the degrees in genDegs by congruence class.
   applyValues(L1, LL->( 
      (ideal apply(first LL, m->T_0^(first m)*T_1^(last m)))*(T^{-last LL}))
@@ -84,15 +85,15 @@ applyPairs (L1, (k,V)->(
 )
 
 
-decomposeSimplicialHomogeneousMonomialAlgebra=method()
-decomposeSimplicialHomogeneousMonomialAlgebra(List):= A -> (
+decomposeSimplicialHomogeneousMonomialAlgebra=method(Options=>{CoefficientField=>ZZ/101})
+decomposeSimplicialHomogeneousMonomialAlgebra(List):= opts -> A -> (
 --A should be a list of elements of NN^(m-1), all of total degree <=d, (thought of
 --as homogeneous elements of degree d in NN^m.
 B := adjoinPurePowers homogenizeSemigroup A;
 d := sum B_0;
 m := #B_0;
 n := #B;
-   kk:=QQ;
+   kk:=opts.CoefficientField;
    x:=symbol x;
    s:=symbol s;
    t:=symbol t;
@@ -113,8 +114,10 @@ L1 := applyValues(L,LL -> (
 	  mins := apply(#LL_0, i -> min apply(LL1, l -> l#i));
 	  {LL1 / (l -> l-mins), degLL0 + sum(mins)}
      ));
-a := local a;
-T := kk[a_0..a_(m-1)];
+   a:=getSymbol "a";
+   T := kk(monoid[a_0..a_(m-1)]);
+--a := local a;
+--T := kk[a_0..a_(m-1)];
 --Now make ideals in T by grouping the degrees in genDegs by congruence class.
 applyValues(L1, LL->( 
 	  LLf := first LL;
@@ -156,6 +159,50 @@ monomialAlgebraIdeal(PolynomialRing) := (R) -> (
 
 
 beginDocumentation()
+
+
+--generateAssertions
+TEST/// 
+
+      kk=ZZ/101
+      A = {1,3,4}
+      H = decomposeMonomialCurve A
+      R = ring H#0
+      use R
+      assert( H === new HashTable from {0 => image map(R^1,R^1,{{1}}), 1 => image map(R^{{-1}},R^{{-1}},{{1}}), 2 => image map(R^{{-1}},R^{{-2},{-2}},{{b, a}}), 3 => image map(R^{{-1}},R^{{-1}},{{1}})} )
+
+///
+
+TEST ///
+
+     kk=ZZ/101
+     B = {{1,2},{3,0},{0,4},{0,5}}
+     S = kk[x_0..x_3, Degrees=> B]
+assert( monomialAlgebraIdeal S === ideal(x_0^3*x_2-x_1*x_3^2,x_2^5-x_3^4,x_1*x_2^4-x_0^3*x_3^2,x_0^6-x_1^2*x_2^3) )
+
+///
+
+TEST///
+      A = {{4,2},{10,6},{3,7},{3,6}}
+      B = {{4,2},{10,6},{3,7}}
+      S = ZZ/101[x_0..x_(#A-1), Degrees=>A];
+      P = ZZ/101[x_0..x_(#B-1), Degrees=>B];     
+      f = map(S,P)
+assert(decomposeMonomialAlgebra f === 
+     new HashTable from {map(ZZ^2,ZZ^1,0) => 
+	  {ideal(x_1^570,x_0^135*x_1^513*x_2^12,x_0^270*x_1^456*x_2^24,x_0^405*x_1^399*x_2^36,x_0^540*x_1^342*x_2^48,x_0^675*x_1^285*x_2^60,x_0^810*x_1^228*x_2^72,x_0^945*x_1^171*x_2^84,x_0^1080*x_1^114*x_2^96,x_0^1215*x_1^57*x_2^108,x_0^1350*x_2^120),map(ZZ^2,ZZ^1,{{-5700}, {-3420}})}, map(ZZ^2,ZZ^1,{{1}, {0}}) => {ideal(x_1^570,x_0^135*x_1^513*x_2^12,x_0^270*x_1^456*x_2^24,x_0^405*x_1^399*x_2^36,x_0^540*x_1^342*x_2^48,x_0^675*x_1^285*x_2^60,x_0^810*x_1^228*x_2^72,x_0^945*x_1^171*x_2^84,x_0^1080*x_1^114*x_2^96,x_0^1215*x_1^57*x_2^108,x_0^1350*x_2^120),map(ZZ^2,ZZ^1,{{-5697}, {-3414}})}} ) 
+
+///
+
+TEST///
+      kk= ZZ/101
+      A = {{1,2},{3,0},{0,4},{0,5}}
+      H = decomposeSimplicialHomogeneousMonomialAlgebra A
+      R = ring H#{0,0,0}
+      use R
+      assert( H  === new HashTable from {{4,4,2} => image map(R^{{-3}},R^{{-5},{-4}},{{a_1^2, a_0}}), {1,1,3} => image map(R^{{-2}},R^{{-2}},{{1}}), {0,3,2} => image map(R^{{-2}},R^{{-2}},{{1}}), {4,3,3} => image map(R^{{-4}},R^{{-4}},{{1}}), {1,0,4} => image map(R^{{-1}},R^{{-3},{-2}},{{a_1^2, a_0}}), {0,2,3} => image map(R^{{-1}},R^{{-4},{-3}},{{a_0^2*a_2, a_1^2}}), {3,4,3} => image map(R^{{-2}},R^{{-2}},{{1}}), {4,2,4} => image map(R^{{-2}},R^{{-2}},{{1}}), {4,1,0} => image map(R^{{-3}},R^{{-3}},{{1}}), {0,1,4} => image map(R^{{-2}},R^{{-5},{-4}},{{a_0^2*a_2, a_1^2}}), {0,0,0} => image map(R^1,R^1,{{1}}), {3,3,4} => image map(R^{{-3}},R^{{-3}},{{1}}), {4,0,1} => image map(R^{{-2}},R^{{-4},{-3}},{{a_1^2, a_0}}), {3,2,0} => image map(R^{{-2}},R^{{-5},{-4}},{{a_0^2*a_2, a_1^2}}), {2,4,4} => image map(R^{{-2}},R^{{-2}},{{1}}), {2,3,0} => image map(R^{{-3}},R^{{-3}},{{1}}), {3,1,1} => image map(R^{{-3}},R^{{-3}},{{1}}), {3,0,2} => image map(R^{{-1}},R^{{-1}},{{1}}), {1,4,0} => image map(R^{{-2}},R^{{-4},{-3}},{{a_1^2, a_0}}), {2,2,1} => image map(R^{{-2}},R^{{-4},{-3}},{{a_1^2, a_0}}), {1,3,1} => image map(R^{{-3}},R^{{-5},{-4}},{{a_1^2, a_0}}), {2,1,2} => image map(R^{{-3}},R^{{-5},{-4}},{{a_1^2, a_0}}), {0,4,1} => image map(R^{{-1}},R^{{-1}},{{1}}), {1,2,2} => image map(R^{{-1}},R^{{-1}},{{1}}), {2,0,3} => image map(R^{{-2}},R^{{-6},{-5},{-4}},{{a_1^4, a_0*a_1^2, a_0^2}})} )
+///
+
 
 doc ///
   Key
@@ -429,5 +476,6 @@ restart
 uninstallPackage("MonomialAlgebras")
 installPackage("MonomialAlgebras",RerunExamples=>true);
 installPackage("MonomialAlgebras");
+check MonomialAlgebras
 viewHelp MonomialAlgebras
 *}
