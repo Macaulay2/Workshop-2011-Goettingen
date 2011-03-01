@@ -20,9 +20,7 @@ newPackage ("RandomObjects",
         Headline => "framework for making random objects in algebraic geometry",
     	DebuggingMode => true
         )
-     
-     
-     
+       
 export {
      "Certify", 
      "RandomObject", 
@@ -39,17 +37,22 @@ export {
 RandomObject = new Type of MutableHashTable
 globalAssignment RandomObject
 random RandomObject := randomopts -> Object -> args -> (
+     -- if the args consist of a single element make it into a sequence
      if not instance(args, Sequence) then args = 1:args;
+     -- default values for certify and attempts
      cert := false;
      att := infinity;
-     args = for x in args list (
+     -- strip off certify and attempts from the argument list
+     args = toSequence (for x in args list (
 	  if instance(x,Option) then (
 	       if x#0 === Certify then (cert = x#1 ; continue )
 	       else
 	       if x#0 === Attempts then (att = x#1 ; continue )
 	       else x
 	       )
-	  else x);
+	  else x));
+     -- try to construct the object until either the maximum number of 
+     -- attempts is reached or a (certified) object is constructed  
      for i from 1 do (
 	  if i > att then return null;
 	  object := Object.Construction args;
@@ -61,10 +64,6 @@ random RandomObject := randomopts -> Object -> args -> (
 isImplementedRandom=method()
 isImplementedRandom RandomObject:= randomopts -> Object -> Object.isImplemented
      
-
-
-
-
 doc ///
 Key
  RandomObject
@@ -75,25 +74,23 @@ Description
     RandomObject provides the framework for the construction of random objects parametrized by a unirational moduli space $M$.
     
     RandomObject has MutableHashTable as ancestor and needs to have the following keys:
-    
-    * ParameterTypes: defines parameter types that specify the moduli space M (e.g. ZZ for the genus g in the case of the moduli space of curves)
-    
+        
     * Options: Options for the construction of the random objects 
     
-    * Construction: the function assigned to this key contains a unirationality construction.
+    * Construction: the method function assigned to this key contains a unirationality construction.
     
-    * Certification: the certification function is used to check whether the constructed object fulfills certain conditions.
+    * Certification: the method function assigned to this key checks whether the constructed object fulfills certain conditions.
     
-    In the following simple example we construct plane curves of degree $d$. The Certification checks whether they are irreducible.
+    In the following example we construct plane curves of degree $d$. The Certification checks whether they are irreducible over the coefficient field.
     
  Example
-    constructPlaneCurve = opts -> ((d,R) -> ideal random(R^1,R^{1:-d}))
+    constructPlaneCurve = method(TypicalValue=>Ideal)
+    constructPlaneCurve(ZZ,PolynomialRing):=(d,R) -> ideal random(R^1,R^{1:-d})
  
-    certifyPlaneCurve = (opts, args, object) -> #decompose object==1
+    certifyPlaneCurve = method(TypicalValue=>Boolean)
+    certifyPlaneCurve(Ideal,ZZ,PolynomialRing):=(I,d,R)-> #decompose I==1
 
     planeCurve = new RandomObject from {
-	 ParameterTypes => (ZZ,Ring),
-     	 Options    => {Color => Blue},
      	 Construction => constructPlaneCurve,
      	 Certification => certifyPlaneCurve
      	 }
@@ -136,8 +133,8 @@ doc ///
     Text 
   SeeAlso  
 ///
-
 end
+
 restart
 uninstallPackage"RandomObjects";
 installPackage"RandomObjects";
