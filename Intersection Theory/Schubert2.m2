@@ -657,7 +657,7 @@ map(FlagBundle,AbstractVariety,AbstractSheaf) := opts -> (P,X,L) -> (
      pushforward := method();
      pushforward RX := a -> pfmap a;
      M := if fulton then (matrix {{-cL} | for i from 1 to n list (
-          chern(i, (f^* E) + L))})
+          chern(i, (f^* E) - dual L))})
      else (matrix {(for i from 1 to n list (
 	  chern(i, (f^* E) - L))) | {cL}});
      pbmap := map(RX,RP,M);
