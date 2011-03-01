@@ -57,11 +57,11 @@ kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, QR) -> (
   C := gens coefficientRing coefficientRing QR;
   pp := sum( subsets gens QR, B, (x,b) -> (product x) * b);
   f := g + pp*h;
-  coeff := apply( subsets gens QR, xx -> (
+  W := apply( subsets gens QR, xx -> (
     m := (product xx);
     coefficient( m_QR, f) )
   );
-  ideal lift( selectInSubring(1, gens gb ideal (coeff - C) ), ambient coefficientRing coefficientRing QR)
+  ideal lift( selectInSubring(1, gens gb ideal (W - C) ), ambient coefficientRing coefficientRing QR)
 )
 
 
@@ -144,8 +144,10 @@ QR = R / ideal apply(gens R, x -> x^2-x)
 g := interpolate(T,QR)
 h := idealOfPoints(T,QR)
 ncf := ideal(apply( L, t -> ncfIdeal( t, QR))|{c_(toList(1..n))-1})
+ncf = lift(ncf, C)
 G := kernPhi(g,h,QR)
 solutions := primaryDecomposition(G+ncf)
 installPackage "RationalPoints"
 --viewHelp RationalPoints
 apply( solutions, I -> rationalPoints I)
+rationalPoints first solutions
