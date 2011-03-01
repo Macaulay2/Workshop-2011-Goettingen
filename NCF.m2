@@ -18,17 +18,18 @@ export{interpolate, idealOfPoints, ncfIdeal, kernPhi}
 -- given a subset S \subseteq [n], return the relation of that generator
 ncfIdeal = method()
 ncfIdeal (List, Ring) := RingElement => (S, QR) -> (
+  n := numgens QR;
   -- c_{ l } = (gens QR)#indeces#l
   indeces := new MutableHashTable;
-  n := numgens coefficientRing QR;
   L := subsets n;
   L = apply( L, l -> apply( l, i -> i + 1 ));
   apply( #L, i -> indeces#(L#i) = i );
   rS := max S;
   compl := toList (set( 1..rS)  -  set S);
-  (gens QR)#(indeces#S) - (gens QR)#(indeces#(toList (1..rS))) *
+  C := gens coefficientRing coefficientRing QR;
+  C#(indeces#S) - C#(indeces#(toList (1..rS))) *
     product( compl, i -> 
-      (gens QR)#( indeces#(toList (set (1..n) - set {i} ) ))
+      C#( indeces#(toList (set (1..n) - set {i} ) ))
     )
 )
 
@@ -61,6 +62,7 @@ kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, QB) -> (
     m := (product xx)_QR;
     coefficient( m, f) )
   );
+  error "debug";
   coeff - C
 )
 
@@ -104,11 +106,15 @@ TEST ///
   n = 5
   L = subsets n
   L = apply( L, l -> apply( l, i -> i + 1) ) 
-  R = ZZ/2[x_1..x_n, apply( L, l -> c_l), apply( L, l -> b_l) ]
-  QR = R / ideal apply(gens R, x -> x^2-x)
+  C = ZZ/2[apply( L, l -> c_l)];
+  QC = C /ideal apply(gens C, x -> x^2-x)
+  B = QC[apply( L, l -> b_l)]
+  QB = B / ideal apply(gens B, x -> x^2-x)
+  R = QB[x_1..x_n];
+  QR = R / ideal apply(gens R, x -> x^2-x);
   S = {1,2,4};
-  --p = ncfIdeal(S,n,QR) 
-  --assert( p == c_{1,2,4} - c_{1,2,3,4}*c_{1,2,4,5} )
+  p = ncfIdeal(S, QR) 
+  assert( p == c_{1,2,4} - c_{1,2,3,4}*c_{1,2,4,5} )
 ///
 
 
@@ -126,24 +132,24 @@ T#{1,1}=1
 T#{1,0}=0
 T#{0,1}=0
 T#{0,0}=0
+T=new MutableHashTable	   
+T#{1,1}=1
 n = 2
 L = subsets n
 L = apply( L, l -> apply( l, i -> i + 1) ) ;
-R = ZZ/2[x_1..x_n];
+C = ZZ/2[apply( L, l -> c_l)];
+QC = C /ideal apply(gens C, x -> x^2-x)
+B = QC[apply( L, l -> b_l)]
+QB = B / ideal apply(gens B, x -> x^2-x)
+R = QB[x_1..x_n];
 QR = R / ideal apply(gens R, x -> x^2-x);
 g := interpolate(T,QR);
 h := idealOfPoints(T,QR);
-C = QR[apply( L, l -> c_l)];
-QC = C /ideal apply(gens C, x -> x^2-x);
-S := {1};
-ncf := ideal(apply( L, t -> ncfIdeal( t, QC))|{c_(toList(1..n))-1})
-B = QC[apply( L, l -> b_l)]
-QB = B / ideal apply(gens B, x -> x^2-x)
-describe QB
-coefficientRing QB
-coefficientRing coefficientRing QB
-kernP := kernPhi(g,h,QB)
-peek kernP
+ncf := ideal(apply( L, t -> ncfIdeal( t, QR))|{c_(toList(1..n))-1})
+kernP := kernPhi(g,h,QR)
 primaryDecomposition(ideal(kernP)+ncf)
-installPackage "NCF"
-viewHelp NCF
+
+
+f = b_{} + b_{1}*x_1 + b_{2}*x_2 + (b_{} + b_{1}+b_{2}+b_{1,2})*x_1*x_2
+m = x_1*x_2
+coefficient(m,f)
