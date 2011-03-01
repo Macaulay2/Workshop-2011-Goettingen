@@ -67,6 +67,7 @@ export {
 --     BCDisPrimary,
      -- auxillary functions:
      partialCharacter,
+     idealFromCharacter,  -- should be renamed to ideal once M2 supports this
      randomBinomialIdeal,
      removeRedundant,
      -- Not in the interface:
@@ -423,7 +424,8 @@ makeBinomial = (R,m,c) -> (
      return posmon - c*negmon;
      )
 
-ideal Ideal := (Ideal, PartialCharacter) => R -> pc -> (
+idealFromCharacter = method();
+idealFromCharacter (Ring, PartialCharacter) := Ideal => (R, pc) -> (
      -- Constructs the lattice Ideal I_+(c) in R
      -- R is a ring in which the ideal is returned
      -- The columns of A should contain exponent vectors of generators
@@ -495,7 +497,7 @@ saturatePChar = (pc) -> (
      varlist := for i in 0..numvars-1 list value ("m"|i);
      scan (varlist, (v -> v = local v));
      Q := QQ[varlist];
-     eqs := ideal (Q, new PartialCharacter from {"J"=>varlist, "L"=>K, "c"=>pc#"c"});
+     eqs := idealFromCharacter (Q, (new PartialCharacter from {"J"=>gens Q, "L"=>K, "c"=>pc#"c"}));
      
      result := binomialSolve eqs;
      r := #result;
@@ -515,7 +517,7 @@ satIdeals = (pc) -> (
      F := ring satpc#0#"c"#0;
      if F === ZZ then F = QQ;
      Q := F[satpc#0#"J"];
-     return for s in satpc list ideal (Q, s);
+     return for s in satpc list idealFromCharacter (Q, s);
      )
 
 binomialRadical = I -> (
@@ -593,8 +595,8 @@ binomialIsPrimary Ideal := Ideal => o -> I -> (
      	       F := ring satpc#0#"c"#0;
      	       S := F[satpc#0#"J"];
 	       M = sub(M,S);
-	       ap1 := ideal (S,satpc) + M;
-	       ap2 := ideal (S,satpc) + M;
+	       ap1 := idealFromCharacter (S,satpc) + M;
+	       ap2 := idealFromCharacter (S,satpc) + M;
 	       -- Return two distinct associated primes:
 	       use R;
 	       return {ap1,ap2};
@@ -625,7 +627,7 @@ binomialIsPrimary Ideal := Ideal => o -> I -> (
 		    F := ring satqchar#0#"c"#0;
      	       	    S := F[satqchar#0#"J"];
 	       	    M = sub(M,S);
-		    ap2 := ideal (S, satqchar);
+		    ap2 := idealFromCharacter (S, satqchar);
 		    use R;
 		    return {rad, ap2 + M};
      	       	    )
@@ -2102,7 +2104,7 @@ document {
 TEST ///
 R = QQ[a..f]
 I = ideal(b*c-d*e,b*e*f-a*c,a*d*f-d*e,a*b*f-c*d,d^2*e-e,a*d*e-d*e,a*c*e-d*f) 
-time bpd = BPD I;
+bpd = BPD I;
 assert (intersect bpd == sub(I,ring bpd#0))
 ///
 
