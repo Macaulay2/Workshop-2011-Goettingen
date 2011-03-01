@@ -374,6 +374,29 @@ doc ///
 
 doc ///
   Key
+    homogenizeSemigroup
+    (homogenizeSemigroup,List)
+  Headline
+    Homogenize generators of a semigroup.
+  Usage
+    homogenizeSemigroup(A)
+  Inputs
+    A:List
+        of lists of integers
+  Outputs
+    :List
+  Description
+   Text
+      Homogenize the generators of a semigroup adding an additional coordinate.
+   Example
+      A = {{1,2},{3,0},{0,4},{0,5}}
+      homogenizeSemigroup A
+///
+
+
+
+doc ///
+  Key
     adjoinPurePowers
   Headline
     adjoin semigroup elements corresponding to pure powers of variables
