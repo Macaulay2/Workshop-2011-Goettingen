@@ -27,30 +27,26 @@ EK(ZZ,MonomialIdeal):= (n,I)->(
       symbolsList:=admissibleSymbols(I);
       sourceList:=symbolsList_(positions (symbolsList,i->first degree(promote(i_0,R))==n));
       targetList:=symbolsList_(positions (symbolsList,i->first degree(promote(i_0,R))==n-1));
-  
       getCoeff := (i,j) -> if (liftable(sourceList_j_0//targetList_i_0,R) and (targetList_i_1==sourceList_j_1)) then
-                             (-1)^(position(positions(coefficients(sourceList_j_0),r->r!=0),s->s==position(first entries vars R,t->t==sourceList_j_0/targetList_i_0)))
+                             (-1)^(position(positions(flatten exponents(sourceList_j_0),r->r!=0),s->s==position(first entries vars R,t->t==sourceList_j_0//targetList_i_0)))
 			   else if  (liftable(sourceList_j_0//targetList_i_0,R) and (canonicalDecomp(lift(sourceList_j_0//targetList_i_0,R)*sourceList_j_1,first entries gens I)==targetList_i_1)) then
-                             (-1)^(1+position(positions(coefficients(sourceList_j_0),r->r!=0),s->s==position(first entries vars R,t->t==sourceList_j_0/targetList_i_0)))
+                             (-1)^(1+position(positions(flatten exponents(sourceList_j_0),r->r!=0),s->s==position(first entries vars R,t->t==sourceList_j_0//targetList_i_0)))
 			   else 0_R;
-       myFn := (i,j) -> (tempElt := sourceList_j_0 // targetList_i_0;
-	    	      	 tempElt2:=(lift(tempElt,R)*sourceList_j_1)//canonicalDecomp(lift(tempElt,R)*sourceList_j_1,first entries gens I);
+       myFn := (i,j) -> (tempElt := sourceList_j_0 / targetList_i_0;
+	    	      	 if (liftable (tempElt,R)) then tempElt2:=(lift(tempElt,R)*sourceList_j_1)//canonicalDecomp(lift(tempElt,R)*sourceList_j_1,first entries gens I);
 	                if (liftable(tempElt,R) and (targetList_i_1==sourceList_j_1) ) then  getCoeff(i,j)*lift(tempElt,R)
 			  else if (liftable(tempElt,R) and (targetList_i_1==canonicalDecomp(lift(tempElt,R)*sourceList_j_1,first entries gens I))) then 
 			       getCoeff(i,j)*(tempElt2)
-			 else 0_R);   
-      print "Source: ";print sourceList;
-      print "Target: ";print targetList;   
-      retVal = map(R^(-apply(targetList, i -> (degree(promote(i_1,R))))), R^(-apply(sourceList, i -> (degree(promote(i_1,R))))), myFn);
+			 else 0_R);      
+      retVal = map(R^(-apply(targetList, i -> (degree(promote(i_1,R)*promote(i_0,R))))), R^(-apply(sourceList, i -> (degree(promote(i_1,R)*promote(i_0,R))))), myFn);
    };
    retVal
 )
 
 EKResolution=method();
 EKResolution(MonomialIdeal):=(I)->(
-    chainComplex(apply((1..2), i -> EK(i,I)))
+    chainComplex(apply(numgens(ring I), i -> EK(i,I)))
 )
-
 
 
 
