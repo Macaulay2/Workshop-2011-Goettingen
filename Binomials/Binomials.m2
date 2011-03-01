@@ -594,14 +594,14 @@ binomialIsPrimary Ideal := Ideal => o -> I -> (
 	  satpc := saturatePChar pc;
 	  if o#returnPChars then (
 	       -- This one is the fastest, so check it first
-	       return {{satpc#0,satpc#1,satpc#2#0}, {satpc#0,satpc#1,satpc#2#1}}
+	       return {{satpc#0#J,satpc#0#L,satpc#0#c}, {satpc#0#J,satpc#0#L,satpc#1#c}}
 	       );
 	  if o#returnPrimes then (
-     	       F := ring satpc#2#0#0;
-     	       S := F[satpc#0];
+     	       F := ring satpc#0#c#0;
+     	       S := F[satpc#0#J];
 	       M = sub(M,S);
-	       ap1 := idealFromCharacter (S,satpc#1,satpc#2#0) + M;
-	       ap2 := idealFromCharacter (S,satpc#1,satpc#2#1) + M;
+	       ap1 := idealFromCharacter (S,satpc#0#L,satpc#0#c) + M;
+	       ap2 := idealFromCharacter (S,satpc#0#L,satpc#1#c) + M;
 	       -- Return two distinct associated primes:
 	       use R;
 	       return {ap1,ap2};
@@ -626,13 +626,13 @@ binomialIsPrimary Ideal := Ideal => o -> I -> (
 	       -- creating some local names:
 	       satqchar := saturatePChar partialCharacter (q,cellVariables=>cv);
 	       if o#returnPChars then(
-		    return {pc, {satqchar#0,satqchar#1,satqchar#2#0}}
+		    return {pc, {satqchar#0#J,satqchar#0#L,satqchar#0#c}}
 		    );
 	       if o#returnPrimes then (
-		    F := ring satqchar#2#0#0;
-     	       	    S := F[satqchar#0];
+		    F := ring satqchar#0#c#0;
+     	       	    S := F[satqchar#0#J];
 	       	    M = sub(M,S);
-		    ap2 := idealFromCharacter (S,satqchar#1,satqchar#2#0);
+		    ap2 := idealFromCharacter (S,satqchar#0#L,satqchar#0#c);
 		    use R;
 		    return {rad, ap2 + M};
      	       	    )
