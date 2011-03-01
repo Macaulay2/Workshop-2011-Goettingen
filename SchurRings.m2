@@ -1304,16 +1304,37 @@ doc ///
 
         The input function {\tt f} should be interpreted as a symmetric
 	function, as well as the output, which is an element of the Schur
-	ring {\tt R.Schur} attached to the Symmetric ring {\tt R} of {\tt f}.
+	ring attached to the Symmetric ring {\tt R} of {\tt f}. 
 
       Example
         R = symmRing(QQ,4);
         toS(e_1*h_2+p_3)
+///
 
+doc ///
+   Key
+     (toS,RingElement,SchurRing)
+   Headline
+     Represents a symmetric function in the s-basis
+   Usage
+     fs = toS(f,S)
+   Inputs
+     f:RingElement
+       element of a Symmetric ring
+     S:SchurRing
+   Outputs
+     fs:RingElement
+        element of a Schur ring
+   Description
       Text
 
-        An error is returned if the degree of the input function {\tt f}
-	is larger than the dimension of the Symmetric ring of {\tt f}.
+        The input function {\tt f} should be interpreted as a symmetric
+	function, as well as the output, which is an element of {\tt S}.
+
+      Example
+        R = symmRing(QQ,4);
+	S = schurRing(QQ,s,2);
+     	toS(e_1*h_2+p_3,S)
 ///
 
 doc ///
@@ -1689,8 +1710,11 @@ Usage
   resol = schurResolution(rep,M,d)
 Inputs
   rep:RingElement
+      element of a SchurRing
   M:List
+    list of representations, corresponding to the homogeneous components of a module {\tt M}.
   d:ZZ
+    degree limit
 Outputs
   resol:List
 Description
@@ -1698,20 +1722,76 @@ Description
   
      Given a representation {\tt rep} of a (product of) general linear
      group(s) {\tt G}, we consider the symmetric algebra {\tt S = Sym(rep)}
-     and a {\tt G}-module {\tt M} which is also an {\tt S}-module. We
-     are interested in computing an equivariant resolution of {\tt M}.
-     This depends on the {\tt S}-module structure of {\tt M} in general,
-     but in many examples that occur in practice, the syzygy modules in the
-     resolution are characterized (as {\tt G}-modules) by the following
-     maximality property: the differentials have maximal rank among all
-     {\tt G}-equivariant maps. This description sucks..     
-  
+     and an {\tt S}-module {\tt M} which is also a {\tt G}-module in such
+     a way that the {\tt S}-module structure on {\tt M} respects the 
+     {\tt G}-action. We are interested in computing an equivariant 
+     resolution of {\tt M}. This depends on the {\tt S}-module structure 
+     of {\tt M} in general, but in many examples that occur in practice, 
+     the differentials in the resolution have maximal rank among all 
+     {\tt G}-module homomorphisms between the modules in the resolution.
+     We will assume that this is the case for the module {\tt M} we are
+     trying to resolve, and therefore disregard its {\tt S}-module structure.
+     
+     The assumptions that we make about {\tt M} are as follows: {\tt M} is a
+     graded {\tt S}-module of finite length (since the {\tt G}-structure on an
+     {\tt S}-module {\tt M} of infinite length would involve an infinite amount
+     of data), where the grading on {\tt S} is
+     given by setting the degree of the elements of {\tt rep} equal to 1. {\tt M}
+     is given as a list of representations, corresponding to the homogeneous 
+     components. The function {\tt schurResolution} takes as inputs the 
+     representation {\tt rep}, the module {\tt M} and a degree bound {\tt d}.
+     It outputs the generators of the syzygy modules, as a sequence of 
+     {\tt G}-representations, together with the degree in which they live.
+     
+     The example below computes the resolution of the quadratic Veronese 
+     surface in {\tt P^5}.
+      
   Example
     S = schurRing(QQ,s,3)
     rep = s_{2}
-    M = {1_S,s_{2},s_{4},s_{6},s_{8},s_{10}}
+    M = {1_S,s_{2},s_{4},s_{6},s_{8},s_{10},s_{12}}
     d = 6
     schurResolution(rep,M,d)
+
+  Text
+  
+    The example below computes the resolution of the cubic Veronese
+    embedding of {\tt P^2}.
+    
+  Example
+    S = schurRing(QQ,s,3)
+    rep = s_{3}
+    M = {1_S,s_{3},s_{6},s_{9},s_{12},s_{15},s_{18},s_{21},s_{24},s_{27}}
+    d = 9
+    schurResolution(rep,M,d)
+///
+
+doc ///
+  Key
+    schurLevel
+  Headline
+    Number of SchurRings the ring is a tensor product of.
+  Usage
+    lev = schurLevel(R)
+  Inputs
+    R:Ring
+  Outputs
+    lev:ZZ
+  Description
+    Text
+    
+      For the representation ring {\tt R} of a product of {\tt lev}
+      general linear groups, the function returns {\tt lev}. If {\tt R}
+      is not a representation ring, then the function returns 0.
+      
+    Example
+      R = schurRing(QQ,r,3)
+      S = schurRing(R,s,5)
+      T = schurRing(S,t,2)
+      schurLevel R
+      schurLevel S
+      schurLevel T
+      schurLevel QQ  
 ///
 
 doc ///
@@ -2270,6 +2350,7 @@ uninstallPackage "SchurRings"
 installPackage "SchurRings"
 check SchurRings
 help SchurRings
+help (toS,RingElement,SchurRing)
 viewHelp SchurRings
 --print docTemplate
 end
