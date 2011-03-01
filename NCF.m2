@@ -147,6 +147,68 @@ installPackage "RationalPoints"
 assert( apply( solutions, I -> rationalPoints I) == {{{0, 0, 0, 1}}} ) 
 ///
 
+TEST ///
+T=new MutableHashTable	   
+T#{0,0,0} = 1
+T#{0,1,0} = 1
+T#{1,1,0} = 0
+T#{0,1,1} = 1
+T#{1,1,1} = 0
+n = #first keys T 
+L = subsets n
+L = apply( L, l -> apply( l, i -> i + 1) ) ;
+C = ZZ/2[apply( L, l -> c_l)];
+QC = C /ideal apply(gens C, x -> x^2-x)
+B = QC[apply( L, l -> b_l), MonomialOrder => Eliminate 2^n]
+QB = B / ideal apply(gens B, x -> x^2-x)
+R = QB[x_1..x_n];
+QR = R / ideal apply(gens R, x -> x^2-x)
+g := interpolate(T,QR)
+assert( g == x_1*x_2*x_3+x_1*x_3+x_2*x_3+x_1+x_3+1)
+h := idealOfPoints(T,QR)
+assert( h == x_1*x_2*x_3+x_1*x_2+x_1*x_3+x_2*x_3+x_1+x_3 ) 
+ncf := ideal flatten entries gens gb ideal(apply( L, t -> ncfIdeal( t, QR))|{c_(toList(1..n))-1})
+ncf = lift(ncf, C)
+installPackage "RationalPoints"
+G := kernPhi(g,h,QR)
+assert( G == ideal apply(flatten entries gens ideal(c_{1, 3}+c_{1, 2,
+3},c_{3}+c_{2, 3},c_{2},c_{1}+c_{1, 2}+1,c_{}+1), g -> lift(g,C)) )
+solutions := primaryDecomposition(G+ncf)
+installPackage "RationalPoints"
+--viewHelp RationalPoints
+s := apply( solutions, I -> rationalPoints I )
+apply( s, ss -> sum ( subsets gens R, flatten ss, (x, c) -> c*(product x) ) )
+netList oo
+assert( apply( solutions, I -> rationalPoints I) == {{{1, 1, 0, 0, 0, 1, 0, 1}}, {{1, 0, 0, 1, 0, 1, 0, 1}}, {{1, 1, 0, 0, 1, 1, 1, 1}}} )
+///
+
+TEST ///
+T=new MutableHashTable	   
+T#{1,1}=1
+n = #first keys T 
+L = subsets n
+L = apply( L, l -> apply( l, i -> i + 1) ) ;
+C = ZZ/2[apply( L, l -> c_l)];
+QC = C /ideal apply(gens C, x -> x^2-x)
+B = QC[apply( L, l -> b_l), MonomialOrder => Eliminate 2^n]
+QB = B / ideal apply(gens B, x -> x^2-x)
+R = QB[x_1..x_n];
+QR = R / ideal apply(gens R, x -> x^2-x)
+g := interpolate(T,QR)
+assert( g == x_1*x_2)
+h := idealOfPoints(T,QR)
+assert( h == x_1*x_2+1 ) 
+ncf := ideal flatten entries gens gb ideal(apply( L, t -> ncfIdeal( t, QR))|{c_(toList(1..n))-1})
+ncf = lift(ncf, C)
+installPackage "RationalPoints"
+G := kernPhi(g,h,QR)
+assert( G == ideal apply(flatten entries gens ideal(c_{}+c_{1}+c_{2}+c_{1, 2}+1), g -> lift(g,C)) )
+solutions := primaryDecomposition(G+ncf)
+installPackage "RationalPoints"
+--viewHelp RationalPoints
+assert( apply( solutions, I -> rationalPoints I) == {{{0, 0, 0, 1}}, {{1, 1, 0, 1}}, {{1, 0, 1, 1}}, {{0, 1, 1, 1}}}) 
+///
+
 
 end
 
