@@ -17,10 +17,7 @@ timing1 = timing gb markovIdeal(R,S)
 --caveat: Can't use time for this one b/c it only measures 
 --the time that the scheduling takes
 
-start = currentTime();
-pscan (jobs, gb); stop = currentTime();
-
---approximation in seconds
+start = currentTime();pscan (jobs, gb); stop = currentTime();
 timeTaken = stop-start
 
 --66 seconds on my machine, so approx 1.32 seconds per GB.
