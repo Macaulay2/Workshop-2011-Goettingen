@@ -101,45 +101,85 @@ doc ///
 
            References:
 
-           [BW-1] S. Eliahou and M. Kervaire, "Minimal Resolutions of Some Monomial Ideals"
+           [EK] S. Eliahou and M. Kervaire, "Minimal Resolutions of Some Monomial Ideals"
 	    J. Algebra 129 (1990), 1--25.
 
 doc ///
    Key
-       
-       (isShellable, SimplicialComplex)
+       isStable
    Headline
-       determines whether a simplicial complex is shellable
+       
    Usage
-       isShellable S
+       
    Inputs
-       S:SimplicialComplex
+       
    Outputs
-       B:Boolean
-           true if and only if $S$ is shellable
+       
    Description
        Text
-           The pure and non-pure cases are handled separately.  If $S$ is
-           pure, then definition III.2.1 in [St] is used.  That is, $S$ is
-           shellable if its facets can be ordered $F_1, ..., F_n$ so that
-           the difference in the $j$-th and $j-1$-th subcomplex has a 
-           unique minimal face, for $2 \leq j \leq n$.
-
-           If $S$ is non-pure, then definition 2.1 in [BW-1] is used.  That is,
-           a simplicial complex $S$ is shellable if the facets of $S$
-           can be ordered $F_1, .., F_n$ such that the intersection of the
-           faces of the first $j-1$ with the faces of the $F_j$ is
-           pure and $dim F_j - 1$-dimensional.
+         
        Example
-           R = QQ[a..f];
-           isShellable simplicialComplex {a*b*c*d*e}
-           isShellable simplicialComplex {a*b*c, c*d*e}
-           isShellable simplicialComplex {a*b*c, b*c*d, c*d*e}
-           isShellable simplicialComplex {a*b*c, c*d, d*e, e*f, d*f}
-           isShellable simplicialComplex {a*b*c, c*d, d*e*f}
+        
    SeeAlso
-       facets
-       isDecomposable
-       isShelling
-       shellingOrder
+      
+///
+
+doc ///
+   Key
+       isElement
+   Headline
+       
+   Usage
+       
+   Inputs
+       
+   Outputs
+       
+   Description
+       Text
+         
+       Example
+        
+   SeeAlso
+      
+///
+
+doc ///
+   Key
+       EK
+   Headline
+       
+   Usage
+       
+   Inputs
+       
+   Outputs
+       
+   Description
+       Text
+         
+       Example
+        
+   SeeAlso
+      
+///doc
+
+ ///
+   Key
+       EKresolution
+   Headline
+       
+   Usage
+       
+   Inputs
+       
+   Outputs
+       
+   Description
+       Text
+         
+       Example
+        
+   SeeAlso
+      
 ///
