@@ -2080,6 +2080,23 @@ document {
      }
 
 
+document {
+     Key => PartialCharacter,
+     Headline => "the class of all partial characters",
+     
+     "In ", TO Binomials , " the partial character of a cellular binomial ideal is given as an object of class,", TT "PartialCharacter", "which is
+     given with the following three descriptions:",
+     
+     UL {
+	  {"J the cellular variables"},
+	  {"L a matrix whose colmns are generators for the lattice"},
+	  {"c the values that the character takes on the generator"},
+    
+         }
+        
+     }
+
+
 --     -- tests
 
 TEST ///
