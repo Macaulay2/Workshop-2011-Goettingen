@@ -157,12 +157,6 @@ doc ///
 
       @TO installPackage@("MonomialAlgebras")
 
-      {\bf Examples:}
-
-      {\bf Curves:}
-
-      @TO "Curve Example 1"@
-
       
 ///
 
@@ -225,20 +219,20 @@ doc ///
       A = {{1,2},{3,0},{0,4},{0,5}}
       adjoinPurePowers homogenizeSemigroup A
       decomposeMonomialAlgebra (A)
-///
 
-
-doc ///
-  Key
-    "Curve Example 1"
-  Description
    Text
    
-    Consider
+    Consider the family of smooth monomial curves in $P^3$, the one of degree $d$
+    having parametrization 
+    $$
+     (s,t) \mapsto (s^d, s^{d-1}t, st^{d-1} t^d)\in P^3.
+    $$
    
    Example
-     A = {1,3,4};
-     decomposeMonomialCurve A
+     for d from 4 to 10 do (A = {{d,0},{d-1,1},{1,d-1},{0,d}}; print decomposeMonomialAlgebra A)
+   Text
+     The case of homogeneous monomial curves can be done with simpler notation using 
+     the command @TO decomposeMonomialCurve@
 ///
 
 
