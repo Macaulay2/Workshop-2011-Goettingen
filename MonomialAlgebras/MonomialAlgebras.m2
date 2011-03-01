@@ -398,6 +398,7 @@ doc ///
 doc ///
   Key
     adjoinPurePowers
+    (adjoinPurePowers, List)    
   Headline
     adjoin semigroup elements corresponding to pure powers of variables
   Usage
