@@ -268,8 +268,11 @@ doc ///
     :HashTable
        Let A be the degree monoid of the @TO target@ of f and analogously B for the @TO source@.
        The @TO keys@ are representatives of congruence classes in ZZ*A / ZZ*B.
-       The value associated to a key k is a submodule of a rank 1 free module over
-       K[B] isomorphic to the K[B]-submodule of K[A] consisting of elements in the class k.
+       The value associated to a key k is a tuple whose first component is an ideal of
+       K[B] isomorphic to the K[B]-submodule of K[A] consisting of elements in the class k,
+       and whose second component is an element of ZZ*A that is the translation
+       vector between the weights of the ideal and the weights of the submodule of
+       K[A].
   Description
    Text
 
@@ -369,6 +372,29 @@ doc ///
      the command @TO decomposeMonomialCurve@
 ///
 
+doc ///
+  Key
+    adjoinPurePowers
+  Headline
+    adjoin semigroup elements corresponding to pure powers of variables
+  Usage
+    adjoinPurePowers A
+  Inputs
+    A:List
+        of lists of ZZ, containing generators of A, all of the same degree d.
+  Outputs
+    :List
+        of lists of ZZ. Same as A, but with elements of the form {d,0...}, {0,d,0...}...
+	prepended.
+  Description
+   Text
+      used to simplify the input of complicated homogeneous semigroups     
+   Example
+      A = {{1,4}, {2,3}}
+      adjoinPurePowers A
+///
+
+
       
       
 
@@ -379,31 +405,5 @@ restart
 uninstallPackage("MonomialAlgebras")
 installPackage("MonomialAlgebras",RerunExamples=>true);
 installPackage("MonomialAlgebras");
-*}
-
--- f=map(QQ[y],QQ[x], {y^2})
-{*
-B = {{1,2},{3,0},{0,4},{0,5}}
-C = {{1,2},{0,5}}
-S = kk[x_0..x_3, Degrees=> B]
-P = kk[y_0,y_1, Degrees=> C]
-f = map(S,P,{x_0,x_3})
-monomialAlgebraIdeal S
-monomialAlgebraIdeal P
-decomposeMonomialAlgebra f
-
-for d from 4 to 10 do(
-  f= map(kk[x_0..x_3, 
-     Degrees=>{{d,0},{d-1,1},{1,d-1},{0,d}}], kk[x_0,x_3,Degrees=>{{d,0},{0,d}}]);
-print decomposeMonomialAlgebra f
-print decomposeMonomialCurve{1,d-1,d}
-     )
-
-
-
-d=4
-  f= map(kk[x_0..x_3, 
-     Degrees=>{{d,0},{d-1,1},{1,d-1},{0,d}}], kk[x_0,x_3,Degrees=>{{d,0},{0,d}}])
-L2=decomposeMonomialAlgebra f
-
+viewHelp MonomialAlgebras
 *}
