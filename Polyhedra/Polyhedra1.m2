@@ -2740,9 +2740,11 @@ newMinkSum = (P,Q) -> (
      HPQ := hyperplanes Q;
      HP := if HPP == (0,0) or HPQ == (0,0) then (map(ZZ^0,ZZ^n,0),map(ZZ^0,ZZ^1,0)) else (
 	  k := transpose mingens ker transpose(HPP#0|| -HPQ#0);
+	  << "k: " << k << endl;
 	  if k == 0 then (map(ZZ^0,ZZ^n,0),map(ZZ^0,ZZ^1,0)) else (
 	       dHPP := numRows HPP#0;
 	       (k_{0..dHPP-1} * HPP#0,k*(HPP#1||HPQ#1))));
+     << "HP: " << HP << endl;
      d := n - numRows(HP#0);
      if d != n then (
 	  if numRows HPP#0 == numRows HP#0 then HPP = (map(ZZ^0,ZZ^n,0),map(ZZ^0,ZZ^1,0)) else (
@@ -2810,9 +2812,15 @@ newMinkSum = (P,Q) -> (
      V = (map(QQ^1,source promote(V,QQ),(i,j)->1) || promote(V,QQ)) | (map(QQ^1,source R,0) || R);
      HS = sort makePrimitiveMatrix transpose(-(HS#1)|HS#0);
      HS = uniqueColumns HS;
+     print HP;
      HP = sort makePrimitiveMatrix transpose(-(HP#1)|HP#0);-- else HP = map(ZZ^(numColumns HP#0 + 1),ZZ^0,0);
      
      HP = uniqueColumns HP;
+     
+     --Debug checks:
+     ch = fourierMotzkin (HS,HP);
+     ch1 = fourierMotzkin fourierMotzkin V;
+     if promote(ch#0,QQ) != ch1#0 then error "Wut?"; 
          
      --print sort matrix {unique apply(apply(numColumns V,i->V_{i}), makePrimitiveMatrix)};
      << "V:" << V << endl;
@@ -3412,18 +3420,28 @@ fMReplacement = (R,HS,HP) -> (
           CHS = CHS * (inverse(HP|CHS))^{beta..n-1};
           HS = CHS * HS);
      HS = if HS == 0 then map(ZZ^(numRows HS),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix HS;
-     << "R after prep: " << R << endl;
+     --<< "R after prep: " << R << endl;
      R = apply(numColumns R, i -> R_{i});
      R = select(R, r -> (r != 0 and (
                     pos := positions(flatten entries((transpose HS) * r), e -> e == 0);
                     #pos >= n-alpha-beta-1 and (n <= 3 or rank HS_pos >= n-alpha-beta-1))));
+     
+     -- Alternative Version according to Weyls facet Lemma.
+     -- R = select(R, r-> (r!=0 and (
+	--	    pos := positions(flatten entries((transpose (HS|HP))*r), e-> e==0);
+	--	    rank (HS|HP)_pos == n-1)));
+     
      if R == {} then R = map(ZZ^(numRows LS),ZZ^0,0) else R = sort matrix {unique apply(R, makePrimitiveMatrix)};
      LS = if LS == 0 then map(ZZ^(numRows LS),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix LS;
      HP = if HP == 0 then map(ZZ^(numRows HP),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix HP;
      ans := ((R,LS),(HS,HP));
+     
+     
+     -- Throw error for debugging.
      m1 := fourierMotzkin fourierMotzkin ans#0;
      m2 := fourierMotzkin fourierMotzkin fourierMotzkin ans#1;
      if m1#0 != m2#0 or m1#1 != m2#1 then error("Failed") else print "ok";
+     
      ans
      )
    
