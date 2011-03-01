@@ -56,7 +56,7 @@ EKResolution(MonomialIdeal):=(I)->(
 
 isElement = method();
 isElement(RingElement, MonomialIdeal) := Boolean => (f,I) -> (
-  any(#I_*, i -> f%I_i == 0)
+  any(#I_*, i -> liftable(f/I_i,ring I))
 );
 
 -- PURPOSE: check if a monomial ideal is stable
@@ -120,9 +120,8 @@ canonicalDecomp(RingElement,List):=(m,G)->(
 
 maxVar=method();
 maxVar(RingElement):=(m)->(
-     
      max positions(first(exponents(m)),i->i!=0)
-     );
+);
 
 
 -------------------
@@ -148,21 +147,29 @@ doc ///
 doc ///
    Key
        isStable
+		 (isStable, MonomialIdeal)
    Headline
-       
+       checks whether a monomial ideal is stable
    Usage
-       
+       isStable I
    Inputs
-       
+       I: MonomialIdeal
    Outputs
-       
+       B: Boolean
+		   returns true if and only if I is stable
    Description
        Text
-         
+           Determines if the monomial ideal I is stable. It uses the ordering of variables given bythe ring of I. 
        Example
-        
+           R = QQ[x,y,z];
+			  I = monomialIdeal(x^3,x^2*y,x*y^2,y^3);
+			  isStable I
+			  J = monomialIdeal(x^3,x*y^2,y^3);
+			  isStable J
+
    SeeAlso
-      
+     MonomialIdeal
+	  isElement 
 ///
 
 doc ///
@@ -173,17 +180,17 @@ doc ///
    Usage
        isElement(f,I)
    Inputs
-       f:RingElement 
-       I:MonomialIdeal
+       f: RingElement 
+       I: MonomialIdeal
    Outputs
-       Boolean
+       B: Boolean
    Description
        Text
-         This function check if f belongs to I
+           This function check if f belongs to I
        Example
         
    SeeAlso
-      
+      isSubset
 ///
 
 doc ///
@@ -192,7 +199,7 @@ doc ///
    Headline
        
    Usage
-       
+       a
    Inputs
        
    Outputs
@@ -204,15 +211,15 @@ doc ///
         
    SeeAlso
       
-///doc
+///
 
- ///
+doc ///
    Key
        EKresolution
    Headline
        constructs the minimal free resolution given by S. Eliahou and M. Kervaire for a stable monomial ideal. 
    Usage
-       
+       a
    Inputs
        
    Outputs
