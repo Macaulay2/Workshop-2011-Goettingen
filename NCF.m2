@@ -17,12 +17,13 @@ export{interpolate, idealOfPoints, ncfIdeal, kernPhi}
 -- equation 3.8 in Jarrah et al
 -- given a subset S \subseteq [n], return the relation of that generator
 ncfIdeal = method()
-ncfIdeal (List, ZZ, Ring) := RingElement => (S, n, QR) -> (
+ncfIdeal (List, Ring) := RingElement => (S, QR) -> (
   -- c_{ l } = (gens QR)#indeces#l
   indeces := new MutableHashTable;
+  n := numgens coefficientRing QR;
   L := subsets n;
   L = apply( L, l -> apply( l, i -> i + 1 ));
-  apply( #L, i -> indeces#(L#i) = i+n );
+  apply( #L, i -> indeces#(L#i) = i );
   rS := max S;
   compl := toList (set( 1..rS)  -  set S);
   (gens QR)#(indeces#S) - (gens QR)#(indeces#(toList (1..rS))) *
@@ -107,8 +108,8 @@ TEST ///
   R = ZZ/2[x_1..x_n, apply( L, l -> c_l), apply( L, l -> b_l) ]
   QR = R / ideal apply(gens R, x -> x^2-x)
   S = {1,2,4};
-  p = ncfIdeal(S,n,QR) 
-  assert( p == c_{1,2,4} - c_{1,2,3,4}*c_{1,2,4,5} )
+  --p = ncfIdeal(S,n,QR) 
+  --assert( p == c_{1,2,4} - c_{1,2,3,4}*c_{1,2,4,5} )
 ///
 
 
@@ -128,10 +129,20 @@ T#{0,1}=0
 T#{0,0}=0
 n = 2
 L = subsets n
-L = apply( L, l -> apply( l, i -> i + 1) ) 
-R = ZZ/2[x_1..x_n]
+L = apply( L, l -> apply( l, i -> i + 1) ) ;
+R = ZZ/2[x_1..x_n];
+QR = R / ideal apply(gens R, x -> x^2-x);
+g := interpolate(T,QR);
+h := idealOfPoints(T,QR);
 
-QR = R / ideal apply(gens R, x -> x^2-x)
+C = R[apply( L, l -> c_l)];
+S := {1};
+ncf := ncfIdeal( S, C);
+
+B = C[apply( L, l -> b_l)]
+kernP := kernPhi(g,h,R)
+
+
 B = ZZ/2[apply( L, l -> b_l)]
 C = ZZ/2[apply( L, l -> c_l)]
 B**R
@@ -140,7 +151,6 @@ C**B**R
 QR = R / ideal apply(gens R, x -> x^2-x)
 
 coefficients( x_1, Monomials => apply(subsets gens R, product)
-g := interpolate(T,QR)
 h := idealOfPoints(T,QR)
 kernPhi(g,h,R)
 
