@@ -19,6 +19,7 @@ export{"nextPrime",
      "randomSpaceCurve",
      "randomHartshorneRaoModule",
      "knownUnirationalComponentOfSpaceCurves",
+     "hilbertNumerator",
      "expectedShape",
      "Attempts",
      "Certify"
@@ -189,51 +190,145 @@ knownUnirationalComponentOfSpaceCurves(ZZ,ZZ) := (d,g)->(
 -- Hilbert Function and Numerator --
 ------------------------------------
 
--- calculate the numerator of a Hilbert 
-hilbertNumerator = (L,t) -> (    
-      p:=sum(L#,i->(if i>1 then min(d*i+1-g,binomial(r+i,r)) else binomial(r+i,r))*t^i);
-     q:=p*(1-t)^(r+1)%t^b;
+-- calculate the numerator of a Hilbert function 
+-- from the frist d+r+1 values where
+-- d is the regularity of the corresponding module
+-- and r is the dimension of the ambient space
+--
+-- L = a list of dimensions
+-- r = the dimension of the ambient space
+-- t = the variable to be used in the numerator
+hilbertNumerator = (L,r,t) -> (
+     -- the beginning of the hilbert series
+     p:=sum(#L,i->L#i*t^i); 
+     -- the numerator
+     p*(1-t)^(r+1)%t^(#L)
+     )
 
-     
+TEST ///
+   assert (hilbertNumerator({1,3,0,0,0,0},3,t) == 3*t^5-11*t^4+14*t^3-6*t^2-t+1)
+///
+
+TEST /// 
+    T = QQ[t];  
+    assert (hilbertNumerator ({1, 4, 10, 15, 20, 25, 30, 35, 40},3,t) == -t^5+5*t^4-5*t^3+1)
+///
+
+TEST ///
+    T = QQ[t]; 
+    e = expectedShape hilbertNumerator({1,3,0,0,0,0},3,t);
+    b = new BettiTally from {
+	 (0,{0},0) => 1, 
+	 (1,{1},1) => 1,
+      	 (1,{2},2) => 6, 
+	 (2,{3},3) => 14, 
+	 (3,{4},4) => 11, 
+	 (4,{5},5) => 3};
+    assert((betti e) == b)
+///    
 
 
 -----------------------------
 -- Expected Betti Tableaus --
 -----------------------------
 
+-- construct a minimal free resolution with expected betti tableau
 expectedShape=method()
-expectedShape(RingElement):= q ->(
-     cq:=coefficients q;
-     mons1:=(entries cq_0)_0;
-     ranks1:=apply(entries cq_1,r->r_0);
-     m:=#mons1;
-     ranks:=apply(m,i->lift(ranks1_(m-i-1),ZZ));
-     mons:=apply(m,i->mons1_(m-i-1));
-     degs:=apply(m,i->degree mons_i);
-     switches:=select(toList(0..m-2),i->ranks_i*ranks_(i+1)<0);
-     pd:=#switches;
-     T:=ring q;
-     F:=new ChainComplex;
-     F.ring=T;
-     F_0=T^(apply(toList(0..switches_0),i->ranks_i:-degs_i));
-     j:=0;
-     while j<pd-1 do (
-         F_(j+1)=T^(apply(toList(switches_j+1..switches_(j+1)),i->abs(ranks_i):-degs_i));
-     	 j=j+1);
-    F_pd=T^(apply(toList(switches_(pd-1)+1..#mons-1),i->abs(ranks_i):-degs_i));
-    F_(pd+1)=T^0;
-    F)
 
-expectedShape(ZZ,ZZ,ZZ):=(d,g,r)->(
+
+-- calculates a minimal free resolution with expected betti tableau
+-- from a hilbert Numerator
+--
+-- For this every term a_i*t^i will represent a summand T^{abs(a_i):-i}
+-- The step where this summand is used depends on the number of
+-- sign switches that occur in the hilbert numerator befor this monomial  
+expectedShape(RingElement):= hilbNum ->(
+     -- find terms of hilbert Numerator
+     -- smallest degree first
+     termsHilbNum := reverse terms hilbNum;
+     -- convert terms into pairs (coefficient, FreeModule)
+     summands := apply(termsHilbNum,oneTermToFreeModule);
+     -- make empty chain comples
+     F := new ChainComplex;
+     F.ring = ring hilbNum;
+     -- put the summands into the appropriate step of F
+     -- j contains the current step
+     j := -1;
+     -- previous Coefficient is needed to detect sign changes
+     previousCoefficient := -(first summands)#0;
+     -- step through all summands     
+     for s in summands do (
+	  -- has a sign change occured?
+     	  if (s#0*previousCoefficient) < 0 then (
+	       -- sign change => next step in the resolution
+	       j = j+1;
+	       -- start new step with current summand
+	       F_j = s#1 )
+     	  else (
+	       -- no sign change => add currend summand to currend step
+     	       F_j = F_j ++ s#1;
+	       );
+	  -- store previous coefficient
+     	  previousCoefficient = s#0;
+     	  );
+     -- return the complex
+     F
+     )
+
+-- convert c*t^d to (c,T^(abs(c):-d))
+-- assumes only one term c*t^d
+-- ring of t must be over ZZ
+-- and singly graded
+oneTermToFreeModule = (mon) -> (
+     T := ring mon;
+     -- the coefficient of the monomial
+     c := lift((last coefficients mon)_0_0,ZZ);
+     -- the degree of the monmial
+     d := sum degree mon;
+     (c,T^{abs(c):-d})
+     )
+
+TEST ///
+  T = QQ[t];
+  assert (oneTermToFreeModule(-4*t^3)==(-4,T^{4:-3}))
+///
+
+ 
+
+-- erase following code when new code is tested
+--expectedShapeOld(ZZ,ZZ,ZZ):=(d,g,r)->(
      -- we assume C non-degenerate, O_C(2) nonspecial and maximal rank
+--     t:=symbol t;
+--     T:=ZZ[t];
+--     b:=d+r+1;
+--     p:=sum(b,i->(if i>1 then min(d*i+1-g,binomial(r+i,r)) else binomial(r+i,r))*t^i);
+--     q:=p*(1-t)^(r+1)%t^b;
+--     expectedShape q)
+
+-- calculate the expected shape of the betti tableau
+-- for a curve of degree d, genus g in IP^r.
+-- we assume C non-degenerate, O_C(2) nonspecial and maximal rank
+expectedShape(ZZ,ZZ,ZZ) := (d,g,r)->(
      t:=symbol t;
      T:=ZZ[t];
      b:=d+r+1;
-     p:=sum(b,i->(if i>1 then min(d*i+1-g,binomial(r+i,r)) else binomial(r+i,r))*t^i);
-     q:=p*(1-t)^(r+1)%t^b;
-     expectedShape q)
+     L:=apply(b,i->(if i>1 then 
+	       min(d*i+1-g,binomial(r+i,r)) 
+	       else binomial(r+i,r)));
+     expectedShape hilbertNumerator(L,r,t)
+     )
 
-
+TEST ///
+    T = QQ[t]; 
+    e = expectedShape(5,1,3);
+    b = new BettiTally from {
+	 (0,{0},0) => 1, 
+	 (1,{3},3) => 5,
+      	 (2,{4},4) => 5, 
+	 (3,{5},5) => 1
+    	 };
+    assert((betti e) == b)
+///
 
 beginDocumentation()
 
