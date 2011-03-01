@@ -1,3 +1,4 @@
+needsPackage"RandomObjects"
 newPackage(
 	"RandomCurves",
     	Version => "0.5", 
@@ -39,9 +40,9 @@ export{"nextPrime",
 nextPrime=method()
 nextPrime ZZ:=n->(
       if n <= 2 then return 2;
-      p:=if n%2==0 then n+1 else n;
-      while not isPrime p do p=p+2;
-      p)
+      if n even then n=n+1;
+      while not isPrime n do n=n+2;
+      n)
 
 randomRationalPoint=method()
 randomRationalPoint Ideal := I->(
@@ -102,6 +103,7 @@ randomNodalPlaneCurve(ZZ,ZZ,PolynomialRing):=opt->(d,delta,R)->(
 	  else if opt.Attempts>0 then randomDistinctPlanePoints(delta,R,Attempts=>opt.Attempts) 
 	  else randomDistinctPlanePoints(delta,R)
 	  );
+     IPts := randomDistinctPlanePoints(delta,R,Certify=>opt.Certify,Attempts=>opt.Attempts
      if I==0 then return ideal 0_R;
      -- choose (if possible) a curve of deg d with double points in the given points
      I2:=gens saturate(I^2); f:= 0_R;
