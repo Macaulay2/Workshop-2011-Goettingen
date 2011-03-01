@@ -63,40 +63,19 @@ decomposeMonomialAlgebra f
 for d from 4 to 10 do(
   f= map(kk[x_0..x_3, 
      Degrees=>{{d,0},{d-1,1},{1,d-1},{0,d}}], kk[x_0,x_3,Degrees=>{{d,0},{0,d}}]);
-print decomposeMonomialAlgebra f)
+print decomposeMonomialAlgebra f
+print decomposeMonomialCurve{1,d-1,d}
+     )
+
+
+
+d=4
+  f= map(kk[x_0..x_3, 
+     Degrees=>{{d,0},{d-1,1},{1,d-1},{0,d}}], kk[x_0,x_3,Degrees=>{{d,0},{0,d}}])
+L2=decomposeMonomialAlgebra f
 
 *}
 
-
-{*
-makePositive = method()
-makePositive1(List, List) := (C,v) ->(
-     c = sum C;
-     while #select(1,join toSequence v, i-> i<0)>0 do v = v/(v1 -> v1+c);
-     vmin = for i from 0 to #v_0-1 list min apply (v, v1->v1_i);
-      while #(c0 = select(1, C, C1->C1 < vmin))>0 do(
-     if #c0 !=0 then v = apply(v, v1-> v1-c0_0);
-     vmin = vmin -c_0);
-     v
-)
-makePositive(List, List) := (C,v) ->(
-     vm = transpose matrix v;
-     Cm = transpose matrix C;
-     coef = vm//Cm;
-     mins = for i from 0 to numrows coef -1 list 
-            min (entries coef^{i})#0;
-     Mins = transpose matrix{mins} * matrix{{numcols vm:1}};
-     coef1 = coef-Mins;
-     for i from 0 to numcols vm -1 list entries((Cm*coef1)_i)
-)
-C = {{1,2},{0,5}}     
-V = {{-1,3},{1,-3}, {1,7}}
-makePositive(C,V)
-coef
-coef1-coef
-Cm*coef
-Cm*coef1
-*}
 decomposeMonomialAlgebra=method()
 decomposeMonomialAlgebra(RingMap):= f -> (
 S:=target f;
@@ -108,43 +87,25 @@ C:=degrees P;
 c := sum C;
 m := #B_0;
 I := monomialAlgebraIdeal S;
-N = S^1/(f(ideal vars P)+I);
-bN = last degrees basis N;
-print bN;
---B1:=transpose matrix B;
-C1 =gens gb transpose matrix C;
+N := S^1/(f(ideal vars P)+I);
+bN := last degrees basis N;
+C1 := gens gb transpose matrix C;
 L := partition(j->(transpose matrix {j})%C1,bN);
 L1 := applyPairs(L,(k,v) -> (k,apply(v, v1->
 	       (entries transpose((transpose matrix{v1})-k))#0)));
-L2 :=applyValues (L1, V->(  
-     vm = transpose matrix V;
-     Cm = transpose matrix C;
-     coef = vm//Cm;
-     mins = for i from 0 to numrows coef -1 list 
-            min (entries coef^{i})#0;
-     Mins = transpose matrix{mins} * matrix{{numcols vm:1}};
-     coef1 = coef-Mins;
-     {ideal(apply(numcols coef1, v->product(apply(p, j->P_j^(coef1_v_j))))), -mins}
-));
-print L;
-print L1;
-print L2;
-FS = frac S;
-Ff = map(FS,S)*f;
-applyPairs(L2, (k,v) -> 
-(k, {v_0, (product(apply(#entries k, 
-		j->FS_j^(k_(j,0))))*
-      product apply(p, j->(Ff(P_j))^(v_1_j)))}))
---applyPairs(L2, (k,v) -> 
--- (k, {v_0, product(apply(#entries k, j->FS_j^(k_(j,0))))}))
+applyPairs (L1, (k,V)->(  
+     vm := transpose matrix V;
+     Cm := transpose matrix C;
+     coef := vm//Cm;
+     mins := transpose matrix {for i from 0 to numrows coef -1 list 
+            min (entries coef^{i})#0};
+     Mins := mins * matrix{{numcols vm:1}};
+     coef1 := coef-Mins;
+     (k,{ideal(apply(numcols coef1, 
+		  v->product(apply(p, j->P_j^(coef1_v_j))))), k+Cm*mins})
+           ))
 )
-d=4
-  f= map(kk[x_0..x_3, 
-     Degrees=>{{d,0},{d-1,1},{1,d-1},{0,d}}], kk[x_0,x_3,Degrees=>{{d,0},{0,d}}])
-decomposeMonomialAlgebra f
-f((source f)_0)
-mins
-C1
+
 
 
 
