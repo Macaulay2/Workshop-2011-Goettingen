@@ -32,6 +32,159 @@ nextPrime ZZ:=n->(
       while not isPrime p do p=p+2;
       p)
 
+------------------------------------
+-- Hilbert Function and Numerator --
+------------------------------------
+
+-- calculate the numerator of a Hilbert function 
+-- from the frist d+r+1 values where
+-- d is the regularity of the corresponding module
+-- and r is the dimension of the ambient space
+--
+-- L = a list of dimensions
+-- r = the dimension of the ambient space
+-- t = the variable to be used in the numerator
+hilbertNumerator = (L,r,t) -> (
+     -- the beginning of the hilbert series
+     p:=sum(#L,i->L#i*t^i); 
+     -- the numerator
+     p*(1-t)^(r+1)%t^(#L)
+     )
+
+TEST ///
+   T = QQ[t]; 
+   assert (hilbertNumerator({1,3,0,0,0,0},3,t) == 3*t^5-11*t^4+14*t^3-6*t^2-t+1)
+///
+
+TEST /// 
+    T = QQ[t];  
+    assert (hilbertNumerator ({1, 4, 10, 15, 20, 25, 30, 35, 40},3,t) == -t^5+5*t^4-5*t^3+1)
+///
+
+   
+
+-----------------------------
+-- Expected Betti Tableaus --
+-----------------------------
+
+-- convert c*t^d to (c,R^(abs(c):-d))
+-- assumes only one term c*t^d
+-- ring of t must be over ZZ
+-- and singly graded
+--
+-- this funciton is needed to construct 
+-- ChainComplexes of expected shape from
+-- a HilberNumerator
+oneTermToFreeModule = (mon,R) -> (
+     -- the coefficient of the monomial
+     c := lift((last coefficients mon)_0_0,ZZ);
+     -- the degree of the monmial
+     d := sum degree mon;
+     (c,R^{abs(c):-d})
+     )
+
+TEST ///
+  T = QQ[t];
+  assert (oneTermToFreeModule(-4*t^3,T)==(-4,T^{4:-3}))
+///
+
+
+
+-- construct a minimal free resolution with expected betti tableau
+expectedShape=method()
+
+
+-- calculates a minimal free resolution with expected betti tableau
+-- from a hilbert Numerator
+--
+-- For this every term a_i*t^i will represent a summand R^{abs(a_i):-i}
+-- The step where this summand is used depends on the number of
+-- sign switches that occur in the hilbert numerator befor this monomial  
+expectedShape(RingElement,Ring):= (hilbNum,R) ->(
+     -- find terms of hilbert Numerator
+     -- smallest degree first
+     termsHilbNum := reverse terms hilbNum;
+     -- convert terms into pairs (coefficient, FreeModule)
+     summands := apply(termsHilbNum,m->oneTermToFreeModule(m,R));
+     -- make empty chain comples
+     F := new ChainComplex;
+     F.ring = ring hilbNum;
+     -- put the summands into the appropriate step of F
+     -- j contains the current step
+     j := -1;
+     -- previous Coefficient is needed to detect sign changes
+     previousCoefficient := -(first summands)#0;
+     -- step through all summands     
+     for s in summands do (
+	  -- has a sign change occured?
+     	  if (s#0*previousCoefficient) < 0 then (
+	       -- sign change => next step in the resolution
+	       j = j+1;
+	       -- start new step with current summand
+	       F_j = s#1 )
+     	  else (
+	       -- no sign change => add currend summand to currend step
+     	       F_j = F_j ++ s#1;
+	       );
+	  -- store previous coefficient
+     	  previousCoefficient = s#0;
+     	  );
+     -- return the complex
+     F
+     )
+
+-- if no ring is given, the ring of the HilbertNumerator is used
+expectedShape(RingElement):= (hilbNum) -> expectedShape(hilbNum,ring hilbNum)
+
+ 
+
+-- erase following code when new code is tested
+--expectedShapeOld(ZZ,ZZ,ZZ):=(d,g,r)->(
+     -- we assume C non-degenerate, O_C(2) nonspecial and maximal rank
+--     t:=symbol t;
+--     T:=ZZ[t];
+--     b:=d+r+1;
+--     p:=sum(b,i->(if i>1 then min(d*i+1-g,binomial(r+i,r)) else binomial(r+i,r))*t^i);
+--     q:=p*(1-t)^(r+1)%t^b;
+--     expectedShape q)
+
+-- calculate the expected shape of the betti tableau
+-- for a curve of degree d, genus g in IP^r.
+-- we assume C non-degenerate, O_C(2) nonspecial and maximal rank
+expectedShape(ZZ,ZZ,ZZ) := (d,g,r)->(
+     t:=symbol t;
+     T:=ZZ[t];
+     b:=d+r+1;
+     L:=apply(b,i->(if i>1 then 
+	       min(d*i+1-g,binomial(r+i,r)) 
+	       else binomial(r+i,r)));
+     expectedShape hilbertNumerator(L,r,t)
+     )
+
+TEST ///
+    T = QQ[t]; 
+    e = expectedShape(5,1,3);
+    b = new BettiTally from {
+	 (0,{0},0) => 1, 
+	 (1,{3},3) => 5,
+      	 (2,{4},4) => 5, 
+	 (3,{5},5) => 1
+    	 };
+    assert((betti e) == b)
+///
+
+TEST ///
+    T = QQ[t]; 
+    e = expectedShape hilbertNumerator({1,3,0,0,0,0},3,t);
+    b = new BettiTally from {
+	 (0,{0},0) => 1, 
+	 (1,{1},1) => 1,
+      	 (1,{2},2) => 6, 
+	 (2,{3},3) => 14, 
+	 (3,{4},4) => 11, 
+	 (4,{5},5) => 3};
+    assert((betti e) == b)
+/// 
 
 --------------------
 -- Finite Modules --
@@ -50,6 +203,8 @@ randomHartshorneRaoModule(ZZ,ZZ,PolynomialRing):=opt->(d,g,R)->(
      HRao:=apply(HRao1,i->i_1);
      e:=HRao1_0_0;
      M:=randomHartshorneRaoModule(e,HRao,R);
+     return M;
+     -- this return was not in the original code by Frank
      attempt:=1;
      while true do (
      	  if apply(toList(e..e+#HRao-1),i->hilbertFunction(i,M))==HRao then return M;
@@ -58,7 +213,183 @@ randomHartshorneRaoModule(ZZ,ZZ,PolynomialRing):=opt->(d,g,R)->(
 	  attempt=attempt+1;
 	  ))
 
+-- calculate the number of expected syzygies of a
+-- random a x b matrix with linear entries in R
+expectedLinearSyzygies = (a,b,R) -> (
+     n := dim R;
+     b*n-a*binomial(n+1,2)
+     )
+
+TEST ///
+    R = ZZ/101[x_0..x_3];
+    assert(expectedLinearSyzygies(2,6,R) == 
+	 (betti res coker random(R^{2:0},R^{6:-1}))#(2,{2},2)
+	 )
+///
+
+-- Try to construct a random HartshorneRau module of
+-- length 3 starting at the beginning of the
+-- minimal free resolution.
+-- 
+-- The main difficulty is in getting the number of 
+-- linear syzygies of the first matrix in the resolution right
+--
+-- HRau = {h1,h2,h3} the Hilbertfunction of the desired module 
+-- R the ring where the module should live. It is assumed, that 
+-- this ring has 4 variables and is singly graded.
+randomHartshorneRaoModuleDiameter3oneDirection = (HRao,R) -> (
+     -- construct a chain complex with expected betti tableau
+     -- and 0 differentials
+     F := expectedShape(hilbertNumerator(HRao|{0,0,0,0},3,(gens R)#0),R);
+     -- the betti Tableau of F to find out later if linear syzygies 
+     -- are requried (this is the difficult part in the construction)
+     expectedBetti := betti F;
+     -- find betti Numbers of the linear strand
+     linearStrand := for i from 0 list (if expectedBetti#?(i,{i},i) then expectedBetti#(i,{i},i) else break);
+     -- construction depends on lenth of linear strand.
+     -- length 0 should never occur
+     if #linearStrand == 0 then error"linear Stand has lenght 0. This should never happen";
+     if #linearStrand == 1 then (
+	  -- first matrix can neither have nor be required to have linear syzygies
+	  -- choose first matrix randomly
+     	  return coker random (F_0,F_1)
+	  );
+     if #linearStrand == 2 then (
+	  -- no linear syzygies of the first matrix are requried
+	  -- check if first matrix always has unwanted syzygies
+	  if expectedLinearSyzygies(linearStrand#0,linearStrand#1,R) <= 0 then (
+	       -- no unwanted syzygies
+	       -- choose first matrix randomly
+     	       return coker random (F_0,F_1)
+	       );
+     	  );	       
+     if #linearStrand == 3 then (
+	  -- is the number of expected syzygies == the number of required syzygies?
+	  if expectedLinearSyzygies(linearStrand#0,linearStrand#1,R) == linearStrand#2 then (
+	       -- choose first matrix randomly
+     	       return coker random (F_0,F_1)
+	       );
+	  -- too many syzygies?
+	  if expectedLinearSyzygies(linearStrand#0,linearStrand#1,R) > linearStrand#2 then (
+	       -- in this case the construction method will not work
+	       return null     	       
+	       );
+	  -- too few syzygies?
+	  if expectedLinearSyzygies(linearStrand#0,linearStrand#1,R) < linearStrand#2 then (
+	       -- try to choose the syzygies first
+	       -- this will work if the transpose of a generic map between
+	       -- 1. and 2. module of the linear strand has more expected syzygies
+	       -- than required in the 0. step
+     	       if expectedLinearSyzygies(linearStrand#2,linearStrand#1,R) >= linearStrand#0 then (
+	       	    -- syzygies of the transpose of second step in linear strand
+	       	    s := syz random(R^{linearStrand#2:2},R^{linearStrand#1:1});
+	       	    -- choose linearStrand#0 syzygies randomly among those and transpose again
+	       	    return coker (transpose (s*random(source s,R^{linearStrand#0:0})));
+	       	    );
+	       )
+      	   );
+      -- if we arrive here there were either to few or to many linear
+      -- syzygies required	  
+      return null     	       
+      );
+
+R = ZZ/101[x_0..x_3];
+betti res randomHartshorneRaoModuleDiameter3oneDirection({1,4,1},R)
+betti res randomHartshorneRaoModuleDiameter3oneDirection({1,4,2},R)
+betti res randomHartshorneRaoModuleDiameter3oneDirection({1,3,2},R)
+betti res randomHartshorneRaoModuleDiameter3oneDirection({2,3,1},R)
+-- this is a pathological case since 2<-5 has 2 syzygies in 4 variables
+-- while the expected number is 0
+
+
+
+-- Try to construct a random Hartshorne-Rau module of
+-- length 3 by starting at both ends of the expected
+-- minimal free resolution.
+--
+-- HRau = {h1,h2,h3} the Hilbertfunction of the desired module 
+-- R the ring where the module should live. It is assumed, that 
+-- this ring singly graded. It is checked that the ring has 4 variables
+randomHartshorneRaoModuleDiameter3 = (HRao,R)->(
+     if #HRao != 3 then error"Hilbert function has to have length 3";
+     -- start at the beginning of the resolution    
+     M := randomHartshorneRaoModuleDiameter3oneDirection(HRao,R);
+     -- did this direction work?
+     if M =!= null and apply(3,i->hilbertFunction(i,M)) == HRao then return M;
+     -- start at the end of the resolution
+     Mdual := randomHartshorneRaoModuleDiameter3oneDirection(reverse HRao,R);
+     Fdual := res Mdual;
+     M = (coker transpose Fdual.dd_4)**R^{ -6};
+     return M
+     )
+
+-- these will become examples
+betti res randomHartshorneRaoModuleDiameter3({1,4,1},R)
+betti res randomHartshorneRaoModuleDiameter3({1,4,2},R)
+-- the two following are strictly not to specification,
+-- sind the resolution is not expected
+betti res randomHartshorneRaoModuleDiameter3({1,3,2},R)
+betti res randomHartshorneRaoModuleDiameter3({2,3,1},R)
+-- this should not work
+--betti res randomHartshorneRaoModuleDiameter3({1,2,3,4},R)
+
+-- Try to construct a random Hartshorne-Rau module of
+-- length 2. Here the only problem is, that the
+-- generic module may not have expected syzgies
+--
+-- HRau = {h1,h2} the Hilbertfunction of the desired module 
+-- R the ring where the module should live. It is assumed, that 
+-- this ring has 4 variables and is singly graded.
+randomHartshorneRaoModuleDiameter2 = (HRao,R)->(
+     if #HRao != 2 then error"Hilbert function has to have length 2";
+     -- some special cases with non expected resoluton
+     --
+     --if HRao == {1,1} then return coker random(R^{0},R^{3:-1,1:-2});
+     --if HRao == {1,2} then return coker random(R^{0},R^{2:-1,3:-2});
+     --if HRao == {2,1} then return coker random(R^{2:0},R^{7:-1});
+     --
+     -- the standart construction still works since the unexpected
+     -- part is not in the first 2 steps.
+     --
+     -- now assume expected resolution
+     --
+     -- always start at the beginning of the resolution    
+     F := expectedShape(hilbertNumerator(HRao|{0,0,0,0},3,(gens R)#0),R);
+     -- the betti Tableau of F to find out later if linear syzygies 
+     -- are requried (this is the difficult part in the construction)
+     expectedBetti := betti F;
+     M := coker random(F_0,F_1)
+     )
+
+-- Construct a random Hartshorne-Rau module of
+-- length 1. This allways works
+--
+-- HRau = {h1} the Hilbertfunction of the desired module 
+-- R the ring where the module should live. It is assumed, that 
+-- this ring has 4 variables and is singly graded.
+randomHartshorneRaoModuleDiameter1 = (HRao,R)->(
+     if #HRao != 1 then error"Hilbert function has to have length 1";
+     return coker (vars R**R^{HRao#0:0})
+     )
+
+betti res randomHartshorneRaoModuleDiameter1({1},R)
+betti res randomHartshorneRaoModuleDiameter1({2},R)
+
 randomHartshorneRaoModule(ZZ,List,PolynomialRing):=opt->(e,HRao,R)->(
+     if dim R != 4 then error "expected a polynomial ring in 4 variables";
+     if degrees R !={{1}, {1}, {1}, {1}} then error "polynomial ring is not standard graded";
+     if #HRao > 3 then error "no method implemented for Hartshorne Rao modue of diameter >3";
+     M := null;
+     if #HRao == 1 then M = randomHartshorneRaoModuleDiameter1(HRao,R);
+     if #HRao == 2 then M = randomHartshorneRaoModuleDiameter2(HRao,R);
+     if #HRao == 3 then M = randomHartshorneRaoModuleDiameter3(HRao,R);
+     if M === null then return null else return M**R^{ -e};
+     )
+
+     
+
+--randomHartshorneRaoModule(ZZ,List,PolynomialRing):=opt->(e,HRao,R)->(
+randomHartshorneRaoModuleOld = (e,HRao,R)->(
      if dim R != 4 then error "expected a polynomial ring in 4 variables";
      if degrees R !={{1}, {1}, {1}, {1}} then error "polynomial ring is not standard graded";
      if #HRao > 3 then error "no method implemented for Hartshorne Rao modue of diameter >3";
@@ -145,7 +476,8 @@ randomSpaceCurve(ZZ,ZZ,PolynomialRing) := opt->(d,g,R)->(
 	  else return minors(rank G_2,random(R^(-degrees G_1),R^(-degrees G_2)))
 	  );
      e:=HRao1_0_0;
-     M:=randomHartshorneRaoModule(d,g,R);     	       
+     M:=randomHartshorneRaoModule(d,g,R);
+     if M === null then return null;     	       
      fM:=res( M);
      t1:=tally degrees fM_3;
      t2:=tally degrees G_2;
@@ -186,149 +518,6 @@ knownUnirationalComponentOfSpaceCurves(ZZ,ZZ) := (d,g)->(
      b<4*c and 6*a-4*b+c>0 and 4*(4*a-b)-10*(6*a-4*b+c)>=a
      )
 
-------------------------------------
--- Hilbert Function and Numerator --
-------------------------------------
-
--- calculate the numerator of a Hilbert function 
--- from the frist d+r+1 values where
--- d is the regularity of the corresponding module
--- and r is the dimension of the ambient space
---
--- L = a list of dimensions
--- r = the dimension of the ambient space
--- t = the variable to be used in the numerator
-hilbertNumerator = (L,r,t) -> (
-     -- the beginning of the hilbert series
-     p:=sum(#L,i->L#i*t^i); 
-     -- the numerator
-     p*(1-t)^(r+1)%t^(#L)
-     )
-
-TEST ///
-   assert (hilbertNumerator({1,3,0,0,0,0},3,t) == 3*t^5-11*t^4+14*t^3-6*t^2-t+1)
-///
-
-TEST /// 
-    T = QQ[t];  
-    assert (hilbertNumerator ({1, 4, 10, 15, 20, 25, 30, 35, 40},3,t) == -t^5+5*t^4-5*t^3+1)
-///
-
-TEST ///
-    T = QQ[t]; 
-    e = expectedShape hilbertNumerator({1,3,0,0,0,0},3,t);
-    b = new BettiTally from {
-	 (0,{0},0) => 1, 
-	 (1,{1},1) => 1,
-      	 (1,{2},2) => 6, 
-	 (2,{3},3) => 14, 
-	 (3,{4},4) => 11, 
-	 (4,{5},5) => 3};
-    assert((betti e) == b)
-///    
-
-
------------------------------
--- Expected Betti Tableaus --
------------------------------
-
--- construct a minimal free resolution with expected betti tableau
-expectedShape=method()
-
-
--- calculates a minimal free resolution with expected betti tableau
--- from a hilbert Numerator
---
--- For this every term a_i*t^i will represent a summand T^{abs(a_i):-i}
--- The step where this summand is used depends on the number of
--- sign switches that occur in the hilbert numerator befor this monomial  
-expectedShape(RingElement):= hilbNum ->(
-     -- find terms of hilbert Numerator
-     -- smallest degree first
-     termsHilbNum := reverse terms hilbNum;
-     -- convert terms into pairs (coefficient, FreeModule)
-     summands := apply(termsHilbNum,oneTermToFreeModule);
-     -- make empty chain comples
-     F := new ChainComplex;
-     F.ring = ring hilbNum;
-     -- put the summands into the appropriate step of F
-     -- j contains the current step
-     j := -1;
-     -- previous Coefficient is needed to detect sign changes
-     previousCoefficient := -(first summands)#0;
-     -- step through all summands     
-     for s in summands do (
-	  -- has a sign change occured?
-     	  if (s#0*previousCoefficient) < 0 then (
-	       -- sign change => next step in the resolution
-	       j = j+1;
-	       -- start new step with current summand
-	       F_j = s#1 )
-     	  else (
-	       -- no sign change => add currend summand to currend step
-     	       F_j = F_j ++ s#1;
-	       );
-	  -- store previous coefficient
-     	  previousCoefficient = s#0;
-     	  );
-     -- return the complex
-     F
-     )
-
--- convert c*t^d to (c,T^(abs(c):-d))
--- assumes only one term c*t^d
--- ring of t must be over ZZ
--- and singly graded
-oneTermToFreeModule = (mon) -> (
-     T := ring mon;
-     -- the coefficient of the monomial
-     c := lift((last coefficients mon)_0_0,ZZ);
-     -- the degree of the monmial
-     d := sum degree mon;
-     (c,T^{abs(c):-d})
-     )
-
-TEST ///
-  T = QQ[t];
-  assert (oneTermToFreeModule(-4*t^3)==(-4,T^{4:-3}))
-///
-
- 
-
--- erase following code when new code is tested
---expectedShapeOld(ZZ,ZZ,ZZ):=(d,g,r)->(
-     -- we assume C non-degenerate, O_C(2) nonspecial and maximal rank
---     t:=symbol t;
---     T:=ZZ[t];
---     b:=d+r+1;
---     p:=sum(b,i->(if i>1 then min(d*i+1-g,binomial(r+i,r)) else binomial(r+i,r))*t^i);
---     q:=p*(1-t)^(r+1)%t^b;
---     expectedShape q)
-
--- calculate the expected shape of the betti tableau
--- for a curve of degree d, genus g in IP^r.
--- we assume C non-degenerate, O_C(2) nonspecial and maximal rank
-expectedShape(ZZ,ZZ,ZZ) := (d,g,r)->(
-     t:=symbol t;
-     T:=ZZ[t];
-     b:=d+r+1;
-     L:=apply(b,i->(if i>1 then 
-	       min(d*i+1-g,binomial(r+i,r)) 
-	       else binomial(r+i,r)));
-     expectedShape hilbertNumerator(L,r,t)
-     )
-
-TEST ///
-    T = QQ[t]; 
-    e = expectedShape(5,1,3);
-    b = new BettiTally from {
-	 (0,{0},0) => 1, 
-	 (1,{3},3) => 5,
-      	 (2,{4},4) => 5, 
-	 (3,{5},5) => 1
-    	 };
-    assert((betti e) == b)
-///
 
 beginDocumentation()
 
