@@ -11,18 +11,20 @@ newPackage(
     	DebuggingMode => true
     	)
 
-export {PolymakeObject, polymakeObject, toPolymakeFormat, writePolymakeFile, runPolymake,getPropertyNames, getProperty, getMatrixProperty, getListProperty, getVectorProperty, makevec, makemat }
+export { --PolymakeObject,
+      polymakeObject, toPolymakeFormat, writePolymakeFile, runPolymake,getPropertyNames, getProperty, getMatrixProperty, getListProperty, getVectorProperty, makevec, makemat }
 
 
 ---------------------------------------------------------------------------
 -- Code
 ---------------------------------------------------------------------------
 
+needsPackage "gfanInterface2"
 needsPackage "Polyhedra"
 needsPackage "SimpleDoc"
 
 
-PolymakeObject = new Type of MutableHashTable
+--PolymakeObject = new Type of MutableHashTable
 
 polymakeObject = method()
 polymakeObject(String, List) := (filename, properties) -> (
@@ -321,6 +323,7 @@ doc ///
 ///
 
 
+{*
 doc ///
   Key
     PolymakeObject
@@ -335,8 +338,9 @@ doc ///
   Caveat
   SeeAlso
 ///
+*}
 
-
+{*
 doc ///
   Key
     polymakeObject
@@ -632,6 +636,8 @@ doc ///
   Caveat
   SeeAlso
 ///
+
+*}
 
 ---------------------------------------------------------------------------
 ------------------------- TEST ---------------------------
