@@ -3,10 +3,10 @@ needsPackage "Polyhedra"
 newPackage(
 	"Polymake",
     	Version => "0.2", 
-    	Date => "October 28, 2009",
+    	Date => "March 1, 2011",
     	Authors => {{Name => "Josephine Yu", 
-		  Email => "josephine.yu@gmail.com", 
-		  HomePage => "http://www.math.mit.edu/~jyu/"}},
+		  Email => "josephine.yu@math.gatech.edu", 
+		  HomePage => "http://people.math.gatech.edu/~jyu67"}},
     	Headline => "a package for interfacing with polymake",
     	DebuggingMode => true
     	)
@@ -318,22 +318,14 @@ doc ///
      You may need to manually remove the temporary files created in {\tt /tmp}.
   SeeAlso
      Polyhedra
-///;
+///
 
 
 doc ///
   Key
     PolymakeObject
   Headline
-
-  Usage
-
-  Inputs
-
-  Outputs
-
-  Consequences
-
+    Polymake object
   Description
    Text
    Text
@@ -353,7 +345,7 @@ doc ///
   Headline
     Makes PolymakeObject either from the name of a polymake file, or the file name and a list of properties.
   Usage
-
+  
   Inputs
 
   Outputs
@@ -657,6 +649,7 @@ end
 ---------------------------------------------------------------------------
 
 restart
+installPackage("Polymake")
 installPackage("Polymake", FileName => "~/Documents/math/M2codes/packageRepository/development/aim2009/Polymake.m2", MakeDocumentation => true)
 viewHelp(Polymake)
 
