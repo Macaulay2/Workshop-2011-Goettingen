@@ -39,6 +39,10 @@ comp(List,ZZ,ZZ) := (l,n,d) ->
 ---------------------
 ----Standard Tableaux
 ---------------------
+
+--tableaux are given by lists of their column entries
+--assumed to be skew symmetric within columns
+
 local tempTab
 local tempLam
 local auxlam
@@ -65,7 +69,7 @@ standardTableaux(List,List) := (lam,rho) ->
 stdTabRec = method()
 stdTabRec(List,ZZ) := (nc,i) ->
 (
-if i == #auxrho then listOfTableaux = listOfTableaux | {toList tempTab} else
+if i == #auxrho then listOfTableaux = listOfTableaux | {tabTranspose(toList tempTab)} else
 (     
   bdscomp := new MutableList from auxk:0;
   cate := nc#auxk;
@@ -90,6 +94,23 @@ if i == #auxrho then listOfTableaux = listOfTableaux | {toList tempTab} else
        );
      )
 )
+
+tabTranspose = method()
+tabTranspose(List) := tab ->
+(
+     lam := apply(tab,i->#i);
+     newTab := new MutableList from (lam#0:{});
+     for i from 0 to #lam-1 do
+     	  for j from 0 to lam#i-1 do
+	       newTab#j = newTab#j | {tab#i#j};
+     toList newTab
+     )
+
+perTab = method()
+perTab(List,List) := (per,tab) ->
+(
+     apply(tab,i->apply(i,j->per#(j-1)))
+     )
 
 ----------------
 ------Steven Sam
@@ -139,7 +160,7 @@ shuffle = (T, col, row1, row2) -> (
 	       	    else T#j)));
 *}
      
-     P = apply(P, i-> (sgn(join(truncatedrow1, i_{0..len1-col}))*sgn(join(i_{len1-col+1..#i-1}, truncatedrow2))*sgn(i),
+     P = apply(P, i-> (sgn(join(truncatedrow1, i_{0..len1-col}))*sgn(join(i_{len1-col+1..#i-1}, truncatedrow2))*sgn(i)*sgnL,
 	            (for j from 0 to #T-1 list (
 		    if j == row1 then sort join(truncatedrow1, i_{0..len1-col})
 	       	    else if j == row2 then sort join(i_{len1-col+1..#i-1}, truncatedrow2)
@@ -147,9 +168,12 @@ shuffle = (T, col, row1, row2) -> (
 
      
      coeff := 0;
-     for i in P do if last i == T then coeff = coeff + 1;
-     for i in P do if last i != T then output = append(output, (last i, (first i) * sgnL * (-1) / coeff));
-     return hashTable(plus, output);
+     for i in P do if last i == T then coeff = coeff + first i;
+     if coeff == 0 then return new HashTable from {} else
+     (
+     	  for i in P do if last i != T then output = append(output, (last i, (first i) * (-1) / coeff));
+     	  return hashTable(plus, output);
+	  )
      )
 
 -- Input:
@@ -180,18 +204,18 @@ towardStandard = T -> (
 -- stores the coefficients of the straightening of t into standard tableaux
 straighten = method()
 straighten(List) := t -> (
+     sg := t/(i->sgn i)//product;
      h := new MutableHashTable from {};
-     straighten(t, h);
      t = apply(t, i->sort(i));
-     h#t
+     straighten(t, h);
+     new HashTable from apply(keys h#t,i->(i => sg*h#t#i))
      )
 
 straighten(List, MutableHashTable) := (t, h) -> (
-     sg := t/(i->sgn i)//product;
-     t = apply(t, i -> sort i);
+     if t != apply(t, i -> sort i) then error"Debug";
      if h #? t then return null;
      if isStandard(t) === null then 
-     h#t = new HashTable from {t => sg};
+     h#t = new HashTable from {t => 1};
      
      firstIter := towardStandard(t);
      H := hashTable({}); -- straightening of t
@@ -217,7 +241,8 @@ sgn(List) := l ->
      sg := 1;
      for i from 0 to n-1 do
      	  for j from i+1 to n do
-	       if l#i>l#j then sg = -sg;
+	       if l#i>l#j then sg = -sg else
+	       if l#i == l#j then (sg = 0;break;);
      sg
      )
 
@@ -226,9 +251,15 @@ end
 
 restart
 load "tableaux.m2"
+straighten({{3,2},{1}})
+straighten({{2,3},{1}})
 straighten({{3,2},{2,3}})
 straighten({{4,1},{3,2}})
 straighten({{3,2,1},{3,2}})
+straighten({{4,2,3,3,3},{1,2}})
+
+straighten({{3,2},{3,2},{1},{1}})
+t = {{3,2},{3,2},{1},{1}}
 
 compositions({6,0,0,0},5)
 standardTableaux({3},{1,1,1})
@@ -236,6 +267,49 @@ standardTableaux({2,1},{1,1,1})
 standardTableaux({1,1,1},{1,1,1})
 standardTableaux({2,1},{3})
 
+standardTableaux({3,3,3},{1,1,1,1,1,1,1,1,1})
+#oo
 loadPackage"SchurRings"
 S = schurRing(QQ,s,6)
 scalarProduct(s_{2}^3,s_{4,2}) == #standardTableaux({4,2},{2,2,2})
+
+restart
+load "tableaux.m2"
+loadPackage"SchurRings"
+--sym^n(sym^d)
+
+n = 3
+d = 2
+
+S = schurRing(QQ,s,n*d)
+pl = plethysm(s_{n},s_{d})
+s_{d}^n
+
+rho = toList(n:d)
+lam = {4,2}
+
+sTab = standardTableaux(lam,rho)
+R = QQ[apply(sTab,i->z_i)]
+
+perms = permutations splice{1..n}
+rels = {}
+
+per = perms#2
+tab = sTab#1
+
+for per in perms do
+     for tab in sTab do
+     (
+	  str = straighten perTab(per,tab);
+     	  rels = rels | {z_tab-sum for ke in keys str list(try z_ke * str#ke else 0)};
+	  )
+     
+I = ideal rels
+#sTab - numgens source mingens I
+mingens I
+rels
+straighten({{3,2},{1}})
+straighten({{2,1},{3}})
+straighten({{3,2},{3,2},{1},{1}})
+straighten({{2,1},{2,1},{3},{3}})
+straighten({{4,1},{3,2}})
