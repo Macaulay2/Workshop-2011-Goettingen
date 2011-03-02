@@ -1,3 +1,5 @@
+needsPackage "SimplicialComplexes"
+
 newPackage (
   "MonomialIdealResolutions",
   Version=>"0.1",
@@ -16,12 +18,42 @@ export {
   isStable,
   isElement,
   EK,
-  EKResolution  
+  EKResolution,
+  scarf  
 }
 
 -------------------
 -- Exported Code
 -------------------
+
+lcmMon=method();
+lcmMon(List, List):= (L1,L2) -> (
+      apply(L1,L2, (a,b)->max({a,b}))   
+)  
+
+scarf=method();
+scarf(MonomialIdeal):= I -> (
+ labels:=apply(I_*, m->flatten exponents m);
+ faceSet:={{}};
+ n:=numgens I;
+ degreeSet:={apply(n,k->0)};
+ local deg;
+ for i from 0 to length labels-1 do(
+--      print("i=",i);
+     for j from 0 to length faceSet-1 do(
+--	  print("j=",j);
+--	  print(degreeSet_j,labels_i);
+	  deg=lcmMon(degreeSet_j,labels_i);
+          if not member(deg,degreeSet) then
+--	       print faceSet_j;
+	       faceSet=faceSet|{faceSet_j|{i}};
+	       degreeSet=degreeSet|{deg};	  
+     );	      
+ );
+R=QQ[v_0..v_(n-1)];
+simplicialComplex apply(drop(faceSet,1),f->product(apply(f,i->R_i)))           
+)
+
 
 EK = method()
 EK(ZZ,MonomialIdeal):= (n,I)->(
