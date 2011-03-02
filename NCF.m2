@@ -1,6 +1,5 @@
 
 
-
 newPackage(
     "NCF",
     Version => "0.1", 
@@ -10,30 +9,32 @@ newPackage(
     data",
     DebuggingMode => true
 )
+installPackage "RationalPoints";
 
 export{interpolate, idealOfPoints, ncfIdeal, kernPhi, ncfMain}
-
+--List of Nested Canalyzing Functions polynomials
+ --MHT is the table with the expermental data, permutation is a list with the wanted permutation
 ncfMain = method()
-ncfMain (MutableHashTable, List, RingElement) := List --List of Nested Canalyzing Functions polynomials 
-=> (MHT,Permutation, fieldChar) -> ( --MHT is the table with the expermental data, permutation is a list with the wanted permutation
-     installPackage "RationalPoints";
+ncfMain (HashTable, List, ZZ) := List => (MHT, Permutation, fieldChar) -> (
      n := #first keys MHT;
      L := subsets n;
      L = apply( L, l -> apply( l, i -> i + 1) ) ;
-     C := ZZ/fieldChar[apply( L, l -> c_l)];
+     C := ZZ/fieldChar[apply( L, l -> (getSymbol "c")_l)];
      QC := C /ideal apply(gens C, x ->x^fieldChar-x);
-     B := QC[apply( L, l -> b_l), MonomialOrder => Eliminate 2^n];
+     B := QC[apply( L, l -> (getSymbol "b")_l), MonomialOrder => Eliminate 2^n];
      QB := B / ideal apply(gens B, x -> x^fieldChar-x);
-     R := QB[x_1..x_n];
+     R := QB[(getSymbol "x")_1..(getSymbol "x")_n];
      QR := R / ideal apply(gens R, x -> x^fieldChar-x);
      g := interpolate(MHT,QR);
      h := idealOfPoints(MHT,QR) ;
-     ncf := ideal flatten entries gens gb ideal(apply( L, t -> ncfIdeal( t, QR, Permutation))|{c_(toList(1..n))-1});
+     ncf := ideal flatten entries gens gb ideal(apply( L, t -> 
+	       ncfIdeal( t, QR, Permutation))|{(gens C)#(numgens C-1)-1}
+     );
      ncf = lift(ncf, C);
      G := kernPhi(g,h,QR);
      solutions := primaryDecomposition(G+ncf)
-    -- s := apply( solutions, I -> rationalPoints I )
-    -- apply( s, ss -> sum ( subsets gens R, flatten ss, (x, c) -> c*(product x) ) )   
+     -- s := apply( solutions, I -> rationalPoints I )
+     -- apply( s, ss -> sum ( subsets gens R, flatten ss, (x, c) -> c*(product x) ) )   
    )
 
 -- construct the generators for the ideal that encodes the relation of
@@ -123,6 +124,19 @@ SeeAlso
 ///
 
 TEST ///
+installPackage "RationalPoints"
+T=new MutableHashTable	   
+T#{1,1}=1
+T#{1,0}=0
+T#{0,1}=0
+T#{0,0}=0
+per = {0,1,2,3}
+jakob=2
+solutions = ncfMain(T,per,jakob)
+assert( apply( solutions, I -> rationalPoints I) == {{{0, 0, 0, 1}}} )
+ 
+///
+TEST ///
   -- test code and assertions here
   -- may have as many TEST sections as needed
   n = 5
@@ -135,9 +149,9 @@ TEST ///
   R = QB[x_1..x_n];
   QR = R / ideal apply(gens R, x -> x^2-x);
   S = {1,2,4};
-  p = ncfIdeal(S, QR) 
+  p = ncfIdeal(S, QR, toList(0..#L-1)) 
   assert( p == c_{1,2,4} - c_{1,2,3,4}*c_{1,2,4,5} )
-///
+  ///
 
 TEST ///
 T=new MutableHashTable	   
@@ -158,7 +172,9 @@ g := interpolate(T,QR)
 assert( g == x_1*x_2)
 h := idealOfPoints(T,QR)
 assert( h == 0 ) 
-ncf := ideal flatten entries gens gb ideal(apply( L, t -> ncfIdeal( t, QR, {0,2,1,3}))|{c_(toList(1..n))-1})
+ncf := ideal flatten entries gens gb ideal(apply( L, t 
+	  -> ncfIdeal( t, QR, toList(0..#L-1)))|{c_(toList(1..n))-1}
+     )
 ncf = lift(ncf, C)
 installPackage "RationalPoints"
 assert( rationalPoints ncf ==  {{0, 0, 0, 1}, {1, 0, 0, 1}, {0, 1, 0, 1}, {1,
@@ -191,7 +207,9 @@ g := interpolate(T,QR)
 assert( g == x_1*x_2*x_3+x_1*x_3+x_2*x_3+x_1+x_3+1)
 h := idealOfPoints(T,QR)
 assert( h == x_1*x_2*x_3+x_1*x_2+x_1*x_3+x_2*x_3+x_1+x_3 ) 
-ncf := ideal flatten entries gens gb ideal(apply( L, t -> ncfIdeal( t, QR))|{c_(toList(1..n))-1})
+ncf := ideal flatten entries gens gb ideal(apply( L, t -> 
+	  ncfIdeal( t, QR, toList(0..7)))|{c_(toList(1..n))-1}
+     )
 ncf = lift(ncf, C)
 installPackage "RationalPoints"
 G := kernPhi(g,h,QR)
@@ -222,7 +240,8 @@ g := interpolate(T,QR)
 assert( g == x_1*x_2)
 h := idealOfPoints(T,QR)
 assert( h == x_1*x_2+1 ) 
-ncf := ideal flatten entries gens gb ideal(apply( L, t -> ncfIdeal( t, QR))|{c_(toList(1..n))-1})
+ncf := ideal flatten entries gens gb ideal(apply( L, t -> 
+	  ncfIdeal( t, QR, toList(0..3)))|{c_(toList(1..n))-1})
 ncf = lift(ncf, C)
 installPackage "RationalPoints"
 G := kernPhi(g,h,QR)
@@ -239,6 +258,7 @@ end
 --
 
 restart 
+load "./Goettingen-2011/NCF.m2"
 loadPackage "NCF"
 check "NCF"
 T=new MutableHashTable	   
@@ -260,7 +280,9 @@ R = QB[x_1..x_n];
 QR = R / ideal apply(gens R, x -> x^2-x)
 g := interpolate(T,QR)
 h := idealOfPoints(T,QR)
-ncf := ideal(apply( L, t -> ncfIdeal( t, QR, permutation))|{c_(toList(1..n))-1})
+ncf := ideal(apply( L, t -> 
+	  ncfIdeal( t, QR, permutation))|{c_(toList(1..n))-1}
+     )
 ncf = lift(ncf, C)
 G := kernPhi(g,h,QR)
 solutions := primaryDecomposition(G+ncf)
@@ -287,3 +309,10 @@ ncfIdeal (List, Ring, List) := RingElement => (S, QR, sigma) -> (
       C#( indeces#(toList (set (1..n) - set {sigam#i} ) ))
     )
 )
+
+
+restart 
+--load "./Goettingen-2011/NCF.m2"
+loadPackage ("NCF", FileName => "./Goettingen-2011/NCF.m2" ) 
+--installPackage "NCF"
+check "NCF"
