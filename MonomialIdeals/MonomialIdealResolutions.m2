@@ -1,4 +1,5 @@
 needsPackage ("SimplicialComplexes");
+needsPackage ("ChainComplexExtras");
 
 
 newPackage (
@@ -13,6 +14,7 @@ newPackage (
 )
 
 needsPackage ("SimplicialComplexes");
+needsPackage ("ChainComplexExtras");
 -------------------
 -- Exports
 -------------------
@@ -205,7 +207,10 @@ simplicialResolution(MonomialIdeal, SimplicialComplex):=(I,C)-> (
      chainComplex(apply((0..dim C),i->simplicialResolutionDifferential(i,I,C)))
      )
 
-
+isResolution=method()
+isResolution(ChainComplex,MonomialIdeal):=(C,M)->(
+     return ((cokernel gens I==prune HH_0(C)) and ( all((min C+1,max C), i -> (prune HH_i(C) == 0))))
+     )
 -------------------
 -- Local-Only Code
 -------------------
@@ -278,6 +283,14 @@ subcomplex(RingElement, SimplicialComplex):=(M,C)->(
      select(L,i->M//i!=0_R)
      )
 
+labelledSubcomplex=method();
+labelledSubcomplex(RingElement,SimplicialComplex,MonomialIdeal):=(M,C,I)->(
+     R:=ring(I);
+     L:=toList flatten apply(0..dim C,i->flatten entries faces(i,C));
+     lista:=flatten apply(L,i->exponents(i));
+     N:=positions(apply(lista,k->myLcm(apply(positions(k,i->i!=0),j->I_j))),i->M//i!=0_R);
+     simplicialComplex(L_N)
+     )
 -------------------
 -- Documentation
 -------------------
