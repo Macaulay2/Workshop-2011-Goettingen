@@ -11,7 +11,9 @@ newPackage(
 )
 installPackage "RationalPoints";
 
-export{interpolate, idealOfPoints, ncfIdeal, kernPhi, ncfMain}
+
+
+export{interpolate, idealOfPoints, ncfIdeal, kernPhi, ncfMain,realNCFMain}
 --List of Nested Canalyzing Functions polynomials
  --MHT is the table with the expermental data, permutation is a list with the wanted permutation
 ncfMain = method()
@@ -59,6 +61,40 @@ ncfIdeal (List, Ring, List) := RingElement => (S, QR, Sigma) -> (
     )
 )
 
+realNCFMain = method()
+realNCFMain (Matrix , List, ZZ) := List=> (inputMatrix,Permutation,fieldChar) ->
+(
+   
+     rows:= numgens target inputMatrix;
+     assert(rows>1);
+     fullDataHashTable := new MutableHashTable;
+     fullDataHashTable# (flatten entries  inputMatrix^{0} ) = flatten entries inputMatrix^{1};
+     currentRow:=1;
+     while (currentRow<rows -1) do
+     (
+	  if (fullDataHashTable#?(flatten entries  inputMatrix^{currentRow})===false) then
+	       fullDataHashTable#(flatten entries  inputMatrix^{currentRow} ) = flatten entries inputMatrix^{currentRow+1}
+	  else
+	       if (fullDataHashTable#(flatten entries  inputMatrix^{currentRow})!= fullDataHashTable# (flatten entries  inputMatrix^{currentRow+1})) then
+		    throw "inconsistent input data ";
+	  currentRow=currentRow+1;
+     );
+     --
+     cols := numgens source inputMatrix;
+     resultFunctionListOfLists:={};
+          apply(cols, currCol->
+	       (
+		    dataHashTableForSingleVar:=copy fullDataHashTable;
+		    apply(keys fullDataHashTable, key -> dataHashTableForSingleVar#key=(fullDataHashTable#key)_currCol
+		    );
+	       --   apply(keys fullDataHashTable, key -> key;    );
+	            currFunctionList:=ncfMain(dataHashTableForSingleVar,Permutation,fieldChar);
+		    resultFunctionListOfLists=resultFunctionListOfLists |{currFunctionList};	       
+	 ));
+     resultFunctionListOfLists
+)
+
+
   
 -- generate a function that interpolates a given time course
 -- T is a Hash table, with T#Input(t)=Output(t+1)
@@ -68,6 +104,7 @@ interpolate (HashTable, Ring) := (T, R) -> (
 ) 
 
 -- construct generator for the ideal that vanishes on all given time points
+-- only access the keys of the hashtable T
 idealOfPoints = method()
 idealOfPoints(HashTable, Ring) := (T,R) -> (
   product (keys T, A -> 
@@ -146,6 +183,18 @@ Description
   Pre
 Caveat
 SeeAlso
+///
+
+TEST ///
+  fieldChar=2;
+  qring=ZZ/fieldChar
+  inputMatrix=matrix {{1,1,1},{0,1,1},{0,0,1},{1,1,0},{1,0,1},{0,1,1}}
+  inputMatrix=sub(inputMatrix,qring)
+  Permutation={0,1,2,3,4,5,6,7}  
+ resultListOfLists=  realNCFMain(inputMatrix,Permutation,fieldChar)  
+  
+     
+     
 ///
 
 TEST ///
