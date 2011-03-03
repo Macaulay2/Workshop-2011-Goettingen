@@ -13,7 +13,7 @@ newPackage(
 export {}
 
 -- Code here
-export {keelSum, keelAvgIndices, boundaryRing, fCurveIneqsCB}
+export {keelSum, keelAvgIndices, boundaryRing, fCurveIneqsLPSOLVE}
 
 BoundaryRing = new Type of HashTable
 
@@ -116,8 +116,8 @@ keelAvgIndices (Sequence, List, BoundaryRing) := (J, IList, R) -> (
       
 --**************************************************************************      
 --**************************************************************************
-fCurveIneqsCB = method()
-fCurveIneqsCB (ZZ, String) := (n, fileName)->(
+fCurveIneqsLPSOLVE = method()
+fCurveIneqsLPSOLVE (ZZ, String) := (n, fileName)->(
      --input an integer n and a string
      -- outputs to the file fileName the F-inequalities for M_{0,n}
      -- with respect to the sl_2 level 1 conformal block divisor class basis
