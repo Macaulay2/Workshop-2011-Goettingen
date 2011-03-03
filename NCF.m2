@@ -32,9 +32,9 @@ ncfMain (HashTable, List, ZZ) := List => (MHT, Permutation, fieldChar) -> (
      );
      ncf = lift(ncf, C);
      G := kernPhi(g,h,QR);
-     solutions := primaryDecomposition(G+ncf)
-     -- s := apply( solutions, I -> rationalPoints I )
-     -- apply( s, ss -> sum ( subsets gens R, flatten ss, (x, c) -> c*(product x) ) )   
+     solutions := primaryDecomposition(G+ncf);
+     s := apply( solutions, I -> rationalPoints I );
+     apply( s, ss -> sum ( subsets gens R, flatten ss, (x, c) -> c*(product x) ) )   
    )
 
 -- construct the generators for the ideal that encodes the relation of
@@ -86,7 +86,8 @@ kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, QR) -> (
     m := (product xx);
     coefficient( m_QR, f) )
   );
-  ideal lift( selectInSubring(1, gens gb ideal (W - C) ), ambient coefficientRing coefficientRing QR)
+  ideal lift( selectInSubring(1, gens gb ideal (W - C) ), 
+       ambient coefficientRing coefficientRing QR)
 )
 
 -- G=gb( , MonomialOrder => Weights => #:0)
@@ -96,13 +97,37 @@ beginDocumentation()
 
 doc ///
 Key
-  NCF
+  ncfMain
+--  (ncfMain, HashTable, List, ZZ)
 Headline
   Inferring nested canalyzing functions for given time-course data
+Usage
+	        P = ncfMain(TimeCourseDataTable, Permutation, Characteristic)
+Inputs
+	        TimeCourseDataTable : HashTable
+		Permutation : List
+		Characteristic : ZZ
+Outputs
+	        P : List
+	            of nested canalyzing functions fitting the data
 Description
+  
   Text
-  Example
-Caveat
+       	    For each variable, the complete list of all nested canalyzing 
+	    functions interpolating the given data set on the given time course data. 
+	    A function is in the output if it is nested canalyzing 
+	    in the given variable order
+	    
+--	    EXAMPLE{
+-- " T=new MutableHashTable;"	   
+--  "T#{1,1}=1;"
+--  "T#{1,0}=0;"
+--  "T#{0,1}=0;"
+--  "T#{0,0}=0;"
+--  "per = {0,1,2,3};"
+--  "jakob=2;"
+--  "solutions = ncfMain(T,per,jakob)"}
+     
 SeeAlso
 ///
 
@@ -110,7 +135,7 @@ doc ///
 Key
   interpolate 
 Headline
-  construct polynomial that interpolates the data
+  construct polynomial that interpolates the data test
 Usage
   interpolate HashTable
 Consequences
@@ -133,7 +158,11 @@ T#{0,0}=0
 per = {0,1,2,3}
 jakob=2
 solutions = ncfMain(T,per,jakob)
-assert( apply( solutions, I -> rationalPoints I) == {{{0, 0, 0, 1}}} )
+genVars=gens ring solutions_0
+referenceSolutions=genVars_0*genVars_1
+assert(#solutions==1)
+assert(solutions_0==referenceSolutions)
+--assert( apply( solutions, I -> rationalPoints I) == {{{0, 0, 0, 1}}} )
  
 ///
 TEST ///
@@ -314,5 +343,5 @@ ncfIdeal (List, Ring, List) := RingElement => (S, QR, sigma) -> (
 restart 
 --load "./Goettingen-2011/NCF.m2"
 loadPackage ("NCF", FileName => "./Goettingen-2011/NCF.m2" ) 
---installPackage "NCF"
+installPackage ("NCF", FileName => "./Goettingen-2011/NCF.m2" )
 check "NCF"
