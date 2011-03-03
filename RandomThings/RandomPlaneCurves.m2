@@ -6,6 +6,7 @@ newPackage(
     	Authors => {{Name => "Frank-Olaf Schreyer", 
 		  Email => "schreyer@math.uni-sb.de", 
 		  HomePage => "http://www.math.uni-sb.de/ag/schreyer/"},
+	     
 	            {Name => "Hans-Christian Graf v. Bothmer",
 	             Email => "bothmer@uni-math.gwdg.de",
 		     HomePage => "http://www.crcg.de/wiki/User:Bothmer"}		 
@@ -215,6 +216,9 @@ doc ///
       (dim F, degree F)
       singF = F + ideal jacobian F;
       (dim singF,degree singF)   
+   Example
+      R=ZZ/11[x_0..x_2];
+      tally apply(11^2,i-> null===((random nodalPlaneCurve)(8,5,R,Certify=>true, Attempts=>1)))
 ///
 
 doc ///
