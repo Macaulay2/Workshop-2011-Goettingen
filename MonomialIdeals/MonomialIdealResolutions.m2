@@ -1,4 +1,5 @@
-needsPackage "SimplicialComplexes"
+needsPackage ("SimplicialComplexes");
+
 
 newPackage (
   "MonomialIdealResolutions",
@@ -11,6 +12,7 @@ newPackage (
   DebuggingMode => false
 )
 
+needsPackage ("SimplicialComplexes");
 -------------------
 -- Exports
 -------------------
@@ -33,10 +35,11 @@ lcmMon(List, List):= (L1,L2) -> (
 
 scarf=method();
 scarf(MonomialIdeal):= I -> (
+     print cpuTime ();
  labels:=apply(I_*, m->flatten exponents m);
- faceSet:={{}};
  n:=numgens I;
- degreeSet:={apply(n,k->0)};
+ faceSet:={{}};
+ degreeSet:={apply(length labels_0,k->0)};
  local deg;
  for i from 0 to length labels-1 do(
 --      print("i=",i);
@@ -50,8 +53,13 @@ scarf(MonomialIdeal):= I -> (
 	       degreeSet=degreeSet|{deg};	  
      );	      
  );
-R=QQ[v_0..v_(n-1)];
-simplicialComplex apply(drop(faceSet,1),f->product(apply(f,i->R_i)))           
+x:=getSymbol "x";
+--R:=QQ[apply(n,i->getSymbol ("x_"|toString i))];
+R:=QQ[x_0..x_(n-1)];
+l:=apply (drop(faceSet,1),f->product(apply(f,i->R_(x_i))));
+print cpuTime();
+return simplicialComplex l;
+print cpuTime();
 )
 
 
