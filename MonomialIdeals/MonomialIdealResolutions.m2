@@ -40,31 +40,23 @@ lcmMon(List, List):= (L1,L2) -> (
 
 scarf=method();
 scarf(MonomialIdeal):= I -> (
-     print cpuTime ();
  labels:=apply(I_*, m->flatten exponents m);
  n:=numgens I;
  faceSet:={{}};
  degreeSet:={apply(length labels_0,k->0)};
  local deg;
  for i from 0 to length labels-1 do(
---      print("i=",i);
      for j from 0 to length faceSet-1 do(
---	  print("j=",j);
---	  print(degreeSet_j,labels_i);
 	  deg=lcmMon(degreeSet_j,labels_i);
-          if not member(deg,degreeSet) then
---	       print faceSet_j;
-	       faceSet=faceSet|{faceSet_j|{i}};
-	       degreeSet=degreeSet|{deg};	  
+          if not member(deg,degreeSet) then (
+	       faceSet=faceSet|{faceSet_j|{i}};	       
+	       degreeSet=degreeSet|{deg};
+	  );     	  
      );	      
  );
-x:=getSymbol "x";
---R:=QQ[apply(n,i->getSymbol ("x_"|toString i))];
-R:=QQ[x_0..x_(n-1)];
-l:=apply (drop(faceSet,1),f->product(apply(f,i->R_(x_i))));
-print cpuTime();
-return simplicialComplex l;
-print cpuTime();
+ v:=getSymbol "v";
+ R:=QQ[v_0..v_(n-1)];
+ simplicialComplex apply (drop(faceSet,1),f->product(apply(f,i->R_(v_i))))
 )
 
 
