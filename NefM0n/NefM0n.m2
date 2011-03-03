@@ -16,7 +16,7 @@ newPackage(
 export {}
 
 -- Code here
-export {keelSum, keelAvgIndices, boundaryRing, fCurveIneqsLPSOLVE}
+export {keelSum, keelAvgIndices, boundaryRing, fCurveIneqsLPSOLVE, fCurveIneqsMatrix}
 
 BoundaryRing = new Type of HashTable
 
@@ -154,13 +154,12 @@ fCurveIneqsLPSOLVE (ZZ, String) := (n, fileName)->(
 	  ); -- end apply
 				          
 			      	
-	
-	  
+
 
          --Output inequalities F(N1, N2, N3, N4) in CB coordinates to the file fileName,
 	 -- i.e. output \cdot D \geq 0, where [D] = \sum d_I [DD_I]
 	 apply(fCurves, F -> (
-		 --    I := {}; --List of lists, with each I_x indexing a CB divisor in the basis
+		
 		for i from 2 to floor(n/2) do (
 		     apply(subsets(nList, 2*i), I -> (
 	       		 	  -- Calculate the intersection of the F-curve F with the CB-divisor D_I,
@@ -170,7 +169,7 @@ fCurveIneqsLPSOLVE (ZZ, String) := (n, fileName)->(
 	       		 	  then (
 			      	       fileName << " +d_" << I;
 			      	       )
-			 	  )--end I -> ()
+				  )--end I -> ()
 	  	    	     )--end apply over I
      	       		);-- end for over 2i, the cardinality of I
 	  	   fileName << ">= 0" << endl;
@@ -180,8 +179,6 @@ fCurveIneqsLPSOLVE (ZZ, String) := (n, fileName)->(
      fileName << close;
      );
 
-
-end
 --**************************************************************************      
 --**************************************************************************
 fCurveIneqsMatrix = method()
@@ -223,7 +220,10 @@ fCurveIneqsMatrix (ZZ) := (n)->(
 
          --Output inequalities F(N1, N2, N3, N4) in CB coordinates to the file fileName,
 	 -- i.e. output \cdot D \geq 0, where [D] = \sum d_I [DD_I]
-	 apply(fCurves, F -> (
+	 
+	 
+	 
+	 fMatrix := apply(fCurves, F -> (
 		for i from 2 to floor(n/2) do (
 		     apply(subsets(nList, 2*i), I -> (
 	       		 	  -- Calculate the intersection of the F-curve F with the CB-divisor D_I,
@@ -231,17 +231,19 @@ fCurveIneqsMatrix (ZZ) := (n)->(
 	       		 	  parity := (#(set I * set F_0 ) * #(set I * set F_1 ) * #(set I * set F_2 ) * #(set I * set F_0 ) );
 	       		 	  if odd parity 
 	       		 	  then (
-			      	       fileName << " 1";
+				       1
+			      	       --fileName << " 1";
 			      	       )
-				  else ( fileName << "0)
+				  else ( 0 )
 			 	  )--end I -> ()
 	  	    	     )--end apply over I
      	       		);-- end for over 2i, the cardinality of I
-	  	   fileName << ">= 0" << endl;
+	  	   --fileName << ">= 0" << endl;
 	  	   )-- end F-> ()
           
      	  );-- end apply     
-     fileName << close;
+     --fileName << close;
+     fMatrix
      );
 
 
@@ -291,4 +293,5 @@ tex keelAvgIndices( (1,2,3), {{2,3,4,5}}, R)
 tex keelAvgIndices( (1,2,3), {{1,2,4,5}, {1,2,4,6}, {1,2,5,6}, {1,3,4,5}, {1,3,4,6}, {1,3,5,6}, {2,3,4,5}, {2,3,4,6}, {2,3,5,6}},R)
 
 fCurveIneqsLPSOLVE(6, "fIneqs6.txt") 
-
+M = fCurveIneqsMatrix 5
+M_0
