@@ -168,14 +168,14 @@ removeComment = (str) -> (
       -- returns a list of strings, names of known properties
 getPropertyNames = method(TypicalValue => String)
 getPropertyNames(List) := (F) -> (
-      -- F is a list of lines, as from a polymake file
+      -- F is a list of lines, as from a polymake file (old version)
       nameLines := select(F, s-> match("property name", s) );
       apply(nameLines, s->  
 	   replace( "\".*$"  , "" ,replace("^.*property name=\"", "", s))
 	   )
      )
 getPropertyNames(String) := (filename) -> (
-      -- filename is the name of a polymake file (XML format)
+      -- filename is the name of a polymake file (may be in XML format)
       F := lines get filename;
       nameLines := select(F, s-> match("property name", s) );
       apply(nameLines, s->  
@@ -657,6 +657,7 @@ end
 restart
 installPackage("Polymake")
 installPackage("Polymake", FileName => "~/Documents/math/M2codes/packageRepository/development/aim2009/Polymake.m2", MakeDocumentation => true)
+needsPackage("Polymake")
 viewHelp(Polymake)
 
 P = cyclicPolytope(3,5)

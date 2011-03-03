@@ -719,6 +719,7 @@ argFuncs = {
 	"restrict" => {gfanGroebnerCone,gfanToPolyhedralFan},
 	"shiftVariables" => {gfanRender},
 	-- "subspace" => {gfan}, -- missing v0.4
+	"stable" => {gfanTropicalStartingCone, gfanTropicalTraverse},
 	"symmetry" => {gfan,gfanTropicalTraverse,gfanToPolyhedralFan},
 	"tplane" => {gfanTropicalIntersection},
 }
@@ -743,7 +744,7 @@ argStrs = hashTable {
 	"w" => "-w",
 	"W" => "-W",
 	"asfan" => "--asfan",
-	"disableSymmetryTest" => "--disablesymmetrytest",
+	"disableSymmetryTest" => "--disableSymmetryTest",
 	"dressian" => "--dressian",
 	"help" => "--help",
 	"ideal" => "--ideal",
@@ -760,6 +761,7 @@ argStrs = hashTable {
 	"scale" => "--scale",
 	"shiftVariables" => "--shiftVariables",
 	"star" => "--star",
+	"stable" => "--stable",
 	"symmetry" => "--symmetry",
 	"symmetryExploit" => "--symmetryExploit",
 	"symmetryPrinting" => "--symmetryPrinting",
@@ -1534,7 +1536,8 @@ gfanTropicalRank (Matrix) := opts -> (M) -> (
 
 gfanTropicalStartingCone = method( Options => {
 	"g" => false, 
-	"d" => false
+	"d" => false,
+	"stable" => false
 	}
 )
 
@@ -1551,7 +1554,9 @@ gfanTropicalStartingCone (List) := opts -> (L) -> (
 gfanTropicalTraverse = method( Options => {
 	"symmetry"=>null,
 	"symsigns"=>false,
-	"noincidence"=>false
+	"stable"=>false,
+	"disableSymmetryTest"=>false,
+	"nocones"=>false
 	}
 )
 
@@ -3082,7 +3087,7 @@ doc ///
 		gfanTropicalStartingCone(L)
 	Inputs
 		L:List
-			of homogeneous polynomials
+			of polynomials, homogeneous with respect to a positive weight vector
 	Outputs
 		P:List
 			a pair of @TO MarkedPolynomialList@s
@@ -3110,7 +3115,7 @@ doc ///
 		gfanTropicalTraverse(L)
 	Inputs
 		L:List
-			a pair of @TO MarkedPolynomialList@s.
+			a pair of @TO MarkedPolynomialList@s, homogeneous with respect to a positive weight vector
 	Outputs
 		F:PolymakeFan
 			describing the tropical variety of the given ideal
@@ -3236,6 +3241,7 @@ loadPackage("gfanInterface2", Configuration => {
 	}) 
 
 viewHelp
+viewHelp gfanInterface2
 
 R = QQ[x,y,z]; 
 I = ideal(x,y+z); 
