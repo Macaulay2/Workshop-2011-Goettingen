@@ -380,21 +380,22 @@ doc ///
        EK
        (EK,ZZ,MonomialIdeal)
    Headline
-       e
+       constructs the n-th step of the Eliahou-Kervaire resolution
    Usage
-       a
+       EK(n,I)
    Inputs
        n: ZZ
 		 I: MonomialIdeal
    Outputs
-       m: 
+       M: Matrix
+		    returns a Matrix representing the map for the n-th step
    Description
        Text
         e 
        Example
         
    SeeAlso
-      
+      EKResolution
 ///
 
 doc ///
@@ -417,6 +418,7 @@ doc ///
          I=monomialIdeal(x^2,x*y,y^2,y*z);
          EKResolution(I)
    SeeAlso
+	   EK
       MonomialIdeal
       ChainComplex
       res
@@ -481,6 +483,10 @@ assert(isElement(y^3, I));
 assert(not isElement(x^2, I));
 assert(not isElement(x*y, I));
 assert(not isElement(x*y*z, I));
+
+J = monomialIdeal(x*y,x^3*z);
+assert(not isElement(x*y^2+x^3*y*z+z^2, J));
+assert(  isElement(x^2*y+x*y*z+x^3*z^3, J));
 ///
 
 
@@ -491,5 +497,7 @@ I = monomialIdeal(x^3,x^2*y,x*y^2,y^3);
 assert(isStable I);
 J = monomialIdeal(x^3,x*y^2,y^3);
 assert(not isStable J);
+assert(not isStable monomialIdeal z);
 ///
+
 
