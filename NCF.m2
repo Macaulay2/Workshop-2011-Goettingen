@@ -1,3 +1,4 @@
+
 newPackage(
     "NCF",
     Version => "0.1", 
@@ -132,34 +133,36 @@ beginDocumentation()
 doc ///
 Key
   getNcfLists
-        (getNcfLists, HashTable, List, ZZ)
+  (getNcfLists, Matrix, List, ZZ)
 Headline
   Inferring nested canalyzing functions for given time-course data
 Usage
 	        P = getSingleNcfList(TimeCourseDataTable, Permutation, Characteristic)
 Inputs
-	        TimeCourseDataTable : HashTable with the time-course data
-		Permutation : List with the wanted variable ordering
-		Characteristic : ZZ 
+	TimeCourseDataTable : Matrix
+	  with the time-course data
+	    
+	Permutation : List
+	  with the wanted variable ordering
+	Characteristic : ZZ 
 Outputs
  P : List
 	 of Lists of nested canalyzing functions fitting the data for each variable
 Description
-        Text
-       	    For each variable, the complete list of all nested canalyzing 
+  Text
+	    For each variable, the complete list of all nested canalyzing 
 	    functions interpolating the given data set on the given time course data. 
 	    A function is in the output if it is nested canalyzing 
 	    in the given variable order
---Example
-  --T=new MutableHashTable;
- -- T#{1,1}=1;
- -- T#{1,0}=0;
- -- T#{0,1}=0;
- -- T#{0,0}=0;
- -- per = {0,1,2,3};
---  "jakob=2;"
---  "solutions = getSingleNcfList(T,per,jakob)"}
-     
+  Example	
+    T=new MutableHashTable;
+    T#{1,1}=1;
+    T#{1,0}=0;
+    T#{0,1}=0;
+    T#{0,0}=0;
+    per = {0,1,2,3};
+    jakob=2;
+    solutions = getSingleNcfList(T,per,jakob)
 SeeAlso
 ///
 
@@ -189,7 +192,7 @@ TEST ///
   inputMatrix=matrix {{0,0,0},{0,1,0},{1,1,0},{0,1,1},{1,1,1},{0,0,0}}
   inputMatrix=sub(inputMatrix,qring)
   Permutation={0,1,2,3,4,5,6,7}  
- resultListOfLists=  getNCFLists(inputMatrix,Permutation,fieldChar)  
+ resultListOfLists=  getNcfLists(inputMatrix,Permutation,fieldChar)  
   
      
      
@@ -395,7 +398,6 @@ check "NCF"
 
 
 restart 
---load "./Goettingen-2011/NCF.m2"
 loadPackage "NCF"
 installPackage "NCF"
 check "NCF"
