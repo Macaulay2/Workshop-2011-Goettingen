@@ -1,3 +1,5 @@
+needsPackage"RandomObjects"
+
 newPackage(
 	"RandomSpaceCurves",
     	Version => "0.6", 
@@ -21,9 +23,11 @@ export{"nextPrime",
      "knownUnirationalComponentOfSpaceCurves",
      "hilbertNumerator",
      "expectedShape",
-     "Attempts",
-     "Certify"
+     "certifyRandomSpaceCurve",
+     "spaceCurve"
      }
+
+needsPackage"RandomObjects"
 
 nextPrime=method()
 nextPrime ZZ:=n->(
@@ -136,8 +140,6 @@ expectedShape(RingElement,Ring):= (hilbNum,R) ->(
 -- if no ring is given, the ring of the HilbertNumerator is used
 expectedShape(RingElement):= (hilbNum) -> expectedShape(hilbNum,ring hilbNum)
 
- 
-
 -- erase following code when new code is tested
 --expectedShapeOld(ZZ,ZZ,ZZ):=(d,g,r)->(
      -- we assume C non-degenerate, O_C(2) nonspecial and maximal rank
@@ -158,18 +160,10 @@ expectedShape(ZZ,ZZ,Ring) := (d,g,R)->(
      L := apply(b,i->(if i>1 then 
 	       min(d*i+1-g,binomial(r+i,r)) 
 	       else binomial(r+i,r)));
-     expectedShape(hilbertNumerator(L,r,(gens R)#0),R)
+     t := symbol t;
+     T := QQ[t];
+     expectedShape(hilbertNumerator(L,r,t),R)
      )
-
---expectedShape(ZZ,ZZ,ZZ) := (d,g,r)->(
---     t:=symbol t;
---     T:=ZZ[t];
---     b:=d+r+1;
---     L:=apply(b,i->(if i>1 then 
---	       min(d*i+1-g,binomial(r+i,r)) 
---	       else binomial(r+i,r)));
---     expectedShape hilbertNumerator(L,r,t)
---     )
 
 TEST ///
     x = symbol x
@@ -197,7 +191,32 @@ TEST ///
     assert((betti e) == b)
 /// 
 
+-- given a betti Table b and a Ring R make a chainComplex 
+-- with zero maps over R  that has betti diagramm b. 
+--
+-- negative entries are ignored
+-- rational entries produce an error
+-- multigraded R's work only if the betti Tally
+-- contains degrees of the correct degree length
+Ring ^ BettiTally := (R,b) -> (
+     F := new ChainComplex;
+     F.ring = R;
+     --apply(pDim b,i->F_i = null);
+     for k in keys b do (
+	  -- the keys of a betti table have the form
+	  -- (homological degree, multidegree, weight)
+	  (i,d,h) := k;
+	  -- use F_i since it gives 0 if F#0 is not defined
+	  F#i = F_i ++ R^{b#k:-d};
+	  );
+     F
+     )
 
+TEST ///
+     R = QQ[x_0..x_3];
+     b = betti (random(R^{1,2},R^{0,0,1}))	  
+     assert (b == betti (R^b))
+///
 
 --------------------
 -- Finite Modules --
@@ -205,26 +224,6 @@ TEST ///
 
 
 randomHartshorneRaoModule=method(TypicalValue=>Module,Options=>{Attempts=>0})
-randomHartshorneRaoModule(ZZ,ZZ,PolynomialRing):=opt->(d,g,R)->(
-     if not knownUnirationalComponentOfSpaceCurves(d,g) then 
-     error ("no construction implemented for degree ",toString d, " and genus ", toString g);
-     G:=expectedShape(d,g,R);
-     --if length G>3 then error "either 2H special or not of maximal rank";
-     n:=4;
-     while d*n+1-g>binomial(n+3,3) do n=n+1;
-     HRao1:=select(apply(toList(1..n),n->(n,max(d*n+1-g-binomial(3+n,3),0))), i-> i_1 !=0);
-     HRao:=apply(HRao1,i->i_1);
-     e:=HRao1_0_0;
-     M:=randomHartshorneRaoModule(e,HRao,R);
-     return M;
-     -- this return was not in the original code by Frank
-     attempt:=1;
-     while true do (
-     	  if apply(toList(e..e+#HRao-1),i->hilbertFunction(i,M))==HRao then return M;
-	  if opt.Attempts <= attempt then return null;
-	  M=randomHartshorneRaoModule(e,HRao,R);
-	  attempt=attempt+1;
-	  ))
 
 -- calculate the number of expected syzygies of a
 -- random a x b matrix with linear entries in R
@@ -253,7 +252,9 @@ TEST ///
 randomHartshorneRaoModuleDiameter3oneDirection = (HRao,R) -> (
      -- construct a chain complex with expected betti tableau
      -- and 0 differentials
-     F := expectedShape(hilbertNumerator(HRao|{0,0,0,0},3,(gens R)#0),R);
+     t := symbol t;
+     T := QQ[t];
+     F := expectedShape(hilbertNumerator(HRao|{0,0,0,0},3,t),R);
      -- the betti Tableau of F to find out later if linear syzygies 
      -- are requried (this is the difficult part in the construction)
      expectedBetti := betti F;
@@ -366,8 +367,10 @@ randomHartshorneRaoModuleDiameter2 = (HRao,R)->(
      --
      -- now assume expected resolution
      --
-     -- always start at the beginning of the resolution    
-     F := expectedShape(hilbertNumerator(HRao|{0,0,0,0},3,(gens R)#0),R);
+     -- always start at the beginning of the resolution  
+     t := symbol t;
+     T := QQ[t];
+     F := expectedShape(hilbertNumerator(HRao|{0,0,0,0},3,t),R);
      -- the betti Tableau of F to find out later if linear syzygies 
      -- are requried (this is the difficult part in the construction)
      expectedBetti := betti F;
@@ -402,31 +405,7 @@ randomHartshorneRaoModule(ZZ,List,PolynomialRing):=opt->(e,HRao,R)->(
 -- Space Curves --
 ------------------
 
--- given a betti Table b and a Ring R make a chainComplex 
--- over R-Module with that has betti diagramm b.
--- negative entries are ignored
--- rational entries produce an error
--- multigraded R's work only if the betti Tally
--- contains degrees of the correct degree length
-Ring ^ BettiTally := (R,b) -> (
-     F := new ChainComplex;
-     F.ring = R;
-     --apply(pDim b,i->F_i = null);
-     for k in keys b do (
-	  -- the keys of a betti table have the form
-	  -- (homological degree, multidegree, weight)
-	  (i,d,h) := k;
-	  -- use F_i since it gives 0 if F#0 is not defined
-	  F#i = F_i ++ R^{b#k:-d};
-	  );
-     F
-     )
 
-TEST ///
-     R = QQ[x_0..x_3];
-     b = betti (random(R^{1,2},R^{0,0,1}))	  
-     assert (b == betti (R^b))
-///
 
 -- the Harshorne Rao module of a curve is defined as 
 -- M = \oplus_i H^1(I_C(-i)) is can also be obtained as
@@ -469,15 +448,14 @@ randomSpaceCurve(ZZ,ZZ,PolynomialRing) := opt->(d,g,R)->(
      return ideal syz transpose N
      )
 
+certifyRandomSpaceCurve=method()
 
 -- old certification for SpaceCurves 
+certifyRandomSpaceCurve(Ideal,ZZ,ZZ,PolynomialRing) := (J,d,g,R)->(
+     singJ := minors(2,jacobian J)+J;
+     (dim singJ==0) and (g == genus J) and (d == degree J) and (2 == codim J)
+)
 
---     if not opt.Certify then return J;
---     singJ := minors(2,jacobian J)+J;
---     if dim singJ==0 and dim M==0 then return J;
---     if opt.Attempts<= 0 then return null;
---     J=randomSpaceCurve(d,g,R,opt.Certify=>true,Attempts=>opt.Attempts-1);
---     J)
 
 knownUnirationalComponentOfSpaceCurves=method()
 knownUnirationalComponentOfSpaceCurves(ZZ,ZZ) := (d,g)->(
@@ -503,6 +481,13 @@ knownUnirationalComponentOfSpaceCurves(ZZ,ZZ) := (d,g)->(
      or
      b<4*c and 6*a-4*b+c>0 and 4*(4*a-b)-10*(6*a-4*b+c)>=a
      )
+
+--- interface for (random spaceCurves)
+
+spaceCurve = new RandomObject from {
+     Construction => randomSpaceCurve,
+     Certification => certifyRandomSpaceCurve
+     }
 
 
 beginDocumentation()
@@ -564,7 +549,7 @@ doc ///
      R=ZZ/20011[x_0..x_3];
      d=10;g=7;
      betti res (J=randomSpaceCurve(d,g,R))
-     betti res randomHartshorneRaoModule(d,g,R)
+--     betti res randomHartshorneRaoModule(d,g,R)
      degree J==d and genus J == g
    Text
      We verify that the Hilbert scheme has (at least) 60 components consisting of smooth non-degenerate curves
@@ -619,13 +604,13 @@ doc ///
 doc ///
   Key 
     randomHartshorneRaoModule
-    (randomHartshorneRaoModule,ZZ,ZZ,PolynomialRing)
+--    (randomHartshorneRaoModule,ZZ,ZZ,PolynomialRing)
     (randomHartshorneRaoModule,ZZ,List,PolynomialRing)
     [randomHartshorneRaoModule,Attempts]
   Headline
     Compute a random Hartshorne-Rao module
   Usage 
-    randomHartshorneRaoModule(d,g,R)
+--    randomHartshorneRaoModule(d,g,R)
     randomHartshorneRaoModule(e,HRao,R)
   Inputs
     d: ZZ
@@ -796,6 +781,39 @@ end
 restart
 uninstallPackage("RandomSpaceCurves")
 installPackage("RandomSpaceCurves",RerunExamples=>true,RemakeAllDocumentation=>true);
-viewHelp"RandomSpaceCurves"
+--viewHelp"RandomSpaceCurves"
 
-loadPackage("RandomSpaceCurves")
+restart
+needsPackage("RandomSpaceCurves")
+
+R = (ZZ/7)[x_0..x_3]
+betti res (random spaceCurve)(12,11,R)
+
+time tally apply(10,i->null === (random spaceCurve)(12,11,R,Certify=>true,Attempts=>1))
+
+time tally apply(10,i->time certifyRandomSpaceCurve(randomSpaceCurve(12,11,R),12,11,R))
+
+R = ZZ[]/49
+(matrix{{11_R,12_R},{13_R,14_R}})^-1
+--
+
+randomHartshorneRaoModule(ZZ,ZZ,PolynomialRing):=opt->(d,g,R)->(
+     if not knownUnirationalComponentOfSpaceCurves(d,g) then 
+     error ("no construction implemented for degree ",toString d, " and genus ", toString g);
+     G:=expectedShape(d,g,R);
+     --if length G>3 then error "either 2H special or not of maximal rank";
+     n:=4;
+     while d*n+1-g>binomial(n+3,3) do n=n+1;
+     HRao1:=select(apply(toList(1..n),n->(n,max(d*n+1-g-binomial(3+n,3),0))), i-> i_1 !=0);
+     HRao:=apply(HRao1,i->i_1);
+     e:=HRao1_0_0;
+     M:=randomHartshorneRaoModule(e,HRao,R);
+     return M;
+     -- this return was not in the original code by Frank
+     attempt:=1;
+     while true do (
+     	  if apply(toList(e..e+#HRao-1),i->hilbertFunction(i,M))==HRao then return M;
+	  if opt.Attempts <= attempt then return null;
+	  M=randomHartshorneRaoModule(e,HRao,R);
+	  attempt=attempt+1;
+	  ))
