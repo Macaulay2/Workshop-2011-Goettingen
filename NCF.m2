@@ -13,11 +13,11 @@ installPackage "RationalPoints";
 
 
 
-export{interpolate, idealOfPoints, ncfIdeal, kernPhi, ncfMain,realNCFMain}
+export{interpolate, idealOfPoints, ncfIdeal, kernPhi, getSingleNcfList,getNCFLists}
 --List of Nested Canalyzing Functions polynomials
  --MHT is the table with the expermental data, permutation is a list with the wanted permutation
-ncfMain = method()
-ncfMain (HashTable, List, ZZ) := List => (MHT, Permutation, fieldChar) -> (
+getSingleNcfList = method()
+getSingleNcfList (HashTable, List, ZZ) := List => (MHT, Permutation, fieldChar) -> (
      n := #first keys MHT;
      L := subsets n;
      L = apply( L, l -> apply( l, i -> i + 1) ) ;
@@ -61,8 +61,8 @@ ncfIdeal (List, Ring, List) := RingElement => (S, QR, Sigma) -> (
     )
 )
 
-realNCFMain = method()
-realNCFMain (Matrix , List, ZZ) := List=> (inputMatrix,Permutation,fieldChar) ->
+getNCFLists = method()
+getNCFLists (Matrix , List, ZZ) := List=> (inputMatrix,Permutation,fieldChar) ->
 (
    
      rows:= numgens target inputMatrix;
@@ -88,7 +88,7 @@ realNCFMain (Matrix , List, ZZ) := List=> (inputMatrix,Permutation,fieldChar) ->
 		    apply(keys fullDataHashTable, key -> dataHashTableForSingleVar#key=(fullDataHashTable#key)_currCol
 		    );
 	       --   apply(keys fullDataHashTable, key -> key;    );
-	            currFunctionList:=ncfMain(dataHashTableForSingleVar,Permutation,fieldChar);
+	            currFunctionList:=getSingleNcfList(dataHashTableForSingleVar,Permutation,fieldChar);
 		    resultFunctionListOfLists=resultFunctionListOfLists |{currFunctionList};	       
 	 ));
      resultFunctionListOfLists
@@ -134,12 +134,12 @@ beginDocumentation()
 
 doc ///
 Key
-  ncfMain
---  (ncfMain, HashTable, List, ZZ)
+  getSingleNcfList
+--  (getSingleNcfList, HashTable, List, ZZ)
 Headline
   Inferring nested canalyzing functions for given time-course data
 Usage
-	        P = ncfMain(TimeCourseDataTable, Permutation, Characteristic)
+	        P = getSingleNcfList(TimeCourseDataTable, Permutation, Characteristic)
 Inputs
 	        TimeCourseDataTable : HashTable
 		Permutation : List
@@ -154,16 +154,15 @@ Description
 	    functions interpolating the given data set on the given time course data. 
 	    A function is in the output if it is nested canalyzing 
 	    in the given variable order
-	    
---	    EXAMPLE{
--- " T=new MutableHashTable;"	   
---  "T#{1,1}=1;"
---  "T#{1,0}=0;"
---  "T#{0,1}=0;"
---  "T#{0,0}=0;"
---  "per = {0,1,2,3};"
+--Example
+  --T=new MutableHashTable;
+ -- T#{1,1}=1;
+ -- T#{1,0}=0;
+ -- T#{0,1}=0;
+ -- T#{0,0}=0;
+ -- per = {0,1,2,3};
 --  "jakob=2;"
---  "solutions = ncfMain(T,per,jakob)"}
+--  "solutions = getSingleNcfList(T,per,jakob)"}
      
 SeeAlso
 ///
@@ -178,7 +177,9 @@ Usage
 Consequences
 Description
   Text
-  Example
+  Example 
+    xxx;
+    
   Code
   Pre
 Caveat
@@ -189,9 +190,10 @@ TEST ///
   fieldChar=2;
   qring=ZZ/fieldChar
   inputMatrix=matrix {{1,1,1},{0,1,1},{0,0,1},{1,1,0},{1,0,1},{0,1,1}}
+  inputMatrix=matrix {{0,0,0},{0,1,0},{1,1,0},{0,1,1},{1,1,1},{0,0,0}}
   inputMatrix=sub(inputMatrix,qring)
   Permutation={0,1,2,3,4,5,6,7}  
- resultListOfLists=  realNCFMain(inputMatrix,Permutation,fieldChar)  
+ resultListOfLists=  getNCFLists(inputMatrix,Permutation,fieldChar)  
   
      
      
@@ -206,7 +208,7 @@ T#{0,1}=0
 T#{0,0}=0
 per = {0,1,2,3}
 jakob=2
-solutions = ncfMain(T,per,jakob)
+solutions = getSingleNcfList(T,per,jakob)
 genVars=gens ring solutions_0
 referenceSolutions=genVars_0*genVars_1
 assert(#solutions==1)
@@ -393,4 +395,11 @@ restart
 --load "./Goettingen-2011/NCF.m2"
 loadPackage ("NCF", FileName => "./Goettingen-2011/NCF.m2" ) 
 installPackage ("NCF", FileName => "./Goettingen-2011/NCF.m2" )
+check "NCF"
+
+
+restart 
+--load "./Goettingen-2011/NCF.m2"
+loadPackage "NCF"
+installPackage "NCF"
 check "NCF"
