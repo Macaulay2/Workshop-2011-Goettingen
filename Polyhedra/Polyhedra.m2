@@ -8914,9 +8914,39 @@ end
 
 restart 
 load "./Polyhedra/Polyhedra.m2" 
+installPackage "Polyhedra"
 
+V = matrix {{0,2,-2,0},{-1,1,1,1}}
+V = transpose matrix {{1,1}, {2,1}, {1,3} }
+V = transpose matrix {{1,1}, {2,1}, {1,3}, {2,3} }
+P = convexHull V
+verts := entries transpose vertices P
+ 
 
+ -- for each vertex v0
+suppportingCones := apply( verts, v0 -> (
+  newVertices = apply( verts, v -> v -v0 );
+  newVertices = transpose matrix newVertices;
+  C = posHull newVertices;
+  polyh := convexHull transpose matrix{v0};
+  minkowskiSum(C, polyh)
+  )
+)
 
+-- triangulation
+--divide cone in triangles such that each triangle side is entirely shared by
+--two adjacent triangles
+-- simplicial cone: dimension = #rays
+
+-- signed decomposition
+-- cut the cone into cones with smaller index, the index = det(rays) = area of
+-- parallelogram 
+
+-- decomposition, every cone can be decomposed such that every subcone has
+-- index 1
+-- unimodular: index 1
+-- if we do one decomposition step, we know that the new indeces are bounded
+-- above by (ind K )^ {(d-1)/d
 
 
 

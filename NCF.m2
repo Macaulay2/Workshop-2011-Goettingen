@@ -8,10 +8,14 @@ newPackage(
     data",
     DebuggingMode => true
 )
+
 installPackage "RationalPoints";
 
 
-export{interpolate, idealOfPoints, ncfIdeal, kernPhi, getSingleNcfList, getNcfLists}
+export{interpolate, idealOfPoints, ncfIdeal, kernPhi, getSingleNcfList,
+getNcfLists, convertDotFileToHashTable}
+
+
 --returns a List of Nested Canalyzing Functions for the given HashTable of one variable
 --MHT is the table with the expermental data, 
 --permutation is a list with the wanted permutation,
@@ -28,10 +32,11 @@ getSingleNcfList (HashTable, List, ZZ) := List => (MHT, Permutation, fieldChar) 
      R := QB[(getSymbol "x")_1..(getSymbol "x")_n];
      QR := R / ideal apply(gens R, x -> x^fieldChar-x);
      g := interpolate(MHT,QR);
-     h := idealOfPoints(MHT,QR) ;
+     h := idealOfPoints(MHT,QR);
+     -- g+<h> F2[x1,x2, ..., xn]
      ncf := ideal flatten entries gens gb ideal(apply( L, t -> 
 	       ncfIdeal( t, QR, Permutation))|{(gens C)#(numgens C-1)-1}
-     );
+     ); --F2[c0, c1, ..., c[n] ]
      ncf = lift(ncf, C);
      G := kernPhi(g,h,QR);
      solutions := primaryDecomposition(G+ncf);
@@ -126,7 +131,18 @@ kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, QR) -> (
   ideal lift( selectInSubring(1, gens gb ideal (W - C) ), 
        ambient coefficientRing coefficientRing QR)
 )
-    
+ 
+
+-- given the filename of a .dot file, return the hash table T
+-- T#(xi) = all xjs that influcence xi 
+convertDotFileToHashTable = method()
+convertDotFileToHashTable String := HashTable => filename -> (  
+  content := lines get filename;
+  numLines := # content;
+  content = apply( numLines-2, i -> content_(i+1) );
+  select( content, l -> match( "label", l) )
+)
+
 
 beginDocumentation()
 
@@ -433,5 +449,4 @@ check "NCF"
 
 restart 
 loadPackage "NCF"
-installPackage "NCF"
-check "NCF"
+convertDotFileToHashTable "wiring.out1.dot"
