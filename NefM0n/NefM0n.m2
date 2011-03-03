@@ -179,8 +179,9 @@ fCurveIneqsLPSOLVE (ZZ, String) := (n, fileName)->(
      fileName << close;
      );
 
-solveLPPolymake = method()
-solveLPPolymake(Matrix, Vector) := (A, u) -> (
+
+minimalVertex = method()
+minimalVertex(Matrix, Vector) := (A, u) -> (
      S := replace("\\}","]",replace("\\{", "[", toString entries A));
      S = "my $p = new Polytope<Rational>(INEQUALITIES =>" | S | ");";
      tmp := temporaryFileName()|".poly";
@@ -194,7 +195,8 @@ solveLPPolymake(Matrix, Vector) := (A, u) -> (
      polyIn << "print $p->LP->MINIMAL_VERTEX;";
      close polyIn;
      run("polymake --script " | tmp | " > " | tmp | ".out");
-     get(tmp | ".out")
+     polyOut = get(tmp | ".out");
+     polyOut = vector apply(separate(" ", polyOut), n-> value n)
      )
 
 --**************************************************************************      
