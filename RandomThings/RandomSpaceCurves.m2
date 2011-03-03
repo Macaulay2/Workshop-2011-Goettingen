@@ -151,19 +151,30 @@ expectedShape(RingElement):= (hilbNum) -> expectedShape(hilbNum,ring hilbNum)
 -- calculate the expected shape of the betti tableau
 -- for a curve of degree d, genus g in IP^r.
 -- we assume C non-degenerate, O_C(2) nonspecial and maximal rank
-expectedShape(ZZ,ZZ,ZZ) := (d,g,r)->(
-     t:=symbol t;
-     T:=ZZ[t];
-     b:=d+r+1;
-     L:=apply(b,i->(if i>1 then 
+-- R the coordinate Ring of IP^r with r+1 variables
+expectedShape(ZZ,ZZ,Ring) := (d,g,R)->(
+     r := (dim R)-1;
+     b := d+r+1;
+     L := apply(b,i->(if i>1 then 
 	       min(d*i+1-g,binomial(r+i,r)) 
 	       else binomial(r+i,r)));
-     expectedShape hilbertNumerator(L,r,t)
+     expectedShape(hilbertNumerator(L,r,(gens R)#0),R)
      )
 
+--expectedShape(ZZ,ZZ,ZZ) := (d,g,r)->(
+--     t:=symbol t;
+--     T:=ZZ[t];
+--     b:=d+r+1;
+--     L:=apply(b,i->(if i>1 then 
+--	       min(d*i+1-g,binomial(r+i,r)) 
+--	       else binomial(r+i,r)));
+--     expectedShape hilbertNumerator(L,r,t)
+--     )
+
 TEST ///
-    T = QQ[t]; 
-    e = expectedShape(5,1,3);
+    x = symbol x
+    R = QQ[x_0..x_3]; 
+    e = expectedShape(5,1,R);
     b = new BettiTally from {
 	 (0,{0},0) => 1, 
 	 (1,{3},3) => 5,
@@ -186,6 +197,8 @@ TEST ///
     assert((betti e) == b)
 /// 
 
+
+
 --------------------
 -- Finite Modules --
 --------------------
@@ -195,7 +208,7 @@ randomHartshorneRaoModule=method(TypicalValue=>Module,Options=>{Attempts=>0})
 randomHartshorneRaoModule(ZZ,ZZ,PolynomialRing):=opt->(d,g,R)->(
      if not knownUnirationalComponentOfSpaceCurves(d,g) then 
      error ("no construction implemented for degree ",toString d, " and genus ", toString g);
-     G:=expectedShape(d,g,3);
+     G:=expectedShape(d,g,R);
      --if length G>3 then error "either 2H special or not of maximal rank";
      n:=4;
      while d*n+1-g>binomial(n+3,3) do n=n+1;
@@ -247,7 +260,6 @@ randomHartshorneRaoModuleDiameter3oneDirection = (HRao,R) -> (
      -- find betti Numbers of the linear strand
      linearStrand := for i from 0 list (if expectedBetti#?(i,{i},i) then expectedBetti#(i,{i},i) else break);
      -- construction depends on lenth of linear strand.
-     -- length 0 should never occur
      if #linearStrand == 0 then error"linear Stand has lenght 0. This should never happen";
      if #linearStrand == 1 then (
 	  -- first matrix can neither have nor be required to have linear syzygies
@@ -293,6 +305,7 @@ randomHartshorneRaoModuleDiameter3oneDirection = (HRao,R) -> (
       return null     	       
       );
 
+-- these will become examples
 R = ZZ/101[x_0..x_3];
 betti res randomHartshorneRaoModuleDiameter3oneDirection({1,4,1},R)
 betti res randomHartshorneRaoModuleDiameter3oneDirection({1,4,2},R)
@@ -372,9 +385,6 @@ randomHartshorneRaoModuleDiameter1 = (HRao,R)->(
      return coker (vars R**R^{HRao#0:0})
      )
 
-betti res randomHartshorneRaoModuleDiameter1({1},R)
-betti res randomHartshorneRaoModuleDiameter1({2},R)
-
 randomHartshorneRaoModule(ZZ,List,PolynomialRing):=opt->(e,HRao,R)->(
      if dim R != 4 then error "expected a polynomial ring in 4 variables";
      if degrees R !={{1}, {1}, {1}, {1}} then error "polynomial ring is not standard graded";
@@ -388,110 +398,86 @@ randomHartshorneRaoModule(ZZ,List,PolynomialRing):=opt->(e,HRao,R)->(
 
      
 
---randomHartshorneRaoModule(ZZ,List,PolynomialRing):=opt->(e,HRao,R)->(
-randomHartshorneRaoModuleOld = (e,HRao,R)->(
-     if dim R != 4 then error "expected a polynomial ring in 4 variables";
-     if degrees R !={{1}, {1}, {1}, {1}} then error "polynomial ring is not standard graded";
-     if #HRao > 3 then error "no method implemented for Hartshorne Rao modue of diameter >3";
-     trybackwards:=false;
-     M:=coker(matrix{{1_R}});sb:=M;A:=M;
-     a:=0;b:=0;c:=0;b1:=0;b2:=0;b3:=0;c2:=0;a2:=0;
-     if #HRao==1 then (a=HRao_0;M=coker (vars R**R^{a:-e}));
-     if #HRao==2 then (
-	 a=HRao_0;
-	 b=HRao_1;
-         if b>= 4*a then M=coker(random(R^{a:0,b-4*a:-1},R^{10*a+4*(b-4*a):-2})**R^{ -e }) 
-	 else if 10*a-4*(4*a-b)<0 then M=coker(random(R^a,R^{4*a-b:-1})**R^{ -e }) 
-	 else M=coker(random(R^a,R^{4*a-b:-1,10*a-4*(4*a-b):-2})**R^{ -e }));
-     if #HRao==3 then (
-	  a=HRao_0;b=HRao_1;c=HRao_2;b1=4*a-b;
-	  if b1>=0 then (
-	       b2=10*a-4*b1-c;
-	       if b2>0 then (
-		     b3=20*a-10*b1-4*b2; 
-	             if b3>0 then M=coker(random(R^a,R^{b1:-1,b2:-2,b3:-3})**R^{ -e })
-		     else M=coker(random(R^a,R^{b1:-1,b2:-2})**R^{ -e }))
-	       else (
-		    c2=-b2;
-		    if -10*c2+4*b1<a then trybackwards=true 
-		    else (
-			 sb=syz random(R^c2,R^{b1:-1});
-			 A=sb*random(source sb, R^{a:-2});
-			 M=coker( map( R^{a:-e},R^{b1:-e-1},transpose A));)
-		    ))
-	   else (
-	       a2=-b1;
-	       b2=10*a+4*a2-c;	       
-	       if b2>0 then (
-		    b3=20*a+10*a2-4*b2;
-	            if b3>0 then M=coker(random(R^a,R^{b1:-1,b2:-2,b3:-3})**R^{-e})
-		    else M=coker(random(R^{a:0,a2:-1},R^{b2:-2})**R^{-e}))
-	       );
-        if trybackwards then (
-	  a=HRao_2;b=HRao_1;c=HRao_0;b1=4*a-b;
-	  if b1>=0 then (
-	       b2=10*a-4*b1-c;
-	       if b2>0 then (
-		     b3=20*a-10*b1-4*b2; 
-	             if b3>0 then M=coker(random(R^a,R^{b1:-1,b2:-2,b3:-3}))
-		     else M=coker(random(R^a,R^{b1:-1,b2:-2})))
-	       else (
-		    c2=-b2;
-		    if -10*c2+4*b1<a then error ("no method to construct a natural module with Hilbert function", toString (c,b,a)) 
-		    else (
-			 sb=syz random(R^c2,R^{b1:-1});
-			 A=sb*random(source sb, R^{a:-2});
-			 M=coker( map(R^{a:0},R^{b1:-1},transpose A));)))
-	  else (
-	       a2=-b1;b2=10*a+4*a2-c;
-	       if b2>0 then (
-		    b3=20*a+10*a2-4*b2;
-		    if b3>0 then M=coker(random(R^{a:0,a2:-1},R^{b2:-2,b3:-3}))
-		    else M=coker(random(R^{a:0,a2:-1},R^{b2:-2})););
-	       );
-          fM:=res M;
-	  M=(coker transpose fM.dd_4)**R^{-e-6});
-	  );
-     M)
-
-
-
 ------------------
 -- Space Curves --
 ------------------
 
+-- given a betti Table b and a Ring R make a chainComplex 
+-- over R-Module with that has betti diagramm b.
+-- negative entries are ignored
+-- rational entries produce an error
+-- multigraded R's work only if the betti Tally
+-- contains degrees of the correct degree length
+Ring ^ BettiTally := (R,b) -> (
+     F := new ChainComplex;
+     F.ring = R;
+     --apply(pDim b,i->F_i = null);
+     for k in keys b do (
+	  -- the keys of a betti table have the form
+	  -- (homological degree, multidegree, weight)
+	  (i,d,h) := k;
+	  -- use F_i since it gives 0 if F#0 is not defined
+	  F#i = F_i ++ R^{b#k:-d};
+	  );
+     F
+     )
+
+TEST ///
+     R = QQ[x_0..x_3];
+     b = betti (random(R^{1,2},R^{0,0,1}))	  
+     assert (b == betti (R^b))
+///
+
+-- the Harshorne Rao module of a curve is defined as 
+-- M = \oplus_i H^1(I_C(-i)) is can also be obtained as
+-- the cokernel of the transpose of the last map
+-- in a minimal free resolution of a curve
+--
+-- conversly one can construct a curve, by first
+-- constructing the Harshorne Rao Module an therefore
+-- the last matrix in the minimal free resolution of 
+-- the curve
 randomSpaceCurve=method(TypicalValue=>Ideal,Options=>{Attempts=>0,Certify=>false})
+
 randomSpaceCurve(ZZ,ZZ,PolynomialRing) := opt->(d,g,R)->(			 
      if not knownUnirationalComponentOfSpaceCurves(d,g) then return null;
-     G:=expectedShape(d,g,3);
-     n:=4;
-     while  d*n+1-g>binomial(n+3,3)  do n=n+1;
-     HRao1:=select(
-	  apply(toList(1..n),j->(j,max(d*j+1-g-binomial(3+j,3),0))),
-	  i-> i_1 !=0);
-     HRao:=apply(HRao1,i->i_1);
+     G:=expectedShape(d,g,R);
+     -- calculate values of h^1 that are forced by the maximal rank assumption
+     h1 := for i from 0 when ((i<4) or(d*i+1-g)>binomial(i+3,3)) list max(d*i+1-g-binomial(3+i,3),0);
+     -- calculate offset (i.e. number of leading 0's in h1)
+     e := 0; for i in h1 when i==0 do e=e+1;
+     -- calculate support of Hartshorne Rao Moduole
+     HRao := select(h1,i->i!=0);
+     -- if the Hartshorne Rao Module is zero, the curve is ACM
+     -- and it can be defined by the minors of an appropriate
+     -- Hilbert-Birch-Matrix
      if #HRao==0 then (
 	  if length G !=2
 	  then error "cannot be ACM" 
-	  else return minors(rank G_2,random(R^(-degrees G_1),R^(-degrees G_2)))
+	  else return minors(rank G_2,random(G_1,G_2))
 	  );
-     e:=HRao1_0_0;
-     M:=randomHartshorneRaoModule(d,g,R);
+     M:=randomHartshorneRaoModule(e,HRao,R);
      if M === null then return null;     	       
-     fM:=res( M);
-     t1:=tally degrees fM_3;
-     t2:=tally degrees G_2;
-     t3:=unique degrees G_2;
-     H:=R^(apply(t3,d->t2_d-t1_d:-d));
-     phi:= fM.dd_3++id_H;
-     N:=random(R^(-degrees G_1),target phi)*phi;
-     J:=ideal syz transpose N;
-     if not opt.Certify then return J;
-     singJ := minors(2,jacobian J)+J;
-     if dim singJ==0 and dim M==0 then return J;
-     if opt.Attempts<= 0 then return null;
-     J=randomSpaceCurve(d,g,R,opt.Certify=>true,Attempts=>opt.Attempts-1);
-     J)
+     F :=res M;
+     -- detect syzygies in the second step, that do not 
+     -- come from the HR-Module
+     H := R^((betti G_2)-(betti F_3));
+     -- calculate a presentation matrix of 
+     -- the ideal of the curve
+     N := random(G_1,F_2++H_0)*(F.dd_3++id_(H_0));
+     -- calculate the ideal presented by this matrix
+     return ideal syz transpose N
+     )
+
+
+-- old certification for SpaceCurves 
+
+--     if not opt.Certify then return J;
+--     singJ := minors(2,jacobian J)+J;
+--     if dim singJ==0 and dim M==0 then return J;
+--     if opt.Attempts<= 0 then return null;
+--     J=randomSpaceCurve(d,g,R,opt.Certify=>true,Attempts=>opt.Attempts-1);
+--     J)
 
 knownUnirationalComponentOfSpaceCurves=method()
 knownUnirationalComponentOfSpaceCurves(ZZ,ZZ) := (d,g)->(
@@ -500,7 +486,7 @@ knownUnirationalComponentOfSpaceCurves(ZZ,ZZ) := (d,g)->(
      d*n+1-g>binomial(n+3,3)  
      do n=n+1;
      HRao1:=select(apply(toList(1..n),n->(n,max(d*n+1-g-binomial(3+n,3),0))), i-> i_1 !=0);
-     G:=expectedShape(d,g,3);
+     G:=expectedShape(d,g,QQ[x_0..x_3]);
      if length G >3 then return false;
      if #HRao1 >3 then return false;
      if #HRao1 <=1 then return true;
@@ -703,24 +689,26 @@ doc ///
 
 doc ///
   Key
-    (expectedShape,ZZ,ZZ,ZZ)
+    (expectedShape,ZZ,ZZ,Ring)
   Usage
-    F=expectedShape(d,g,r)
+    F=expectedShape(d,g,R)
   Inputs
     d: ZZ
        the degree
     g: ZZ
        the genus
-    r: ZZ
-       dimension of $\PP^{ r}$
+--    r: ZZ
+--       dimension of $\PP^{ r}$
+    R: Ring
+       the coordinate Ring of $\PP^{ r}$
   Outputs
     F: ChainComplex
        a free graded chain complex with trivial differential and with Hilbert numerator the same as 
        for a nondegenerate maximal-rank curve of genus g and degree d in $\PP^{ r}$, with O_C(2) non-special.
   Description
     Example
-      betti expectedShape(4,0,4)
-      betti expectedShape(15,16,3)
+      betti expectedShape(4,0,QQ[x_0..x_4])
+      betti expectedShape(15,16,QQ[x_0..x_3])
 ///
 
 
