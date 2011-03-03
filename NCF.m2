@@ -65,7 +65,7 @@ ncfIdeal (List, Ring, List) := RingElement => (S, QR, Sigma) -> (
 getNcfLists = method()
 getNcfLists (Matrix , List, ZZ) := List=> (inputMatrix,Permutation,fieldChar) ->
 (
-   
+     
      rows:= numgens target inputMatrix;
      assert(rows>1);
      fullDataHashTable := new MutableHashTable;
@@ -132,12 +132,49 @@ beginDocumentation()
 
 doc ///
 Key
+  getSingleNcfList
+  (getSingleNcfList, HashTable, List, ZZ)
+Headline
+  Inferring nested canalyzing functions for given time-course data for a single variable
+Usage
+	        P = getSingleNcfList(TimeCourseDataTable, Permutation, Characteristic)
+Inputs
+	TimeCourseDataTable : HashTable
+	  with the time-course data for a single variable as a function of all variables . 
+	  The keys of the TimeCourseDataTable shoult be the variable values at time t 
+	  and the assigned entries are the values of the variable of interest at time (t+1)
+	Permutation : List
+	  with the wanted variable ordering
+	Characteristic : ZZ 
+Outputs
+ P : List
+    of nested canalyzing functions fitting the data for one variable which values are given with the input parameter "TimeCourseDataTable"
+Description
+  Text
+	    For one variable, the complete list of all nested canalyzing 
+	    functions interpolating the given data set on the given time course data. 
+	    A function is in the output if it is nested canalyzing 
+	    in the given variable order
+  Example
+    T=new MutableHashTable;
+    T#{1,1}=1;
+    T#{1,0}=0;
+    T#{0,1}=0;
+    T#{0,0}=0;
+    permutation = {0,1,2,3};
+    fieldChar=2;
+    solutions = getSingleNcfList(T,permutation,fieldChar)
+SeeAlso
+///
+
+doc ///
+Key
   getNcfLists
   (getNcfLists, Matrix, List, ZZ)
 Headline
   Inferring nested canalyzing functions for given time-course data
 Usage
-	        P = getSingleNcfList(TimeCourseDataTable, Permutation, Characteristic)
+	        P = getNcfList(TimeCourseDataTable, Permutation, Characteristic)
 Inputs
 	TimeCourseDataTable : Matrix
 	  with the time-course data
@@ -145,25 +182,25 @@ Inputs
 	Permutation : List
 	  with the wanted variable ordering
 	Characteristic : ZZ 
+	  characteristic of the field. Each entry of the TimeCourseDataTable is converted to an element of the field
 Outputs
  P : List
-	 of Lists of nested canalyzing functions fitting the data for each variable
+	 of Lists of nested canalyzing functions fitting the data for each variable,
+	 "P"_i is a list with the CNFs of the ith variable matching the input data for the given ordering (Permutation)
 Description
   Text
 	    For each variable, the complete list of all nested canalyzing 
 	    functions interpolating the given data set on the given time course data. 
 	    A function is in the output if it is nested canalyzing 
 	    in the given variable order
-  Example	
-    T=new MutableHashTable;
-    T#{1,1}=1;
-    T#{1,0}=0;
-    T#{0,1}=0;
-    T#{0,0}=0;
-    per = {0,1,2,3};
-    jakob=2;
-    solutions = getSingleNcfList(T,per,jakob)
-SeeAlso
+  Example
+    inputMatrix = matrix { {1,1},  {1,0},  {0,1}, {0,0} ,{0,0} };
+    permutation = {0,1,2,3};
+    fieldChar=2;
+    field=ZZ/fieldChar;
+    inputMatrix=sub(inputMatrix,field)
+    solutions = getNcfLists(inputMatrix,permutation,fieldChar)
+    
 ///
 
 doc ///
@@ -178,17 +215,14 @@ Description
   Text
   Example 
     xxx;
-    
   Code
   Pre
-Caveat
-SeeAlso
 ///
 
 TEST ///
   fieldChar=2;
   qring=ZZ/fieldChar
-  inputMatrix=matrix {{1,1,1},{0,1,1},{0,0,1},{1,1,0},{1,0,1},{0,1,1}}
+  --inputMatrix=matrix {{1,1,1},{0,1,1},{0,0,1},{1,1,0},{1,0,1},{0,1,1}}
   inputMatrix=matrix {{0,0,0},{0,1,0},{1,1,0},{0,1,1},{1,1,1},{0,0,0}}
   inputMatrix=sub(inputMatrix,qring)
   Permutation={0,1,2,3,4,5,6,7}  
