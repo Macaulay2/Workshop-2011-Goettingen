@@ -14,8 +14,9 @@ blowup(AbstractVarietyMap) :=
      iupper := map(B,A, iuppermatrix);
      N :=  (incl^* tangentBundle Y) - tangentBundle X;
      x := local x;
+     y := local y;
      d := rank N;
-     PN := projectiveBundle(N, VariableNames => {{x},}); -- x = chern(1,OO_PN(-1))
+     PN := projectiveBundle(N, VariableNames => {x,y}); -- x = chern(1,OO_PN(-1))
      C := intersectionRing PN;
      (BasAModule, bas, iLowerMod) := pushFwd(iupper);     
      -- iLowerMod(element b of B) = one column matrix over A whose product with bas is b
@@ -66,11 +67,13 @@ blowup(AbstractVarietyMap) :=
      E0powers := transpose matrix {for i from 0 to d-1 list (D1_(E_0))^i};
      jLower := (f) -> (
 	  -- takes an element f of C, returns an element of D
+	  -- this is currently wrong; dualizing ruined this!
 	  cf := last coefficients(f, Monomials => xpowers);
 	  cf = lift(cf, B);
 	  cfA := matrix {apply(flatten entries cf, iLowerMod)};
 	  (vars D * cfA * E0powers)_(0,0)
 	  );
+     error "debug me!";
      pushforwardPN := method();
      pushforwardPN C := a -> jLower a;
      -- need to push forward sheaves as well
@@ -83,6 +86,7 @@ blowup(AbstractVarietyMap) :=
      pullbackPN AbstractSheaf := F -> (
 	  if variety F =!= Ytilde then error "pullback: variety mismatch";
 	  abstractSheaf(PN,Rank => rank F,ChernClass => pullbackPN chern F));
+     -- have to check the next formula, since it involves O(-1)!
      Ytilde.TangentBundle = abstractSheaf(Ytilde, 
 	  ChernCharacter => ch tangentBundle Y - jLower(ch tangentBundle(PN/X) * (todd OO(x))^-1));
      PNmap := new AbstractVarietyMap from {
