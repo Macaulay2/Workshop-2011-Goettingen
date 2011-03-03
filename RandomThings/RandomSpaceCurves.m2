@@ -22,7 +22,7 @@ export{"nextPrime",
      "randomHartshorneRaoModule",
      "knownUnirationalComponentOfSpaceCurves",
      "hilbertNumerator",
-     "expectedShape",
+     "expectedBetti",
      "certifyRandomSpaceCurve",
      "spaceCurve"
      }
@@ -203,110 +203,6 @@ TEST ///
 
 
 
---------------------
--- expected Shape --
---------------------
-
-------------------------------------------------------------------
--- this should be erased onece expectedBetti is used everywhere --
-------------------------------------------------------------------
-
--- construct a minimal free resolution with expected betti tableau
-expectedShape=method()
-
-
--- calculates a minimal free resolution with expected betti tableau
--- from a hilbert Numerator
---
--- For this every term a_i*t^i will represent a summand R^{abs(a_i):-i}
--- The step where this summand is used depends on the number of
--- sign switches that occur in the hilbert numerator befor this monomial  
-expectedShape(RingElement,Ring):= (hilbNum,R) ->(
-     -- find terms of hilbert Numerator
-     -- smallest degree first
-     termsHilbNum := reverse terms hilbNum;
-     -- convert terms into pairs (coefficient, FreeModule)
-     summands := apply(termsHilbNum,m->oneTermToFreeModule(m,R));
-     -- make empty chain comples
-     F := new ChainComplex;
-     F.ring = ring hilbNum;
-     -- put the summands into the appropriate step of F
-     -- j contains the current step
-     j := -1;
-     -- previous Coefficient is needed to detect sign changes
-     previousCoefficient := -(first summands)#0;
-     -- step through all summands     
-     for s in summands do (
-	  -- has a sign change occured?
-     	  if (s#0*previousCoefficient) < 0 then (
-	       -- sign change => next step in the resolution
-	       j = j+1;
-	       -- start new step with current summand
-	       F_j = s#1 )
-     	  else (
-	       -- no sign change => add currend summand to currend step
-     	       F_j = F_j ++ s#1;
-	       );
-	  -- store previous coefficient
-     	  previousCoefficient = s#0;
-     	  );
-     -- return the complex
-     F
-     )
-
--- if no ring is given, the ring of the HilbertNumerator is used
-expectedShape(RingElement):= (hilbNum) -> expectedShape(hilbNum,ring hilbNum)
-
--- erase following code when new code is tested
---expectedShapeOld(ZZ,ZZ,ZZ):=(d,g,r)->(
-     -- we assume C non-degenerate, O_C(2) nonspecial and maximal rank
---     t:=symbol t;
---     T:=ZZ[t];
---     b:=d+r+1;
---     p:=sum(b,i->(if i>1 then min(d*i+1-g,binomial(r+i,r)) else binomial(r+i,r))*t^i);
---     q:=p*(1-t)^(r+1)%t^b;
---     expectedShape q)
-
--- calculate the expected shape of the betti tableau
--- for a curve of degree d, genus g in IP^r.
--- we assume C non-degenerate, O_C(2) nonspecial and maximal rank
--- R the coordinate Ring of IP^r with r+1 variables
-expectedShape(ZZ,ZZ,Ring) := (d,g,R)->(
-     r := (dim R)-1;
-     b := d+r+1;
-     L := apply(b,i->(if i>1 then 
-	       min(d*i+1-g,binomial(r+i,r)) 
-	       else binomial(r+i,r)));
-     t := symbol t;
-     T := QQ[t];
-     expectedShape(hilbertNumerator(L,r,t),R)
-     )
-
-TEST ///
-    x = symbol x
-    R = QQ[x_0..x_3]; 
-    e = expectedShape(5,1,R);
-    b = new BettiTally from {
-	 (0,{0},0) => 1, 
-	 (1,{3},3) => 5,
-      	 (2,{4},4) => 5, 
-	 (3,{5},5) => 1
-    	 };
-    assert((betti e) == b)
-///
-
-TEST ///
-    T = QQ[t]; 
-    e = expectedShape hilbertNumerator({1,3,0,0,0,0},3,t);
-    b = new BettiTally from {
-	 (0,{0},0) => 1, 
-	 (1,{1},1) => 1,
-      	 (1,{2},2) => 6, 
-	 (2,{3},3) => 14, 
-	 (3,{4},4) => 11, 
-	 (4,{5},5) => 3};
-    assert((betti e) == b)
-/// 
 
 -- given a betti Table b and a Ring R make a chainComplex 
 -- with zero maps over R  that has betti diagramm b. 
@@ -486,10 +382,7 @@ randomHartshorneRaoModuleDiameter2 = (HRao,R)->(
      -- always start at the beginning of the resolution  
      t := symbol t;
      T := QQ[t];
-     F := expectedShape(hilbertNumerator(HRao|{0,0,0,0},3,t),R);
-     -- the betti Tableau of F to find out later if linear syzygies 
-     -- are requried (this is the difficult part in the construction)
-     expectedBetti := betti F;
+     F := R^(expectedBetti(HRao|{0,0,0,0},3));
      M := coker random(F_0,F_1)
      )
 
@@ -536,7 +429,7 @@ randomSpaceCurve=method(TypicalValue=>Ideal,Options=>{Attempts=>0,Certify=>false
 
 randomSpaceCurve(ZZ,ZZ,PolynomialRing) := opt->(d,g,R)->(			 
      if not knownUnirationalComponentOfSpaceCurves(d,g) then return null;
-     G:=expectedShape(d,g,R);
+     G:=R^(expectedBetti(d,g,dim R-1));
      -- calculate values of h^1 that are forced by the maximal rank assumption
      h1 := for i from 0 when ((i<4) or(d*i+1-g)>binomial(i+3,3)) list max(d*i+1-g-binomial(3+i,3),0);
      -- calculate offset (i.e. number of leading 0's in h1)
@@ -580,7 +473,7 @@ knownUnirationalComponentOfSpaceCurves(ZZ,ZZ) := (d,g)->(
      d*n+1-g>binomial(n+3,3)  
      do n=n+1;
      HRao1:=select(apply(toList(1..n),n->(n,max(d*n+1-g-binomial(3+n,3),0))), i-> i_1 !=0);
-     G:=expectedShape(d,g,QQ[x_0..x_3]);
+     G:=R^(expectedBetti(d,g,3));
      if length G >3 then return false;
      if #HRao1 >3 then return false;
      if #HRao1 <=1 then return true;
@@ -764,52 +657,48 @@ doc ///
 
 doc ///
   Key
-    expectedShape
-    (expectedShape,RingElement)
+    expectedBetti
+    (expectedBetti,RingElement)
   Headline
     compute the "expected" shape from the Hilbert numerator
   Usage
-    F=expectedShape q
+    B=expectedBetti q
   Inputs
     q: RingElement
        a polynomial in ZZ[t]
   Outputs
-    F: ChainComplex
-       a trivial free graded complex over ZZ[t] whose Betti table has Hilbert numerator q,
+    B: BettiTally 
+       a Betti table that has Hilbert numerator q,
        assuming that each sign change in the coefficients of q corresponds to a step
   Description
     Example
       T=ZZ[t]
       q=1-3*t^2+2*t^3
-      expectedShape q
-      betti oo
+      expectedBetti q
       q=1-5*t^2+5*t^3-t^5
-      expectedShape q
-      betti oo
+      expectedBetti q
 ///
 
 doc ///
   Key
-    (expectedShape,ZZ,ZZ,Ring)
+    (expectedBetti,ZZ,ZZ,ZZ)
   Usage
-    F=expectedShape(d,g,R)
+    F=expectedBetti(d,g,r)
   Inputs
     d: ZZ
        the degree
     g: ZZ
        the genus
---    r: ZZ
---       dimension of $\PP^{ r}$
-    R: Ring
-       the coordinate Ring of $\PP^{ r}$
+    r: ZZ
+       dimension of $\PP^{ r}$
   Outputs
-    F: ChainComplex
-       a free graded chain complex with trivial differential and with Hilbert numerator the same as 
+    B: BettiTally 
+       a Betti table that has Hilbert numerator the same as 
        for a nondegenerate maximal-rank curve of genus g and degree d in $\PP^{ r}$, with O_C(2) non-special.
   Description
     Example
-      betti expectedShape(4,0,QQ[x_0..x_4])
-      betti expectedShape(15,16,QQ[x_0..x_3])
+      betti expectedBetti(4,0,4)
+      betti expectedBetti(15,16,3)
 ///
 
 
@@ -912,24 +801,3 @@ time tally apply(10,i->time certifyRandomSpaceCurve(randomSpaceCurve(12,11,R),12
 R = ZZ[]/49
 (matrix{{11_R,12_R},{13_R,14_R}})^-1
 --
-
-randomHartshorneRaoModule(ZZ,ZZ,PolynomialRing):=opt->(d,g,R)->(
-     if not knownUnirationalComponentOfSpaceCurves(d,g) then 
-     error ("no construction implemented for degree ",toString d, " and genus ", toString g);
-     G:=expectedShape(d,g,R);
-     --if length G>3 then error "either 2H special or not of maximal rank";
-     n:=4;
-     while d*n+1-g>binomial(n+3,3) do n=n+1;
-     HRao1:=select(apply(toList(1..n),n->(n,max(d*n+1-g-binomial(3+n,3),0))), i-> i_1 !=0);
-     HRao:=apply(HRao1,i->i_1);
-     e:=HRao1_0_0;
-     M:=randomHartshorneRaoModule(e,HRao,R);
-     return M;
-     -- this return was not in the original code by Frank
-     attempt:=1;
-     while true do (
-     	  if apply(toList(e..e+#HRao-1),i->hilbertFunction(i,M))==HRao then return M;
-	  if opt.Attempts <= attempt then return null;
-	  M=randomHartshorneRaoModule(e,HRao,R);
-	  attempt=attempt+1;
-	  ))
