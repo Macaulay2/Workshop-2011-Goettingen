@@ -1,5 +1,3 @@
-
-
 newPackage(
     "NCF",
     Version => "0.1", 
@@ -12,13 +10,14 @@ newPackage(
 installPackage "RationalPoints";
 
 
-
-export{interpolate, idealOfPoints, ncfIdeal, kernPhi, getSingleNcfList,getNCFLists}
---List of Nested Canalyzing Functions polynomials
- --MHT is the table with the expermental data, permutation is a list with the wanted permutation
+export{interpolate, idealOfPoints, ncfIdeal, kernPhi, getSingleNcfList, getNcfLists}
+--returns a List of Nested Canalyzing Functions for the given HashTable of one variable
+--MHT is the table with the expermental data, 
+--permutation is a list with the wanted permutation,
+--and fieldChar is the Characteristic
 getSingleNcfList = method()
 getSingleNcfList (HashTable, List, ZZ) := List => (MHT, Permutation, fieldChar) -> (
-     n := #first keys MHT;
+     n := #first keys MHT; -- Get number of variables
      L := subsets n;
      L = apply( L, l -> apply( l, i -> i + 1) ) ;
      C := ZZ/fieldChar[apply( L, l -> (getSymbol "c")_l)];
@@ -40,8 +39,7 @@ getSingleNcfList (HashTable, List, ZZ) := List => (MHT, Permutation, fieldChar) 
    )
 
 -- construct the generators for the ideal that encodes the relation of
--- coefficients for ncf
--- ideal with relation of coefficients for nested canalyzing functions
+-- coefficients for n-- ideal with relation of coefficients for nested canalyzing functions
 -- equation 3.8 in Jarrah et al
 -- given a subset S \subseteq [n], return the relation of that generator
 ncfIdeal = method()
@@ -61,8 +59,10 @@ ncfIdeal (List, Ring, List) := RingElement => (S, QR, Sigma) -> (
     )
 )
 
-getNCFLists = method()
-getNCFLists (Matrix , List, ZZ) := List=> (inputMatrix,Permutation,fieldChar) ->
+--returns a list "Ls" of lists of CNFs for each variable,
+--"Ls"_i is a list with the CNFs of the ith variable matching the input data 
+getNcfLists = method()
+getNcfLists (Matrix , List, ZZ) := List=> (inputMatrix,Permutation,fieldChar) ->
 (
    
      rows:= numgens target inputMatrix;
@@ -79,15 +79,14 @@ getNCFLists (Matrix , List, ZZ) := List=> (inputMatrix,Permutation,fieldChar) ->
 		    throw "inconsistent input data ";
 	  currentRow=currentRow+1;
      );
-     --
      cols := numgens source inputMatrix;
      resultFunctionListOfLists:={};
           apply(cols, currCol->
 	       (
 		    dataHashTableForSingleVar:=copy fullDataHashTable;
-		    apply(keys fullDataHashTable, key -> dataHashTableForSingleVar#key=(fullDataHashTable#key)_currCol
+		    apply(keys fullDataHashTable, key -> 
+			 dataHashTableForSingleVar#key=(fullDataHashTable#key)_currCol
 		    );
-	       --   apply(keys fullDataHashTable, key -> key;    );
 	            currFunctionList:=getSingleNcfList(dataHashTableForSingleVar,Permutation,fieldChar);
 		    resultFunctionListOfLists=resultFunctionListOfLists |{currFunctionList};	       
 	 ));
@@ -126,30 +125,27 @@ kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, QR) -> (
   ideal lift( selectInSubring(1, gens gb ideal (W - C) ), 
        ambient coefficientRing coefficientRing QR)
 )
-
--- G=gb( , MonomialOrder => Weights => #:0)
-     
+    
 
 beginDocumentation()
 
 doc ///
 Key
-  getSingleNcfList
---  (getSingleNcfList, HashTable, List, ZZ)
+  getNcfLists
+        (getNcfLists, HashTable, List, ZZ)
 Headline
   Inferring nested canalyzing functions for given time-course data
 Usage
 	        P = getSingleNcfList(TimeCourseDataTable, Permutation, Characteristic)
 Inputs
-	        TimeCourseDataTable : HashTable
-		Permutation : List
-		Characteristic : ZZ
+	        TimeCourseDataTable : HashTable with the time-course data
+		Permutation : List with the wanted variable ordering
+		Characteristic : ZZ 
 Outputs
-	        P : List
-	            of nested canalyzing functions fitting the data
+ P : List
+	 of Lists of nested canalyzing functions fitting the data for each variable
 Description
-  
-  Text
+        Text
        	    For each variable, the complete list of all nested canalyzing 
 	    functions interpolating the given data set on the given time course data. 
 	    A function is in the output if it is nested canalyzing 
