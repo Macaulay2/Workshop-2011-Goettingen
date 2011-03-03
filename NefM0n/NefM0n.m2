@@ -232,10 +232,7 @@ fCurveIneqsMatrix (ZZ) := (n)->(
 			 ) -- end for over N2
 		    ) -- end for over N1
 	       ) -- end t->(
-	  ); -- end apply
-				          
-			      	
-	
+	  ); -- end apply	
 	  
 
          --Output inequalities F(N1, N2, N3, N4) in CB coordinates to the file fileName,
@@ -243,8 +240,8 @@ fCurveIneqsMatrix (ZZ) := (n)->(
 	 
 	 
 	 
-	 fMatrix := apply(fCurves, F -> (
-		for i from 2 to floor(n/2) do (
+	fMatrix := toList apply(fCurves, F -> (
+		flatten flatten apply (toList(2..floor(n/2)), i-> (
 		     apply(subsets(nList, 2*i), I -> (
 	       		 	  -- Calculate the intersection of the F-curve F with the CB-divisor D_I,
 	       		 	  --  namely, F \cdot D_I = 1 if \prod i=1^4 #(F_i \cap I)  odd, 0 else
@@ -257,14 +254,15 @@ fCurveIneqsMatrix (ZZ) := (n)->(
 				  else ( 0 )
 			 	  )--end I -> ()
 	  	    	     )--end apply over I
-     	       		);-- end for over 2i, the cardinality of I
+     	       		)-- end apply over i, the cardinality of I
 	  	   --fileName << ">= 0" << endl;
 	  	   )-- end F-> ()
           
-     	  );-- end apply     
+     	  )-- end apply     
      --fileName << close;
-     fMatrix
-     );
+     --fMatrix
+     )
+)
 
 end
 beginDocumentation()
@@ -312,5 +310,5 @@ tex keelAvgIndices( (1,2,3), {{2,3,4,5}}, R)
 tex keelAvgIndices( (1,2,3), {{1,2,4,5}, {1,2,4,6}, {1,2,5,6}, {1,3,4,5}, {1,3,4,6}, {1,3,5,6}, {2,3,4,5}, {2,3,4,6}, {2,3,5,6}},R)
 
 fCurveIneqsLPSOLVE(6, "fIneqs6.txt") 
-M = fCurveIneqsMatrix 5
+M = matrix fCurveIneqsMatrix 5
 M_0
