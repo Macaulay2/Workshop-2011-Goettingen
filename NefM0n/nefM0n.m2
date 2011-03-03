@@ -128,8 +128,8 @@ fCurveIneqsCB (ZZ, String) := (n, fileName)->(
 
      --generate F-indices, that is, four-tuples {n1, n2, n3, n4} such that
      -- n1 <= .. <= n4 and n1 + ... + n4 = n     
-     fIndices := {};
-     fIndices := select({1,1,1,1}..{n,n,n,n}, p-> sum p = n)
+     
+     fIndices := select({1,1,1,1}..{n,n,n,n}, p-> (sum p == n) and (p#0<=p#1) and (p#1<=p#2) and (p#2<=p#3));
   --   for n1 from 1 to n do (
     --	  for n2 from 1 to n do (
 --	       for n3 from 1 to n do (
@@ -143,39 +143,33 @@ fCurveIneqsCB (ZZ, String) := (n, fileName)->(
      
      
      --Generate F-curves in \M_{0,n}, that is partitions {N1, N2, N3, N4} of {1..n}
-     fCurves := {};
-     apply(fIndices, t -> (
-	       for N1 in subsets(nList, t_0) do (
-     	       	    N1c := listComplement(nList, N1);
-	       	    for N2 in subsets(N1c, t_1) do (
+     
+     fCurves := flatten flatten flatten flatten apply(fIndices, t -> (
+	       for N1 in subsets(nList, t_0) list (
+		    N1c := listComplement(nList, N1);
+		    for N2 in select(subsets(N1c, t_1), N2 -> t_0 != t_1 or (t_0 == t_1 and N1_0 < N2_0)) list (
 		    	 --Eliminate duplicates by only 
-		    	 if (t_0 != t_1 or (t_0 == t_1 and N1_0 < N2_0))
-		    	 then (
-		    	      N2c := listComplement(N1c, N2);
-			      for N3 in subsets(N2c, t_2) do (
-			      	   if (t_1 != t_2 or (t_1 == t_2 and N2_0 < N3_0))
-			      	   then (
-				   	N3c := listComplement(N2c, N3);
-				   	for N4 in subsets(N3c, t_3) do (
-					     if (t_2 != t_3 or (t_2 == t_3 and N3_0 < N4_0) )
-					     then (
-			 	   	     	  fCurves = fCurves | {{N1, N2, N3, N4}}
-					     	  )--end if then
-				   	     )--end for over N4
-			 	   	)--end if then
-		       		   )--end for over N3
-		       	      )--end if then     
-	       	    	 )--end for over N2
-	       	    )--end for over N1
-	       )--end t -> ()
-	  );--end apply
-
+			 N2c := listComplement(N1c, N2);
+			 for N3 in select(subsets(N2c, t_2), N3 -> (t_1 != t_2 or (t_1 == t_2 and N2_0 < N3_0))) list (
+			      N3c := listComplement(N2c, N3);
+			      for N4 in select(subsets(N3c, t_3), N4 ->  (t_2 != t_3 or (t_2 == t_3 and N3_0 < N4_0) )) list (
+				   {N1, N2, N3, N4}
+				   ) -- end for over N4
+			      ) -- end for over N3
+			 ) -- end for over N2
+		    ) -- end for over N1
+	       ) -- end t->(
+	  ); -- end apply
+				          
+			      	
+	
+	  
 
          --Output inequalities F(N1, N2, N3, N4) in CB coordinates to the file fileName,
 	 -- i.e. output \cdot D \geq 0, where [D] = \sum d_I [DD_I]
 	 apply(fCurves, F -> (
-	  	   for i from 2 to floor(n/2) do (
-     	       		apply(subsets(nList, 2*i), I -> (
+		for i from 2 to floor(n/2) do (
+		     apply(subsets(nList, 2*i), I -> (
 	       		 	  -- Calculate the intersection of the F-curve F with the CB-divisor D_I,
 	       		 	  --  namely, F \cdot D_I = 1 if \prod i=1^4 #(F_i \cap I)  odd, 0 else
 	       		 	  parity := (#(set I * set F_0 ) * #(set I * set F_1 ) * #(set I * set F_2 ) * #(set I * set F_0 ) );
@@ -231,7 +225,7 @@ TEST ///
 
 end
 restart
-loadPackage "FultonM0n"
+loadPackage "nefM0n"
 R = boundaryRing 7;
 S = R#Ring
 keelSum({{1,3},{2,4}}, R)
@@ -239,3 +233,4 @@ tex keelAvgIndices( (1,2,3), {{2,3,4,5}}, R)
 tex keelAvgIndices( (1,2,3), {{1,2,4,5}, {1,2,4,6}, {1,2,5,6}, {1,3,4,5}, {1,3,4,6}, {1,3,5,6}, {2,3,4,5}, {2,3,4,6}, {2,3,5,6}},R)
 
 fCurveIneqsCB (5, "fIneqs5.txt") 
+
