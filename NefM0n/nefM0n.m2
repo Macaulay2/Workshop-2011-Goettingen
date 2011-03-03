@@ -1,6 +1,6 @@
 -- -*- coding: utf-8 -*-
 newPackage(
-        "FultonM0n",
+        "NefM0n",
         Version => "0.1", 
         Date => "",
         Authors => {{Name => "", 
