@@ -246,6 +246,7 @@ expectedLinearSyzygies = (a,b,R) -> (
      )
 
 TEST ///
+    setRandomSeed("I am feeling lucky");
     R = ZZ/101[x_0..x_3];
     assert(expectedLinearSyzygies(2,6,R) == 
 	 (betti res coker random(R^{2:0},R^{6:-1}))#(2,{2},2)
@@ -380,8 +381,6 @@ randomHartshorneRaoModuleDiameter2 = (HRao,R)->(
      -- now assume expected resolution
      --
      -- always start at the beginning of the resolution  
-     t := symbol t;
-     T := QQ[t];
      F := R^(expectedBetti(HRao|{0,0,0,0},3));
      M := coker random(F_0,F_1)
      )
@@ -786,7 +785,7 @@ end
 restart
 uninstallPackage("RandomSpaceCurves")
 installPackage("RandomSpaceCurves",RerunExamples=>true,RemakeAllDocumentation=>true);
---viewHelp"RandomSpaceCurves"
+viewHelp"RandomSpaceCurves"
 
 restart
 needsPackage("RandomSpaceCurves")
