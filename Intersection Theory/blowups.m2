@@ -25,8 +25,7 @@ blowup(AbstractVarietyMap) :=
      -- if z is the first chern class of OO_PN(-1), we think of E_0^j * E_i as z^j E_i.  In particular, E_0 itself we identify with 1_B.
      -- For this to work, we are depending on the ordering of pushFwd!
      
-     --THESE VARIABLES NEED TO BE PROTECTED
-     --The setup below will break if we ever end up with multigraded Chow rings.
+     --The setup below will break if we ever end up with multigraded Chow rings, because pushFwd does not properly support multigraded maps
      E := getSymbol "E";
      D1 := A( monoid [E_0..E_(n-1), Join=>false, Degrees => (flatten degrees BasAModule) + splice{n:1}]);
      alphas := first entries bas;
@@ -45,7 +44,7 @@ blowup(AbstractVarietyMap) :=
 	  )), x -> x != 0), D1);
      -- 3. linear relations
      -- This imposes the fundamental relations which express the Chow ring of the blowup as a group quotient of the A and the Chow ring of PN.
-     -- Specifically, if b is an element of B, we impose that i_*(b) = b * -chern(d-1, Q) where Q = N / O(-1) is the universal quotient bundle
+     -- Specifically, if b is an element of B, we impose that i_*(b) = b * chern(d-1, Q) where Q = N / O(-1) is the universal quotient bundle
      -- on PN.
      Ndual := dual N;
      blist := for i from 1 to d list chern(d-i, Ndual);
@@ -54,14 +53,14 @@ blowup(AbstractVarietyMap) :=
 	  f2 := sum for j from 0 to d-1 list (
      	       D1_(E_0)^j * ((vars D1) * iLowerMod(blist#j * alphas#i))
 	       );
-	  f1-f2);
+	  f1 + (-1)^d * f2);
      -- Finally, we impose the defining relation on the Chow ring of PN, that is, we impose that
      -- the sum of chern(1,O(-1))^i * chern(d-i, N) for i from 0 to d is 0. 
      I4 := ideal {sum for i from 0 to d list (
 	       (-D1_(E_0))^i * ((vars D1) * iLowerMod(chern(d-i, N)))
 	       )};
-     D := D1/(I1 + I2 + I3 + I4);
-     Ytilde := abstractVariety(dim Y, D); -- the Chow ring of the blowup
+     D := D1/(I1 + I2 + I3 + I4); -- the Chow ring of the blowup
+     Ytilde := abstractVariety(dim Y, D); 
      xpowers := matrix {for i from 0 to d-1 list x^i};
      -- need to check this next line!
      E0powers := transpose matrix {for i from 0 to d-1 list (D1_(E_0))^i};
@@ -79,6 +78,7 @@ blowup(AbstractVarietyMap) :=
      -- the fact that pushing forward and then pulling back a class on PN is the same as multiplying by x = c_1(O(-1))
      jUpper := map(C, D, matrix {(for i from 0 to n-1 list x * alphas#i) | apply(flatten entries iuppermatrix, b -> promote(b,C))});
      pullbackPN := method();
+     pullbackPN ZZ := pullbackPN QQ := a -> promote(a,C);
      pullbackPN D := a -> jUpper a;
      pullbackPN AbstractSheaf := F -> (
 	  if variety F =!= Ytilde then error "pullback: variety mismatch";
@@ -89,17 +89,38 @@ blowup(AbstractVarietyMap) :=
 	  global target => Ytilde,
 	  global source => PN,
 	  PushForward => pushforwardPN,
-	  PullBack => pullbackPN,
+	  PullBack => pullbackPN
 	  };
+     pushforwardPN AbstractSheaf := F -> (
+	  if variety F =!= PN then "pushforward: variety mismatch";
+	  abstractSheaf(Ytilde, ChernCharacter => pushforwardPN (ch F * todd PNmap))
+	  );
      -- to push forward from Ytilde to Y, consider a class a + b on Ytilde, where a is pulled back from Y and b is pushed forward from PN
      -- pushing forward a is easy: since the blowup is birational, we send a to itself on Y
      -- to push forward b, we find the coefficient in b of the relative class of a point in PN over X, then push this coefficient forward from X to Y
+     -- BUT, the formulae of I3 already re-express the relative class of a point (which is E_0^(d-1)) in terms of lower-degree classes
+     -- so pushing forward is as simple as taking the constant coefficient!
      pushforwardY := method();
-     
+     pushforwardY D := a -> (
+	  lift(coefficient(1_D, a), A)
+	  );
      pullbackY := method();
-     pullbackY A := a -> promote(a,D);
-     
-     (Ytilde, PN, PNmap)
+     pullbackY ZZ := pullbackY QQ := pullbackY A := a -> promote(a,D);
+     pullbackY AbstractSheaf := F -> (
+	  if variety F =!= Y then error "pullback: variety mismatch";
+	  abstractSheaf(Ytilde,Rank => rank F,ChernClass => pullbackY chern F)
+	  );
+     Ymap := new AbstractVarietyMap from {
+	  global target => Y,
+	  global source => Ytilde,
+	  PushForward => pushforwardY,
+	  PullBack => pullbackY
+	  };
+     pushforwardY AbstractSheaf := F -> (
+	  if variety F =!= Ytilde then error "pushforward: variety mismatch";
+	  abstractSheaf(Y, ChernCharacter => pushforwardY (ch F * todd Ymap))
+	  );
+     (Ytilde, PN, PNmap, Ymap)
      )
 
 end
@@ -107,21 +128,33 @@ end
 restart
 loadPackage "Schubert2"
 load "./blowups.m2"
-X = flagBundle({1,2}, VariableNames =>{s,q})
-Y = flagBundle({1,5}, VariableNames =>{a,b})
+X = flagBundle({1,0}, VariableNames =>{s,q})
+Y = flagBundle({1,2}, VariableNames =>{a,b})
 f = X / point
 i = map(Y,X, dual first bundles X)
-(Ytilde, PN, PNmap) = blowup(i)
-intersectionRing Ytilde
+(Ytilde, PN, PNmap, Ymap) = blowup(i)
+Atilde = intersectionRing Ytilde
+describe Atilde
+Ymap_* (E_0^2)
+F = tangentBundle Ytilde
+Ymap_* F
+c = D_(E_0)^2
+PNpart := bas * iupper lift(last coefficients((-1)^(d-1) * c, Monomials => relativePoint), A)
+pushforwardY D_(E_0)^2
 RPN = intersectionRing PN
 PNmap_* last last entries vars RPN
 PNmap
-PNmap^* E_0
+f = PN / point
+f_* PNmap^* E_0
 
 X = flagBundle({2,3}, VariableNames => {s,q})
 S = first bundles X
 L = exteriorPower(2, dual S)
 Y = flagBundle({1,9}, VariableNames => {a,b})
 i = map(Y,X,L)
-(Ytilde, PN, PNmap) = blowup(i)
+(Ytilde, PN, PNmap, Ymap) = blowup(i)
 intersectionRing Ytilde
+Ymap_* E_0^9
+Q = OO_PN^9 - first bundles PN
+chern Q
+i_*(q_3^2)
