@@ -73,7 +73,7 @@ TEST ///
 
 -- convert c*t^d to (c,R^(abs(c):-d))
 -- assumes only one term c*t^d
--- ring of t must be over ZZ
+-- ring of t must be over ZZ or QQ
 -- and singly graded
 --
 -- this funciton is needed to construct 
@@ -93,6 +93,123 @@ TEST ///
 ///
 
 
+-- construct a minimal free resolution with expected betti tableau
+expectedBetti=method()
+
+
+-- calculates a minimal free resolution with expected betti tableau
+-- from a hilbert Numerator
+--
+-- For this every term a_i*t^i will represent a summand R^{abs(a_i):-i}
+-- The step where this summand is used depends on the number of
+-- sign switches that occur in the hilbert numerator befor this monomial  
+--
+-- the ring of the hilbert numerator is expected to singly graded 
+-- and contain only one variable
+expectedBetti(RingElement):= (hilbNum) ->(
+     T := ring hilbNum;
+     -- find terms of hilbert Numerator
+     -- smallest degree first
+     termsHilbNum := reverse terms hilbNum;
+     -- convert terms into pairs (coefficient, FreeModule)
+     summands := apply(termsHilbNum,m->oneTermToFreeModule(m,T));
+     -- make empty chain comples
+     F := new ChainComplex;
+     F.ring = ring hilbNum;
+     -- put the summands into the appropriate step of F
+     -- j contains the current step
+     j := -1;
+     -- previous Coefficient is needed to detect sign changes
+     previousCoefficient := -(first summands)#0;
+     -- step through all summands     
+     for s in summands do (
+	  -- has a sign change occured?
+     	  if (s#0*previousCoefficient) < 0 then (
+	       -- sign change => next step in the resolution
+	       j = j+1;
+	       -- start new step with current summand
+	       F_j = s#1 )
+     	  else (
+	       -- no sign change => add currend summand to currend step
+     	       F_j = F_j ++ s#1;
+	       );
+	  -- store previous coefficient
+     	  previousCoefficient = s#0;
+     	  );
+     -- return the complex
+     betti F
+     )
+
+TEST ///
+    e = expectedBetti(t^5-5*t^4+5*t^3-1)
+    b = new BettiTally from {
+	 (0,{0},0) => 1, 
+	 (1,{3},3) => 5,
+      	 (2,{4},4) => 5, 
+	 (3,{5},5) => 1
+    	 }
+    assert(e == b)
+///
+
+
+-- calculate the expected betti tableau
+-- from a given hilbert function.
+-- hilb = {h0,...,h_(d+r+1)} 
+-- where d is the regularity of the variety described 
+-- and r is the dimension of the ambient space
+expectedBetti(List,ZZ) := (L,r)->(
+     t := symbol t;
+     T := QQ[t];
+     expectedBetti(hilbertNumerator(L,r,t))
+     )
+
+TEST ///
+    T = QQ[t]; 
+    e = expectedBetti({1,3,0,0,0,0},3)
+    b = new BettiTally from {
+	 (0,{0},0) => 1, 
+	 (1,{1},1) => 1,
+      	 (1,{2},2) => 6, 
+	 (2,{3},3) => 14, 
+	 (3,{4},4) => 11, 
+	 (4,{5},5) => 3};
+    assert(e == b)
+/// 
+
+
+
+-- calculate the expected betti tableau
+-- for a curve of degree d, genus g in IP^r.
+-- we assume C non-degenerate, O_C(2) nonspecial and maximal rank
+expectedBetti(ZZ,ZZ,ZZ) := (d,g,r)->(
+     b := d+r+1;
+     L := apply(b,i->(if i>1 then 
+	       min(d*i+1-g,binomial(r+i,r)) 
+	       else binomial(r+i,r)));
+     expectedBetti(L,r)
+     )
+
+TEST ///
+    e = expectedBetti(5,1,3)
+    b = new BettiTally from {
+	 (0,{0},0) => 1, 
+	 (1,{3},3) => 5,
+      	 (2,{4},4) => 5, 
+	 (3,{5},5) => 1
+    	 };
+    assert(e == b)
+///
+
+
+
+
+--------------------
+-- expected Shape --
+--------------------
+
+------------------------------------------------------------------
+-- this should be erased onece expectedBetti is used everywhere --
+------------------------------------------------------------------
 
 -- construct a minimal free resolution with expected betti tableau
 expectedShape=method()
@@ -252,14 +369,13 @@ TEST ///
 randomHartshorneRaoModuleDiameter3oneDirection = (HRao,R) -> (
      -- construct a chain complex with expected betti tableau
      -- and 0 differentials
-     t := symbol t;
-     T := QQ[t];
-     F := expectedShape(hilbertNumerator(HRao|{0,0,0,0},3,t),R);
-     -- the betti Tableau of F to find out later if linear syzygies 
+     -- 
+     -- calculate the expectd betti diagramm to find out wether linear syzygies 
      -- are requried (this is the difficult part in the construction)
-     expectedBetti := betti F;
+     e := expectedBetti(HRao|{0,0,0,0},3);
+     F := R^e;
      -- find betti Numbers of the linear strand
-     linearStrand := for i from 0 list (if expectedBetti#?(i,{i},i) then expectedBetti#(i,{i},i) else break);
+     linearStrand := for i from 0 list (if e#?(i,{i},i) then e#(i,{i},i) else break);
      -- construction depends on lenth of linear strand.
      if #linearStrand == 0 then error"linear Stand has lenght 0. This should never happen";
      if #linearStrand == 1 then (
