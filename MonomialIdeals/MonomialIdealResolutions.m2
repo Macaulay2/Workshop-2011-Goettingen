@@ -9,7 +9,7 @@ newPackage (
   Authors => {{Name => "Eduardo Saenz De Cabezon Irigara", Email => "eduardo.saenz-de-cabezon@unirioja.es"},
               {Name => "Oscar Fernandez-Ramos", Email => "caribefresno@gmail.com"},
               {Name => "Christof Söger", Email => "csoeger@uos.de"}},
-  Headline => "various decomposability routines for simplicial complexes",
+  Headline => "various methods for working with resolutions for monomial ideals",
   DebuggingMode => false
 )
 
@@ -28,7 +28,8 @@ export {
   AHH,
   AHHResolution,
   simplicialResolutionDifferential,
-  simplicialResolution
+  simplicialResolution,
+  isResolution
 }
 
 -------------------
@@ -110,12 +111,10 @@ isElement(RingElement, MonomialIdeal) := Boolean => (f,I) -> (
 
 isStable = method();
 isStable(MonomialIdeal) := Boolean => (I) -> (
-  genlist := I_*;
   S:=ring I;
-  not any(
-    #genlist, i-> (
-      g:=I_i; mv:=maxVar(g); f:=lift(g/S_mv,S);
-      any(mv, j -> not isElement(f*S_j,I))
+  all( I_*, g-> ( 
+    mv:=maxVar(g); f:=lift(g/S_mv,S);
+    all(mv, j -> isElement(f*S_j,I))
     )
   )
 );
@@ -125,12 +124,10 @@ isStable(MonomialIdeal) := Boolean => (I) -> (
 
 isSQStable = method();
 isSQStable(MonomialIdeal) := Boolean => (I) -> (
-  genlist := I_*;
   S:=ring I;
-  not any(
-    #genlist, i-> (
-      g:=I_i; mv:=maxVar(g); vars:=positions((first exponents g)_{0..mv},i->i==0);f:=lift(g/S_mv,S);
-      any(vars, j -> not isElement(f*S_j,I))
+  not any( I_*, g-> (
+    mv:=maxVar(g); vars:=positions((first exponents g)_{0..mv},i->i==0);f:=lift(g/S_mv,S);
+    any(vars, j -> not isElement(f*S_j,I))
     )
   )
 );
@@ -208,7 +205,7 @@ simplicialResolution(MonomialIdeal, SimplicialComplex):=(I,C)-> (
      )
 
 isResolution=method()
-isResolution(ChainComplex,MonomialIdeal):=(C,M)->(
+isResolution(ChainComplex,MonomialIdeal):=(C,I)->(
      return ((cokernel gens I==prune HH_0(C)) and ( all((min C+1,max C), i -> (prune HH_i(C) == 0))))
      )
 -------------------
@@ -303,14 +300,15 @@ doc ///
        resolutions of some monomial ideals.
    Description
        Text
-          This package includes Eliahou-Kervaire resolution for stable monomial ideals. 
-           It also includes Aramova-Herzog-Hibi resolution for squarefree stable monomial ideals (note that squarefree stable is different from "squarefree and stable").
+          This package includes multiple resolutions for monomial ideals. There are methods to compute the Eliahou-Kervaire resolution for stable monomial ideals, the Aramova-Herzog-Hibi resolution for squarefree stable monomial ideals (note that squarefree stable is different from "squarefree and stable") and it also contains methods for computing monomial resolutions supported on simplicial complexes.
+
            References:
 
-           [EK] S. Eliahou and M. Kervaire, "Minimal Resolutions of Some Monomial Ideals"
-	    J. Algebra 129 (1990), 1--25.
 	   [AHH] A.Aramova, J. Herzog and T. Hibi, "Squarefree lexsegment ideals"
 	   Mat. Zeitschrift 228 (1998), 353-378
+	   [BPS] D. Bayer, I. Peeva, B. Sturmfels, "Monomial resolutions", Math. Res. Lett. 5 (1998), 31-46
+           [EK] S. Eliahou and M. Kervaire, "Minimal Resolutions of Some Monomial Ideals"
+	    J. Algebra 129 (1990), 1-25.
 ///
 
 doc ///
@@ -337,8 +335,8 @@ doc ///
            isStable J
    SeeAlso
      MonomialIdeal
-	  isElement 
-	  isSQStable
+     isElement 
+     isSQStable
 ///
 doc ///
    Key
@@ -361,7 +359,7 @@ doc ///
            I = monomialIdeal(x*y,x*z,y*z);
            isSQStable I
            J = monomialIdeal(x,y*z);
-           isStable J
+           isSQStable J
    SeeAlso
      MonomialIdeal
 	  isElement 
@@ -407,14 +405,18 @@ doc ///
 		 I: MonomialIdeal
    Outputs
        M: Matrix
-		    returns a Matrix representing the map for the n-th step
    Description
        Text
-        e 
+          Returns a Matrix representing the map for the n-th step of the Eliahou-Kervaire resolution.
+          WARNING: The function does not check if I is stable.
        Example
+         R=QQ[x,y,z];
+         I=monomialIdeal(x^2,x*y,y^2,y*z);
+         EK(2,I)
         
    SeeAlso
       EKResolution
+      isStable
 ///
 
 doc ///
@@ -431,15 +433,19 @@ doc ///
        C: ChainComplex
    Description
        Text
-         It computes degrees of modules and differencials in the minimal resolution of I  
+         The Eliahou-Kervaire resolution is a minimal resolution for stable monomial ideals as shown in [EK]. This function computes degrees of modules and differencials in the minimal resolution of I according to the formulas in [EK].
+         WARNING: The function does not check if I is stable. If it is not the result may not be a resolution!
        Example
          R=QQ[x,y,z];
          I=monomialIdeal(x^2,x*y,y^2,y*z);
          EKResolution(I)
    SeeAlso
-	   EK
+      EK
+      AHHResolution
+      isStable
       MonomialIdeal
       ChainComplex
+      isResolution
       res
 ///
 
@@ -447,29 +453,38 @@ doc ///
 doc ///
    Key
        AHH
+      (AHH,ZZ,MonomialIdeal)
+   
    Headline
-       e
+       Constructs the n-th step of the minimal free resolution given by A.Aramova, J. Herzog and T. Hibi in [AHH] for a squarefree stable monomial ideal. 
    Usage
-       a
+       AHH(n, I)
    Inputs
        n: ZZ
-		 I: MonomialIdeal
+       I: MonomialIdeal
    Outputs
-       m: 
+       C: Matrix
    Description
        Text
-        e 
+         Returns a matrix representing the map for the n-th step of the Aramova-Herzog-Hibi resolution.
+         WARNING: The function does not check if I is squarefree stable.
        Example
-        
+         R=QQ[x,y,z];
+         I=monomialIdeal(x*y,x*z,y*z);
+         AHH(2,I)
    SeeAlso
-      
+      AHHResolution
+      isSQStable
+      MonomialIdeal      
 ///
 
 doc ///
    Key
        AHHResolution
+      (AHHResolution,MonomialIdeal)
+   
    Headline
-       constructs the minimal free resolution given by A. Aramova, J. Herzog and T. Hibi in [AHH] for a squarefree stable monomial ideal. 
+       Constructs the minimal free resolution given by A.Aramova, J. Herzog and T. Hibi in [AHH] for a squarefree stable monomial ideal. 
    Usage
        AHHResolution I
    Inputs
@@ -478,15 +493,116 @@ doc ///
        C: ChainComplex
    Description
        Text
-         It computes degrees of modules and differencials in the minimal resolution of I  
+         The Aramova-Herzog-Hibi resolution is a minimal resolution for squarefree stable monomial ideals as shown in [AHH]. This function computes degrees of modules and differencials in the minimal resolution of I according to the formulas in [AHH].
+         WARNING: The function does not check if I is squarefree stable. If it is not the result may not be a resolution!
        Example
          R=QQ[x,y,z];
          I=monomialIdeal(x*y,x*z,y*z);
          AHHResolution(I)
    SeeAlso
+      AHH
+      EKResolution
+      isSQStable
       MonomialIdeal
       ChainComplex
+      isResolution
       res
+      
+///
+
+doc ///
+   Key
+     simplicialResolutionDifferential
+     (simplicialResolutionDifferential,ZZ,MonomialIdeal,SimplicialComplex)
+  Headline
+    Constructs the matrix representing the n-th step of a chain complex supported on a simplicial complex SC labeled by the generators of the monomial ideal I.
+  Usage
+    simplicialResolutionDifferential(n, I, SC)
+  Inputs
+    n: ZZ
+    I: MonomialIdeal
+    SC: SimplicialComplex
+  Outputs
+    M: Matrix
+  Description
+    Text
+      Returns a Matrix representing the map for the n-th step of the chain complex supported on a simplicial complex SC labeled by the generators of the monomial ideal I. This chain complex may or may not be a resolution of I.
+    Example
+      R=QQ[x,y,z];
+      I=monomialIdeal(x*y,x*z,y*z);
+      SC = simplicialComplex({x*y*z});
+      simplicialResolutionDifferential(2,I,SC)
+  SeeAlso
+    simplicialResolution
+    EKResolution
+    taylorResolution
+    MonomialIdeal
+///
+
+doc ///
+  Key
+    simplicialResolution
+    (simplicialResolution, MonomialIdeal, SimplicialComplex)
+  Headline
+    Constructs a chain complex supported on a simplicial complex SC labeled by the generators of the monomial ideal I.
+  Usage
+    simplicialResolution(I, SC)
+  Inputs
+    I: MonomialIdeal
+    SC: SimplicialComplex
+  Outputs
+    C: ChainComplex
+  Description
+    Text
+      Constructs a chain complex supported on a simplicial complex SC labeled by the generators of the monomial ideal I. This chain complex may or may not be a resolution of I. The function checks if the number of generators of the ideal equals the number of vertices of the simplicial complex. 
+      A condition for SC to be a resolution is given in [BPS].
+      WARNING: The function does not check if the output is a resolution!
+    Example
+         R=QQ[x,y,z];
+         I=monomialIdeal(x*y,x*z,y*z);
+	 SC = simplicialComplex({x*y*z});
+         simplicialResolution(I,SC)
+  SeeAlso
+      simplicialResolutionDifferential
+      EKResolution
+      taylorResolution
+      MonomialIdeal
+      ChainComplex
+      isResolution
+      res
+///
+
+doc ///
+   Key
+      isResolution
+     (isResolution, ChainComplex, MonomialIdeal)
+   Headline
+       checks whether a ChainComplex is a resolution of a monomial ideal
+   Usage
+      isResolution(C,I)
+   Inputs
+     C: ChainComplex
+     I: MonomialIdeal
+   Outputs
+     B: Boolean
+         returns true if and only if C is a resolution of I
+  Description
+    Text
+        Determines if the ChainComplex is a resolution of a monomial ideal I. It verifies if the complex is exact except at homological degree 0 where the homology is isomorphic to the ideal. 
+	NOTE: It uses homology computations form the package ChainComplexExtras.
+    Example
+      R = QQ[x,y,z];
+      I = monomialIdeal(x^3,x^2*y,x*y^2,y^3);
+      isResolution(res I,I)
+      isStable I
+      isResolution(EKResolution I, I)
+      J = monomialIdeal(x^3,x*y^2,y^3);
+      isStable J
+      isResolution(EKResolution J, J)
+  SeeAlso
+    MonomialIdeal
+    isElement 
+    isSQStable
 ///
 
 -------------------
