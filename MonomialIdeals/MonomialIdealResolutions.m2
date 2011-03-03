@@ -271,6 +271,12 @@ admissibleSQSymbols(MonomialIdeal):=(M)->(
      flatten apply(first entries gens M,i->admissibleSQSymbolsMonomial(i))
      )
 
+subcomplex=method();
+subcomplex(RingElement, SimplicialComplex):=(M,C)->(
+     R:=ring(C);
+     L:=toList flatten apply(0..dim C,i->flatten entries faces(i,C));
+     select(L,i->M//i!=0_R)
+     )
 
 -------------------
 -- Documentation
