@@ -17,8 +17,7 @@ blowup(AbstractVarietyMap) :=
      d := rank N;
      PN := projectiveBundle(N, VariableNames => {{x},}); -- x = chern(1,OO_PN(-1))
      C := intersectionRing PN;
-     (BasAModule, bas, iLowerMod) := pushFwd(iupper);
-     
+     (BasAModule, bas, iLowerMod) := pushFwd(iupper);     
      -- iLowerMod(element b of B) = one column matrix over A whose product with bas is b
      n := numgens BasAModule;
      -- the fundamental idea: we build the Chow ring of the blowup as an algebra over A
@@ -27,7 +26,9 @@ blowup(AbstractVarietyMap) :=
      -- For this to work, we are depending on the ordering of pushFwd!
      
      --THESE VARIABLES NEED TO BE PROTECTED
-     D1 := A[E_0..E_(n-1), Join=>false, Degrees => (flatten degrees BasAModule) + splice{n:1}];
+     --The setup below will break if we ever end up with multigraded Chow rings.
+     E := getSymbol "E";
+     D1 := A( monoid [E_0..E_(n-1), Join=>false, Degrees => (flatten degrees BasAModule) + splice{n:1}]);
      alphas := first entries bas;
      -- three types of relations.
      -- 1. relations on the generators of B as an A-module
@@ -40,7 +41,7 @@ blowup(AbstractVarietyMap) :=
              for i from 1 to n-1 list 
 	       for j from i to n-1 list (
 		    f := (vars D1) * iLowerMod (alphas#i * alphas#j);
-		    E_i * E_j - E_0 * f
+		    D1_(E_i) * D1_(E_j) - D1_(E_0) * f
 	  )), x -> x != 0), D1);
      -- 3. linear relations
      -- This imposes the fundamental relations which express the Chow ring of the blowup as a group quotient of the A and the Chow ring of PN.
@@ -51,19 +52,19 @@ blowup(AbstractVarietyMap) :=
      I3 := ideal for i from 0 to n-1 list (
      	  f1 := promote(incl_* (alphas#i), D1);
 	  f2 := sum for j from 0 to d-1 list (
-     	       E_0^j * ((vars D1) * iLowerMod(blist#j * alphas#i))
+     	       D1_(E_0)^j * ((vars D1) * iLowerMod(blist#j * alphas#i))
 	       );
 	  f1-f2);
      -- Finally, we impose the defining relation on the Chow ring of PN, that is, we impose that
      -- the sum of chern(1,O(-1))^i * chern(d-i, N) for i from 0 to d is 0. 
      I4 := ideal {sum for i from 0 to d list (
-	       (-E_0)^i * ((vars D1) * iLowerMod(chern(d-i, N)))
+	       (-D1_(E_0))^i * ((vars D1) * iLowerMod(chern(d-i, N)))
 	       )};
      D := D1/(I1 + I2 + I3 + I4);
      Ytilde := abstractVariety(dim Y, D); -- the Chow ring of the blowup
      xpowers := matrix {for i from 0 to d-1 list x^i};
      -- need to check this next line!
-     E0powers := transpose matrix {for i from 0 to d-1 list (E_0)^i};
+     E0powers := transpose matrix {for i from 0 to d-1 list (D1_(E_0))^i};
      jLower := (f) -> (
 	  -- takes an element f of C, returns an element of D
 	  cf := last coefficients(f, Monomials => xpowers);
