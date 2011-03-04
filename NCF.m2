@@ -49,8 +49,9 @@ extractTimecourse (Matrix, List, String, HashTable) := HashTable => ( D, L, x, W
 --MHT is the table with the expermental data, 
 --permutation is a list with the wanted permutation,
 --and fieldChar is the Characteristic
+-- gens: a list of names of generators
 getSingleNcfList = method()
-getSingleNcfList (HashTable, List, ZZ) := List => (MHT, Permutation, fieldChar) -> (
+getSingleNcfList (HashTable, List, ZZ, List) := List => (MHT, Permutation, fieldChar, gens) -> (
      n := #first keys MHT; -- Get number of variables
      L := subsets n;
      L = apply( L, l -> apply( l, i -> i + 1) ) ;
@@ -94,12 +95,26 @@ ncfIdeal (List, Ring, List) := RingElement => (S, QR, Sigma) -> (
     )
 )
 
+--main routine, the user interfaces with this routine
+-- L list of variable names
+-- W wiring diagram 
+-- D time course data
+mainNCF = method()
+mainNCF (List, HashTable, Matrix) := List => (L, W, D) -> (
+  apply(L, x -> (
+    partialData := extractTimecourse( D, L, x, W);
+    n := getSingleNcfList( partialData, {}, 2, W#x);
+    print ("The functions for " | x | " are " | toString n)
+    )
+  )
+)
+
+
 --returns a list "Ls" of lists of CNFs for each variable,
 --"Ls"_i is a list with the CNFs of the ith variable matching the input data 
 getNcfLists = method()
 getNcfLists (Matrix , List, ZZ) := List=> (inputMatrix,Permutation,fieldChar) ->
 (
-     
      rows:= numgens target inputMatrix;
      assert(rows>1);
      fullDataHashTable := new MutableHashTable;
@@ -206,11 +221,11 @@ beginDocumentation()
 doc ///
 Key
   getSingleNcfList
-  (getSingleNcfList, HashTable, List, ZZ)
+  (getSingleNcfList, HashTable, List, ZZ, List)
 Headline
   Inferring nested canalyzing functions for given time-course data for a single variable
 Usage
-	        P = getSingleNcfList(TimeCourseDataTable, Permutation, Characteristic)
+	        P = getSingleNcfList(TimeCourseDataTable, Permutation, Characteristic, generators)
 Inputs
 	TimeCourseDataTable : HashTable
 	  with the time-course data for a single variable as a function of all variables . 
