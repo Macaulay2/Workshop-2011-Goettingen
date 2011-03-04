@@ -30,7 +30,8 @@ export {
   AHHResolution,
   simplicialResolutionDifferential,
   simplicialResolution,
-  isResolution
+  isResolution,
+  hasScalars
 }
 
 -------------------
@@ -207,6 +208,12 @@ simplicialResolution(MonomialIdeal, SimplicialComplex):=(I,C)-> (
 isResolution=method()
 isResolution(ChainComplex,MonomialIdeal):=(C,I)->(
      return ((cokernel gens I==prune HH_0(C)) and ( all((min C+1,max C), i -> (prune HH_i(C) == 0))))
+     )
+
+hasScalars=method()
+hasScalars(ChainComplex):=(C)->(
+     d:=flatten flatten apply(1..max C,i->apply(flatten entries C.dd_i,j->degree j));
+     member(0,d)
      )
 -------------------
 -- Local-Only Code
