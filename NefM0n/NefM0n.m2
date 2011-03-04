@@ -16,7 +16,7 @@ newPackage(
 export {}
 
 -- Code here
-export {keelSum, keelSumList, keelAvg, keelAvgIndices, boundaryRing, fCurveIneqsLPSOLVE, fCurveIneqsMatrix, cJinDDI, cJinD, m1}
+export {listComplement, keelSum, keelSumList, keelAvg, keelAvgIndices, boundaryRing, fCurveIneqsLPSOLVE, fCurveIneqsMatrix, cJinDDI, cJinD, m1}
 
 BoundaryRing = new Type of HashTable
 
@@ -25,7 +25,6 @@ protect M0nList;
 protect M0nComplement;
 
 listComplement = (L, K) -> toSequence sort toList(set L - set K)
-
 
 --**************************************************************************      
 --**************************************************************************
@@ -59,8 +58,8 @@ boundaryRing ZZ := n-> (
 
 BoundaryRing_List := (B,i) -> B.Variables#i
 
-
--- Define the ideal I = ideal( D_J - D_{J^c}) \subseteq R. Redundancies included to make code more transparent.
+--listComplement = method()
+--listComplement (List, List) := (L, K) -> toSequence sort toList(set L - set K)
 
 keelSum = method()
 keelSum (List, BoundaryRing) := (K,R)-> (
@@ -77,27 +76,6 @@ keelSum (List, BoundaryRing) := (K,R)-> (
        	  );
      bndsum
      );
-
---**************************************************************************      
---**************************************************************************
-
-keelSumList = method()
-keelSumList (List, BoundaryRing) := (K,R)-> (
-     --Input a split four-tuple K = {{i,j}, {k,l}}
-     -- and output the sum
-     --  \sum_{{i,j} \subseteq J, {k,l} subseteq J^c} D_J
-     -- as a list indexed by D_J
-     
-     if #(set K_0 * set K_1) != 0 then error "expected pairs in the list to be disjoint";
-     apply(R.M0nIndices, j-> (
-      	       if (isSubset(K_0, set j ) and isSubset( K_1, set R.M0nComplement j) )
-	       then 1
-	       else 0
-	       )
-       	  )
-     )
-
-
 
 --**************************************************************************      
 --**************************************************************************
@@ -170,6 +148,27 @@ keelAvgIndices (Sequence, List, BoundaryRing) := (J, IList, R) -> (
 	   )
       
       
+--**************************************************************************      
+--**************************************************************************
+
+keelSumList = method()
+keelSumList (List, ZZ) := (K,n)-> (
+     --Input a split four-tuple K = {{i,j}, {k,l}}
+     -- and output the sum
+     --  \sum_{{i,j} \subseteq J, {k,l} subseteq J^c} D_J
+     -- as a list indexed by D_J
+     
+     nList := toList(1..n);
+     if #(set K_0 * set K_1) != 0 then error "expected pairs in the list to be disjoint";
+     
+     bndIndices := select (subsets(nList), J -> ( (#J >= 2 and #J < floor n/2) or (#J == floor n/2 and isSubset({1},J) ) ) );
+     apply(bndIndices, j-> (
+      	     if (isSubset(K_0, set j ) and isSubset( K_1, set listComplement(nList, j)) )
+	     then print "hey"
+	     --  else 0
+	       )
+       	  )  
+     )
       
 --**************************************************************************      
 --**************************************************************************
@@ -459,7 +458,7 @@ S = R#Ring
 tex keelAvg((1,2,3), R)
 
 print keelSum({{1,3},{2,4}}, R)
-keelSumList({{1,3},{2,4}},R)
+keelSumList({{1,3},{2,4}},5)
 tex keelAvgIndices( (1,2,3), {{2,3,4,5}}, R)
 tex keelAvgIndices( (1,2,3), {{1,2,4,5}, {1,2,4,6}, {1,2,5,6}, {1,3,4,5}, {1,3,4,6}, {1,3,5,6}, {2,3,4,5}, {2,3,4,6}, {2,3,5,6}},R)
 
