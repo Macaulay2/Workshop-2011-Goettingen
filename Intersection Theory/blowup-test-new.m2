@@ -26,12 +26,19 @@ assert (integral propertransform^5 == 3264)
 -- blow up a point on P^2
 X = flagBundle({1,0}, VariableNames =>{s,q})
 Y = flagBundle({1,2}, VariableNames =>{a,b})
-f = X / point
+i = map(Y,X, OO_X)
+(Ytilde, PN, PNmap, Ymap) = blowup(i)
+E = PNmap_* chern(0,OO_PN)
+assert (integral (E^2) == -1)
+assert (integral PNmap^* E == -1)
+assert (integral ctop tangentBundle Ytilde == 4)
+
+-- blow up a point in P^7
+X = flagBundle({1,0}, VariableNames =>{s,q})
+Y = flagBundle({1,7}, VariableNames =>{a,b})
 i = map(Y,X, dual first bundles X)
 (Ytilde, PN, PNmap, Ymap) = blowup(i)
-assert (integral Ymap_* (E_0^2) == -1)
-assert (integral PNmap^* E_0 == -1)
-assert (integral ctop tangentBundle Ytilde == 4)
+assert (integral ctop tangentBundle Ytilde == 14)
 
 -- Blow up a twisted cubic in P^3, then check that the proper transforms
 -- of three quadric surfaces containing that twisted cubic have product == 0
@@ -53,3 +60,19 @@ cubic = chern(1,OO_Y(3))
 -- points, so it intersects the other two quadrics in one point off of the
 -- twisted cubic, and this formula counts that point.
 assert(integral (propertransform^2 *((Ymap^* cubic) - E)) == 1)
+
+-- G(2,5) is cut out by 5 quadrics in P^9
+X = flagBundle({2,3}, VariableNames => {s,q})
+S = first bundles X
+L = exteriorPower(2, dual S)
+Y = flagBundle({1,9}, VariableNames => {a,b})
+i = map(Y,X,L)
+(Ytilde, PN, PNmap, Ymap) = blowup(i)
+E = PNmap_* chern(0, OO_PN)
+quadric = chern(1,OO_Y(2))
+propertransform = (Ymap^* quadric) - E
+-- 5 generic quadrics containing the Grassmannian cut it out
+propertransform^5
+E^5
+(Ymap^* quadric)^5
+assert (propertransform^5 == 0)

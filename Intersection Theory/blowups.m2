@@ -15,7 +15,9 @@ blowup(AbstractVarietyMap) :=
      N :=  (incl^* tangentBundle Y) - tangentBundle X;
      x := local x;
      d := rank N;
-     PN := projectiveBundle'(dual N, VariableNames => {,{x}}); -- x = chern(1,OO_PN(1))
+     if not (d == dim Y - dim X) then error "Expected a finite morphism";
+     Ndual := dual N;
+     PN := projectiveBundle'(Ndual, VariableNames => {,{x}}); -- x = chern(1,OO_PN(1))
      C := intersectionRing PN;
      (BasAModule, bas, iLowerMod) := pushFwd iupper;     
      -- iLowerMod(element b of B) = one column matrix over A whose product with bas is b
@@ -23,7 +25,7 @@ blowup(AbstractVarietyMap) :=
      -- the fundamental idea: we build the Chow ring of the blowup as an algebra over A
      -- we introduce one algebra generator per basis element of B over A, and we let the first generator, E_0, play a special role:
      -- if z is the first chern class of OO_PN(-1), we think of E_0^j * E_i as z^j E_i.  In particular, E_0 itself we identify with 1_B.
-     -- For this to work, we are depending on the ordering of pushFwd!
+     -- For this to work, we are depending on the ordering of pushFwd: the element 1_B must be the first generator returned!
      
      --The setup below will break if we ever end up with multigraded Chow rings, because pushFwd does not properly support multigraded maps
      E := getSymbol "E";
@@ -36,17 +38,16 @@ blowup(AbstractVarietyMap) :=
      -- 2. mult map on the E_i and E_j
      -- The multiplication of classes from PN in the Chow ring of the blowup is given by:
      -- if j_* is the pushforward from PN to the Chow ring of the blowup, then j_*(a) * j_*(b) = j_*(zab)
-     I2 := promote( ideal select( flatten (
+     I2 := ideal flatten (
              for i from 1 to n-1 list 
 	       for j from i to n-1 list (
 		    f := (vars D1) * iLowerMod (alphas#i * alphas#j);
 		    D1_(E_i) * D1_(E_j) - D1_(E_0) * f
-	  )), x -> x != 0), D1);
+	  ));
      -- 3. linear relations
-     -- This imposes the fundamental relations which express the Chow ring of the blowup as a group quotient of the A and the Chow ring of PN.
-     -- Specifically, if b is an element of B, we impose that i_*(b) = b * chern(d-1, Q) where Q = N / O(-1) is the universal quotient bundle
+     -- This imposes the fundamental relations which express the Chow ring of the blowup as a group quotient of the sum of A and the Chow ring of PN.
+     -- Specifically, if b is an element of B, we impose that incl_*(b) = b * ctop(Q) where Q = N / O(-1) is the universal quotient bundle
      -- on PN.
-     Ndual := dual N;
      blist := for i from 1 to d list chern(d-i, Ndual);
      I3 := ideal for i from 0 to n-1 list (
      	  f1 := promote(incl_* (alphas#i), D1);
@@ -59,10 +60,10 @@ blowup(AbstractVarietyMap) :=
      I4 := ideal {sum for i from 0 to d list (
 	       (-D1_(E_0))^i * ((vars D1) * iLowerMod(chern(d-i, N)))
 	       )};
-     D := D1/(I1 + I2 + I3 + I4); -- the Chow ring of the blowup
+     I := trim (I1 + I2 + I3 + I4);
+     D := D1/I; -- the Chow ring of the blowup
      Ytilde := abstractVariety(dim Y, D); 
      xpowers := matrix {for i from 0 to d-1 list x^i};
-     -- 
      E0powers := transpose matrix {for i from 0 to d-1 list (-D1_(E_0))^i};
      jLower := (f) -> (
 	  -- takes an element f of C, returns an element of D
@@ -73,11 +74,9 @@ blowup(AbstractVarietyMap) :=
 	  );
      pushforwardPN := method();
      pushforwardPN C := a -> jLower a;
-     -- need to push forward sheaves as well
-     -- to pull back a class from the blowup to PN we take E_i to x*alphas#i; this corresponds to
+     -- to pull back a class from the blowup to PN we take E_i to -x*alphas#i; this corresponds to
      -- the fact that pushing forward and then pulling back a class on PN is the same as multiplying by x = c_1(O(1))
-     -- CHECK SIGNS IN NEXT LINE
-     jUpper := map(C, D, matrix {(for i from 0 to n-1 list -x * alphas#i) | apply(flatten entries iuppermatrix, b -> promote(b,C))});
+     jUpper := map(C, D, (for i from 0 to n-1 list -x * alphas#i) | flatten entries promote(iuppermatrix,C));
      pullbackPN := method();
      pullbackPN ZZ := pullbackPN QQ := a -> promote(a,C);
      pullbackPN D := a -> jUpper a;
@@ -155,6 +154,15 @@ L = exteriorPower(2, dual S)
 Y = flagBundle({1,9}, VariableNames => {a,b})
 i = map(Y,X,L)
 (Ytilde, PN, PNmap, Ymap) = blowup(i)
+E = PNmap_* chern(0, OO_PN)
+quadric = chern(1,OO_Y(2))
+propertransform = (Ymap^* quadric) - E
+-- 5 generic quadrics containing the Grassmannian cut it out
+propertransform^5
+E^5
+(Ymap^* quadric)^5
+assert (propertransform^5 == 0)
+
 intersectionRing Ytilde
 Ymap_* E_0^9
 Q = OO_PN^9 - first bundles PN
