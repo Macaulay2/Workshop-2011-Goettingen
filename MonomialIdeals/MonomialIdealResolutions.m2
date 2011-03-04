@@ -21,6 +21,7 @@ needsPackage ("ChainComplexExtras");
 export {      
   isStable,
   isElement,
+  isGenericMonIdeal,
   EK,
   EKResolution,
   scarf,  
@@ -35,31 +36,30 @@ export {
 -------------------
 -- Exported Code
 -------------------
-
-lcmMon=method();
-lcmMon(List, List):= (L1,L2) -> (
-      apply(L1,L2, (a,b)->max({a,b}))   
-)  
+   
+isGenericMonIdeal=method();
+isGenericMonIdeal(MonomialIdeal) := I->(
+     local l; 
+     flag:=true;
+     ex:=apply(I_*,g->(flatten exponents g));
+   --  print VerticalList ex;
+     apply(support I,v->(
+	                l=select(apply(ex,e->e_(index v)),a->a!=0);
+			if length (unique l) !=length l then flag=false;
+			)      
+	  );
+     flag     
+) 
 
 scarf=method();
 scarf(MonomialIdeal):= I -> (
- labels:=apply(I_*, m->flatten exponents m);
- n:=numgens I;
- faceSet:={{}};
- degreeSet:={apply(length labels_0,k->0)};
- local deg;
- for i from 0 to length labels-1 do(
-     for j from 0 to length faceSet-1 do(
-	  deg=lcmMon(degreeSet_j,labels_i);
-          if not member(deg,degreeSet) then (
-	       faceSet=faceSet|{faceSet_j|{i}};	       
-	       degreeSet=degreeSet|{deg};
-	  );     	  
-     );	      
- );
- v:=getSymbol "v";
- R:=QQ[v_0..v_(n-1)];
- simplicialComplex apply (drop(faceSet,1),f->product(apply(f,i->R_(v_i))))
+   S:=drop(subsets(numgens I),1);
+   faces:={};
+   P:=partition(s->lcmMon(apply (s,i->flatten exponents I_i)),S);
+   apply(keys P,k->if #(P#k)==1 then faces=faces|P#k); 
+   v:=getSymbol "v";
+   R:=QQ[v_1..v_(length faces-1)];
+   simplicialComplex apply(faces,f->product(apply(f,i->R_i)))           
 )
 
 
@@ -211,6 +211,14 @@ isResolution(ChainComplex,MonomialIdeal):=(C,I)->(
 -------------------
 -- Local-Only Code
 -------------------
+
+lcmMon=method();
+lcmMon(List):= (L) -> (
+      len:=#(L_0);
+      apply(len,i->max(apply(L,l->l_i)))  
+)
+
+
 
 --lcm function taken from package "ChainComplexExtras.m2"
 myLcm = method()
