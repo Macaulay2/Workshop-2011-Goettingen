@@ -14,7 +14,10 @@ export {
       TropicalVariety,
       --methods
       tropicalVariety,
-      tropicalMap
+      tropicalMap,
+      tropicalDiscriminant,
+      tropicalResultant,
+      cayleySum
       --options
       }
  
@@ -37,11 +40,7 @@ tropicalVariety = method( Options => {
 	"symmetry" => null, 
 	"disableSymmetryTest" => false})
 tropicalVariety List := opts -> L -> (
-  --   if(opts#"symmetry" === null) then (
-    -- 	  gfanTropicalTraverse(gfanTropicalStartingCone(L,"stable" => opts#"stable"), "stable" => opts#"stable")     
---	  ) else (
-	  gfanTropicalTraverse(gfanTropicalStartingCone(L,"stable" => opts#"stable"), opts)     
---	  )
+  	  gfanTropicalTraverse(gfanTropicalStartingCone(L,"stable" => opts#"stable"), opts)     
      )
 tropicalVariety Ideal := opts -> I -> (
      tropicalVariety(I_*, opts)
@@ -85,6 +84,25 @@ extrinsicIndex := (C,A) -> (
      )
 
 
+----------------------------
+-- cayleySum
+----------------------------
+-- INPUT: a list of matrices, all with the same number of rows
+-- OUTPUT: a matrix, representing the Cayley sum of the columns of input matrices
+cayleySum = method()
+cayleySum List := L -> (
+     if (not # set(L / numRows) == 1) then
+     	  error "the matrices in the list must have the same number of rows";
+     N := L / numColumns;
+     matrix( flatten \ table(#N, #N, (i,j) -> (
+	       if(not i == j) then (
+	       	    toList (1..N#j)/(k->0)
+		    ) else (
+		    toList (1..N#j)/(k->1)	       	 
+		    )
+	       ))) || fold((a,b)->a|b, L)
+     )
+
 
 ---------------exported functions--------------------------------
 
@@ -115,25 +133,68 @@ tropicalMap (PolymakeObject, Matrix) := (T,A) -> (
      new TropicalVariety from hashTable H
      )
 
-----------------------------
---- tropicalResultant
-----------------------------
 
 ----------------------------
 --- tropicalDiscriminant
 ----------------------------
-
+--INPUT: a matrix, whose columns form a vector configuration A
+--OUTPUT:  tropical A-discriminant (GKZ, Dickenstein-Feichter-Sturmfels)
 tropicalDiscriminant = method()
 tropicalDiscriminant Matrix := A -> (
-     
+     n := numColumns A;
+     x := local x;
+     R := QQ(monoid[x_0..x_(n-1)]);
+     I := ideal( (entries A) / (a -> sum apply(toList(0..#a-1), i -> a#i*R_i)));
+     T := gfanTropicalVariety I;
+     B := transpose gens kernel A;
+     tropicalMap(T,transpose gens kernel A)
      )
 
-----------------------------
---- tropicalChowHypersurface
-----------------------------
 
 ----------------------------
---- rayShooting
+--- tropicalResultant
+----------------------------
+--INPUT: a list of matrices, representing point configurations
+--OUTPUT: tropical resultant
+tropicalResultant = method()
+tropicalResultant List := L -> (
+     if (not # set(L / numRows) == 1) then
+     	  error "the matrices in the list must have the same number of rows";
+     N := L / numColumns;
+     ambientDim := sum N;
+     rays := entries id_(ZZ^ambientDim);
+     chosenMixedCells := fold( (a,b) -> toList(set(a)**set(b)), N / (n -> subsets(n,2)))/deepSplice;
+     count := 0;
+     startIndices := for n in N list count do count=count+n;
+     mixedOrthants := apply(chosenMixedCells, C -> (
+	      flatten apply(#C, i -> sort( (toList(set(0..N#i-1)-C#i)) / (j->j+startIndices#i) ))
+	  ));
+     cayleySum L;
+     -- NOT DONE!
+     )
+
+
+----------------------------
+--- secondaryFan
+----------------------------
+--INPUT: a matrix, whose columns form a vector configuration A
+--OUTPUT:  
+
+
+
+----------------------------
+--- fiberFan
+----------------------------
+
+
+
+----------------------------
+--- mixedFiberFan
+----------------------------
+
+
+----------------------------
+--- TrIm
 ----------------------------
 
 
@@ -144,7 +205,30 @@ tropicalDiscriminant Matrix := A -> (
 
 beginDocumentation()
 
-
+doc ///
+	Key
+		tropicalVariety
+		(tropicalVariety, List)
+		(tropicalVariety, Ideal)
+		[tropicalVariety, "stable", "symmetry", "g", "d"]
+	Headline
+		Compute the tropical variety 
+	Usage
+		T = tropicalVariety(L)
+		T = tropicalVariety(I)
+	Inputs
+		L:List
+			containing polynomials generating an ideal homogeneous with respect to a positive grading
+		I:Ideal
+		        homogeneous with respect to a positive grading
+	Outputs
+		T:TropicalVariety
+	Description
+		Text
+		       The optional input "stable" is for tropical stable intersections
+		Example
+			QQ[x,y,z];
+///
 
 end
 
@@ -155,16 +239,25 @@ restart
 --loadPackage "gfanInterface"
 installPackage ("gfanInterface2", FileName => "/Users/bb/Documents/math/M2codes/Goettingen-2011/gfanInterface2.m2", MakeDocumentation => true)
 installPackage ("Polymake", FileName => "/Users/bb/Documents/math/M2codes/Goettingen-2011/Polymake.m2", MakeDocumentation => true)
+installPackage ("Tropical", FileName => "/Users/bb/Documents/math/M2codes/Goettingen-2011/Tropical.m2")
 
 loadPackage ("gfanInterface2", FileName => "/Users/bb/Documents/math/M2codes/Goettingen-2011/gfanInterface2.m2")
 loadPackage ("Tropical", FileName => "/Users/bb/Documents/math/M2codes/Goettingen-2011/Tropical.m2", Reload => true)
 
+needsPackage ("gfanInterface2", FileName => "/Users/bb/Documents/math/M2codes/Goettingen-2011/gfanInterface2.m2",  DebuggingMode =>true)
 needsPackage("Tropical", FileName => "/Users/bb/Documents/math/M2codes/Goettingen-2011/Tropical.m2")
+
+debug gfanInterface2
 
 viewHelp "gfanInterface2"
 viewHelp "Polymake"
+viewHelp "Tropical"
 
+A = matrix {{1,1,1,1,1,1,1,1},{1,1,1,1,0,0,0,0},{1,1,0,0,1,1,0,0},{1,0,1,0,1,0,1,0}}
+T = tropicalDiscriminant A
 
+L = {random(ZZ^2,ZZ^2),random(ZZ^2,ZZ^3),random(ZZ^2,ZZ^4)}
+cayleySum L
 
 P = gfanTropicalStartingCone {x+y+z}
 F = gfanTropicalTraverse P
@@ -183,9 +276,8 @@ gens J
 QQ[x,y,z,w,h]
 I = ideal{x+y+z, y^2+2*z^2+3*w^2}
 J = homogenize(I,h)
-gfanTropicalStartingCone( I_*, "stable" => true)
-gfanTropicalStartingCone( I_*)
-T = tropicalVariety J
+T = gfanTropicalVariety J
+Tstable = tropicalVariety(J, "stable" => true)
 A = matrix{{1, 0, 0, -1, 0},{1,2,3,0,0},{0,2,3,4,5}}
 tropicalMap(T,A)
 

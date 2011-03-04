@@ -6,7 +6,7 @@ needsPackage "Polyhedra"
 newPackage(
 	"gfanInterface2",
 	Version => "0.3.1", 
-	Date => "July 22, 2010",
+	Date => "March 3, 2011 (update by Josephine Yu)",
 	Authors => {
 		{Name => "Mike Stillman", Email => "mike@math.cornell.edu", HomePage => ""},
 		{Name => "Andrew Hoefel", Email => "andrew.hoefel@mathstat.dal.ca", HomePage => ""}
@@ -71,6 +71,7 @@ export {
 	gfanTropicalRank, -- v0.4 -- done! 
 	gfanTropicalStartingCone, -- done!
 	gfanTropicalTraverse, -- done!
+	gfanTropicalVariety, -- done by Josephine
 	gfanTropicalWeilDivisor, -- v0.4
 	gfanFunctions, -- for testing purposes
 	gfanParsePolyhedralFan -- for external use
@@ -1590,6 +1591,33 @@ gfanTropicalWeilDivisor (PolymakeFan, PolymakeFan) := opts -> (F,G) -> (
 	out
 )
 
+--------------------------------------------------------
+-- tropicalStartingCone and tropicalTraverse
+--------------------------------------------------------
+
+gfanTropicalVariety = method( Options => {
+	"stable" => false, 
+	"symmetry" => null, 
+	"disableSymmetryTest" => false})
+gfanTropicalVariety List := opts -> L -> (
+ 	data := gfanRingToString(ring first L) | gfanPolynomialListToString(L);
+	tmpFile := gfanMakeTemporaryFile data;
+	startArgs := gfanArgumentToString("gfan_tropicalstartingcone", "symmetry", opts#"symmetry");
+	traverseArgs := concatenate apply(keys opts, key -> gfanArgumentToString("gfan_tropicaltraverse", key, opts#key));
+	ex := gfanPath | "gfan_tropicalstartingcone" | startArgs | " < " | tmpFile | " | " | gfanPath | "gfan_tropicaltraverse > " | tmpFile | ".out" | " 2> " | tmpFile | ".err";
+	if gfanVerbose then << ex << endl;
+	run ex;
+	out := get(tmpFile | ".out");
+	gfanRemoveTemporaryFile tmpFile;
+	gfanRemoveTemporaryFile(tmpFile | ".out");
+	gfanRemoveTemporaryFile(tmpFile | ".err");
+	gfanParsePolyhedralFan out
+     )
+gfanTropicalVariety Ideal := opts -> I -> (
+     gfanTropicalVariety(I_*, opts)
+     )
+
+
 
 --------------------------------------------------------
 -- Documentation
@@ -3081,6 +3109,7 @@ doc ///
 	Key
 		gfanTropicalStartingCone
 		(gfanTropicalStartingCone, List)
+		[gfanTropicalStartingCone, "stable", "g", "d"]
 	Headline
 		a pair of Groebner bases for use with gfanTropicalTraverse
 	Usage
@@ -3109,6 +3138,7 @@ doc ///
 	Key
 		gfanTropicalTraverse
 		(gfanTropicalTraverse, List)
+		[gfanTropicalTraverse, "stable", "symmetry", "symsigns", "disableSymmetryTest", "nocones"]
 	Headline
 		polyhedral data describing a tropical variety
 	Usage
