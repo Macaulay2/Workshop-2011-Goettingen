@@ -16,7 +16,7 @@ newPackage(
 export {}
 
 -- Code here
-export {keelSum, keelAvgIndices, boundaryRing, fCurveIneqsLPSOLVE, fCurveIneqsMatrix}
+export {keelSum, keelAvgIndices, boundaryRing, fCurveIneqsLPSOLVE, fCurveIneqsMatrix, cJinDDI, cJinD}
 
 BoundaryRing = new Type of HashTable
 
@@ -244,7 +244,7 @@ fCurveIneqsMatrix (ZZ) := (n)->(
 		flatten flatten apply (toList(2..floor(n/2)), i-> (
 		     apply(subsets(nList, 2*i), I -> (
 	       		 	  -- Calculate the intersection of the F-curve F with the CB-divisor D_I,
-	       		 	  --  namely, F \cdot D_I = 1 if \prod i=1^4 #(F_i \cap I)  odd, 0 else
+	       		 	  --  namely, F \cdot DD_I = 1 if \prod i=1^4 #(F_i \cap I)  odd, 0 else
 	       		 	  parity := (#(set I * set F_0 ) * #(set I * set F_1 ) * #(set I * set F_2 ) * #(set I * set F_0 ) );
 	       		 	  if odd parity 
 	       		 	  then (
@@ -263,18 +263,23 @@ fCurveIneqsMatrix (ZZ) := (n)->(
 )
 
 
-end
+
 
 --**************************************************************************      
 --**************************************************************************
 
---Calculate the coefficient of \D_J in the divisor D_I
-cJinDI = (I,J) -> (
+--Calculate the coefficient of D_J in the divisor DD_I
+cJinDDI = method()
+cJinDDI (Sequence, List) := (J, I) -> (
+     --Input a sequence J and a list I, where I indexes the basis element DD_I,
+     -- and J indexes the boundary divisor D_J, and
+     -- outputs the coefficient of D_J in (the obvious representative of) DD_I
+     
      cJ:= 0;
-     k := #(set(I)*set(J));
-     i := #set(I);
-     if odd i then print "Warning: the cardinality of I must be even."; 
-     if even #(set I *set J) 
+     k := #(set I * set J );
+     i := #(set I);
+     --if odd i then print "Warning: the cardinality of I must be even."; 
+     if even k 
      	  then (
 	    cJ = k*(i - k)/(4*(i-1));
 	       )--end if then |I*J| even
@@ -282,39 +287,38 @@ cJinDI = (I,J) -> (
 	       cJ =(k-1)*(i - k - 1)/(4*(i-1));
 	       );--end else |I*J| odd 
 	 cJ
-     );
-
+     )
 
 
 --Generate coefficient c_J of the boundary divisors \D_J in 
 -- D = \sum_{I, 4 \leq |I| \leq n, |I| even} d_I D_I = \sum_{J} c_J \D_J
-cJcoeff = (J, out) -> (
+
+cJinD = method()
+cJinD (Sequence, ZZ) := (J, n) -> (
      --Inputs a boundary index and appendable output file out
      -- outputs coefficient c_J of \D_J to the file out
-     out << "c_" << J << "=";
-     cJ:=0; --holds the coefficient of \D_J in D
-     apply(subsets(nList), I -> (
-	       if (#(set I) >= 4 and even #(set I) and cJinDI(I,J) != 0) 
-	       then(	   
-	      	    out << " +" << texMath cJinDI(I,J) << " d_" << I;
-	      	    )--end if then  
-     	       )--end I->()
-     	  );--end apply
-     out << endl;
+     nList := toList(1..n);
+     apply(select (subsets(nList), I-> (#(set I) >= 4 and even (#(set I ))) ), 
+	                           I -> (
+	        			cJinDDI(J,I)
+     	       				)--end I->()
+				   
+     	  )--end apply
      )--end cJcoeff
 
+end
 --Output all coefficients of boundary divisors
 apply(subsets(nList), J -> (
 	  (
 	  if (2 <= #(set(J)) and #(set(J)) < n/2)
 	  then (
 	       --print " in loop ";
-	       cJcoeff(J, ofile);
+	       cJinD(J, ofile);
 	       --cJcoeff(J);
 	       )-- end if 2 <= |J| < n/2
 	  else if (#(set(J)) == n/2 and isSubset({1},J)) 
 	  then (
-	       cJcoeff(J, ofile);
+	       cJinD(J, ofile);
 	       )-- end else if |J| == n/2
 	  
 	  );-- end J-> ()
@@ -366,5 +370,7 @@ tex keelAvgIndices( (1,2,3), {{2,3,4,5}}, R)
 tex keelAvgIndices( (1,2,3), {{1,2,4,5}, {1,2,4,6}, {1,2,5,6}, {1,3,4,5}, {1,3,4,6}, {1,3,5,6}, {2,3,4,5}, {2,3,4,6}, {2,3,5,6}},R)
 
 fCurveIneqsLPSOLVE(6, "fIneqs6.txt") 
-M = matrix fCurveIneqsMatrix 5
-M_0
+M = matrix fCurveIneqsMatrix 8
+
+cJinDDI((1,2), {1,2,3,4,5,6,7,8})
+v = cJinD((1,2), 7)
