@@ -1609,7 +1609,7 @@ TEST ///
 R = QQ[x_0..x_4]
 D = simplicialComplex monomialIdeal(x_0*x_1,x_2*x_3*x_4)
 fc=faces(D,useFaceClass=>true)
-assert(apply(fc,j->#j)=={1,5,9,6})
+assert(apply(-1..2,j->#fc#j)==(1,5,9,6))
 ///
 
 TEST ///
