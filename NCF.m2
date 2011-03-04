@@ -141,12 +141,16 @@ convertDotFileToHashTable String := HashTable => filename -> (
   numLines := #content;
   content = apply( numLines-2, i -> content_(i+1) );
   nameLines := select( content, l -> match( "label", l) );
-  variableNames := apply( nameLines, l -> if match( ///"(.+)",///, l ) then (
-    m := last lastMatch;
-    substring( m, l )
+  variableNames = new MutableHashTable;
+  scan( nameLines, l -> if match( ///^(.+)\s.*"(.+)",///, l ) then (
+    print l;
+    print toString lastMatch;
+    node := substring( lastMatch_1, l);
+    name := substring( last lastMatch, l);
+    variableNames#node = name;
     )
   );
-
+  variableNames 
 )
 
 
