@@ -22,7 +22,8 @@ export {listComplement,
 	keelAvg, 
 	keelAvgList, 
 	bndJList,
-	keelAvgIndices, 
+	keelAvgIndices,
+	coeffKinKeelAvgJ, 
 	boundaryRing, 
 	fCurveIneqsLPSOLVE, 
 	fCurveIneqsMatrix, 
@@ -114,20 +115,7 @@ keelAvg (Sequence, BoundaryRing) := (J, R) -> (
 
 	   avg/counter
 	   )
-      
---**************************************************************************      
---**************************************************************************
-keelAvgJcoeff = method()
-keelAvgJcoeff (Sequence, Sequence, BoundaryRing) := (J, K, R) -> (
-     --Inputs two sequences J, K, where J gives the index of the 
-     -- boundary divisors D_J averaged over the Keel relations,
-     -- namely in keelAvg(J,n), and 
-     -- K gives the index of the boundary divisor whose coefficient
-     -- we seek in the average of D_J;
-     --Outputs the coefficient of D_K in the average D_J = (...)
-     
-     ) 
-      
+            
 --**************************************************************************      
 --**************************************************************************
 keelAvgIndices = method()
@@ -223,7 +211,23 @@ keelAvgList (Sequence, ZZ) := (J, n) -> (
 
 	   avg/counter
 	   )
-      
+--**************************************************************************      
+--**************************************************************************
+coeffKinKeelAvgJ = method()
+coeffKinKeelAvgJ (Sequence, Sequence, ZZ) := (J, K, n) -> (
+     --Inputs two sequences J, K, where J gives the index of the 
+     -- boundary divisors D_J averaged over the Keel relations,
+     -- namely in keelAvg(J,n), and 
+     -- K gives the index of the boundary divisor whose coefficient
+     -- we seek in the average of D_J;
+     --Outputs the coefficient of D_K in the average D_J = (...)
+     avgJ := keelAvgList(J,n);
+     
+     
+     bndIndices := select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );	
+     apply(bndIndices, i->0);
+     ) 
+
 --**************************************************************************      
 --**************************************************************************
 
@@ -527,7 +531,7 @@ print keelSum({{1,3},{2,4}}, R)
 keelSumList({{1,2},{4,5}},6)
 bndJList((1,2),6)
 
-keelAvgList ((1,2,3), 6)
+keelAvgList ((1,2,3), 8)
 
 tex keelAvgIndices( (1,2,3), {{2,3,4,5}}, R)
 tex keelAvgIndices( (1,2,3), {{1,2,4,5}, {1,2,4,6}, {1,2,5,6}, {1,3,4,5}, {1,3,4,6}, {1,3,5,6}, {2,3,4,5}, {2,3,4,6}, {2,3,5,6}},R)
@@ -549,7 +553,7 @@ avg = {};
 i = {1,2}
 j = {3,4}
 J = (1,2,6)
-n=6
+n=
 keelSumList({i,j},n)
 avg = avg - 2*keelSumList({i,j}, n) + keelSumList({{i_0, j_0}, {i_1, j_1}}, n) + keelSumList({{i_0, j_1}, {i_1, j_0}}, n) + 2*bndJList(J,n)
 2*bndJList(J,n) + keelSumList({i,j}, n)
