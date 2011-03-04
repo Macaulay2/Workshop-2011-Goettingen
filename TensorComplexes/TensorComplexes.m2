@@ -39,10 +39,10 @@ makeExplicitFreeModule(Module) := F -> (
      F))
 
 --shortcuts:
-underlyingModules = E -> E.cache.underlyingModules
-basisList = E -> E.cache.basisList
-fromOrdinal = E -> E.cache.fromOrdinal
-toOrdinal = E -> E.cache.toOrdinal
+underlyingModules = E -> E.cache.underlyingModules; uM = underlyingModules
+basisList = E -> E.cache.basisList ; bL = basisList
+fromOrdinal = E -> E.cache.fromOrdinal; fO = fromOrdinal
+toOrdinal = E -> E.cache.toOrdinal; tO = toOrdinal
 
 ///
 restart
@@ -112,14 +112,18 @@ makeSymmetricPower(Module, ZZ) := (F,d) ->(
      E.cache.fromOrdinal = j -> (basisList E)#j;
      E.cache.toOrdinal = I -> position(basisList E, J->J==I);
      E)
+
 multisetToMonomial=method();
 multisetToMonomial(List, List) := (L, mL) -> 
-      apply(L, i-> #positions(mL, j-> j==i))
      --changes a list of elements of L with repetitions to a list of
      --integers, of length #L whose i-th entry is the number of times L_i
      --occurs in mL
+      apply(L, i-> #positions(mL, j-> j==i))
+
 monomialToMultiset=method()
 monomialToMultiset(List, List) := (L,mm) ->(
+     --changes a list mm of integers to a list of elements of L
+     --where the i-th element of L is repeated m_i times
      flatten apply(#mm, i-> splice{mm_i:L_i}))
 ///
 restart
@@ -143,25 +147,46 @@ basisList E
 
 productList = method()
 productList(List):= L->(
-     --takes a list of lists, and forms the list of tuples of elements, in order
+     --takes a list of lists, and forms  list of  tuples of elements, in order
      --{0,0}, {0,1}, ...
-     if #L <= 1 then flatten L else 
-     flatten apply(L_0, i->apply( productList drop(L,1), j-> flatten {i,j}))
-     )
-{*
+     Pp := if #L == 0 then {}
+     else if #L == 1 then L#0
+     else if #L == 2 then flatten (apply(L_0,i->apply(L_1, j->{i,j})))
+     else (
+	  P0 = productList drop (L, -1);
+	  P1 = last L;
+	  Pp = (apply(P0,a->apply(P1,b->append(a,b))));
+	  --the following line removes the outermost-but-one set of parens
+	  splice(Pp/toSequence));
+--     for i from 1 to #L-2 do Pp = flatten Pp;
+     Pp)
+///
 restart
 load "~/src/Goettingen-2011/TensorComplexes/TensorComplexes.m2"
 L0 = {}
 productList L0
 L1 = {toList(0..1)}
 productList L1
-L2 = {toList(0..1),toList(0..1)}
+L2 = {toList(0..1),toList(0..2)}
 productList L2
-L3 = {toList(0..1),toList(0..1),toList(0..1)}
-productList L3
-L4 = {toList(0..1),toList(0..1),toList(0..1),toList(0,1)}
+
+L3 = {toList(0..1),toList(0..2),toList(0..1)}
+P = productList L3
+
+L4 = {toList(0..1),toList(0..2),toList(0..1),toList(0,1)}
 productList L4
-*}
+
+
+M1= {{0, 0}, {0, 1}}
+M2 = {{0, 2}, {1, 2}}
+L = {M1,M2}
+productList L
+M3 = {A,B}
+L = {M1,M2,M3}
+productList L
+
+
+///
 
 makeTensorProduct = method()
 makeTensorProduct (List) := (L) ->(
@@ -172,7 +197,7 @@ makeTensorProduct (List) := (L) ->(
      E.cache.fromOrdinal = j -> (basisList E)#j;
      E.cache.toOrdinal = I -> position(basisList E, J->J==I);
      E)
-{*
+///
 --Note: this is automatically associative!! the commutativity iso is just permuting
 --the basis elements.
 restart
@@ -183,11 +208,11 @@ F1 = makeExplicitFreeModule(S,2)
 F2 = makeExplicitFreeModule(S,3)
 F3 = makeExplicitFreeModule(S,5)
 E = makeTensorProduct {F1,F2,F3}
-E = makeTensorProduct {S^1,S^2,S^3}
+--E = makeTensorProduct {S^1,S^2,S^3}
 basisList E
 (toOrdinal E) {0,2,3}
 (fromOrdinal E) 5
-*}
+///
 
 makeTensorProductMap = method()
 makeTensorProductMap (List,Module,Module) := (f,Tsource, Ttarget) ->(
@@ -307,45 +332,111 @@ basisList F1
 basisList G
 ///
 
---this isn't right yet:
-wedgeToWedgeSym = method()
-wedgeToWedgeSym (Module, Module, ZZ) := (F,G,b) -> (
-     --creates the map 
-     --A :=(wedge^b F) \otimes (Sym^b G)^* \to wedge^b(F\otimes G^*) =: B.
-     wedgeF = makeExteriorPower(F,b);
-     symG = makeSymmetricPower(G,b);
-     A = makeTensorProduct{wedgeF,symG}; --wedgeSym
-     B = makeExteriorPower(makeTensorProduct{F,G},b); --wedge
-     map(A,B,(i,j)->(
-	       I = (fromOrdinal A)i;
-	       J = (fromOrdinal B)j;
-	       --we have to divide J, and recombine it! Sort of like:
-	       --J_0 is a tuple that is a basis elt of F**G
-	       --J_1 is too. We must extract the two parts and make
-	       --a tuple that is a basis element of wedgF ** symG.
-)          
+{*
+DtoTensor = method()
+DtoTensor (Module) := F -> (
+     --Assumes F = D^b G;
+     --returns map D^b G --> G\otimes...\otimes G.
+     G := (underlyingModules F)#0;
+     g := rank G;
+     b:=0;
+     while binomial(g+b-1,g)<rank F do b = b+1;
+     s := signs rank F;
+     P = permutations rank F;
+     tG := makeTensorProduct(splice{b:G});
+     map(tG,F,(i,j) -> )
 
+signs = n->(
+     --list the signs of the permutations, in the order they
+     --are produced by permuations n. SLOW for n>=7.
+          ZF := ZZ^n;
+          (permutations n)/(p-> det ZF_p))
+*}
+///
+restart
+load "~/src/Goettingen-2011/TensorComplexes/TensorComplexes.m2"
+signs 3
+
+time for n from 0 to 8 do print time (signs n;)
+kk = ZZ/101
+S = kk[a,b,c]
+F2 = S^2
+F = makeSymmetricPower(F2, 3)
+DtoTensor F
+///
+
+
+--still not quite right
+wedgeDToWedge = method()
+wedgeDToWedge (Module, Module) := (F,G) -> (
+     --requires 
+     -- F =  wedge^b F0 \otimes D^b(F1)
+     --and 
+     -- G = wedge^b(F0\otimes F1).
+     --creates the equivariant embedding F->G.
+     
+     --sort out the underlying modules and ranks
+     rankF := rank F;
+     WbF0 := (underlyingModules F)#0;
+     F0 := (underlyingModules WbF0)#0;
+     f0 := rank F0;
+     wbf0 := rank WbF0;
+     DbF1 := (underlyingModules F)#1;
+     dbf1 := rank DbF1;
+     F1 := (underlyingModules DbF1)#0;
+     f1 := rank F1;     
+     F0F1 = (underlyingModules G)#0;
+     if F0 != (underlyingModules F0F1)#0 then error"bad modules";
+     if F1 != (underlyingModules F0F1)#1 then error"bad modules";     
+
+     --find b
+     b:=0;     
+     while binomial(f1+b-1,b)<dbf1 do b = b+1;
+     
+     --make the map
+     map(G,F,(i,j)->(
+     BG = (fromOrdinal G) i;
+     BF = (fromOrdinal F) j;
+     BG0 = BG/first; -- corresponds to an element of wedge^b F0
+     BG1 = BG/last; -- corresponds to an element of wedge^b F1
+     BF0 =  BF_{0..b -1};
+     BF1 = BF_{b..2*b-1};-- corresponds to an element of D^b F1
+     error"";
+     if BG0 != BF0 then 0 -- this assumes that both BG0 and BF#0 will be in order. True??
+     else if contents BG1 != BF#1 then 0
+     else (perm = apply #B
+	  )
+     )	  
+	  )
+)
+
+permSign = method()
+permSign(List, List) := (L,M) ->(
+     --L,M are lists of the same length, possibly with repetitions.
+     -- Returns 0 if the elements and multiplicities don't match. 
+     )
 ///
 --map of wedge^d A \otimes Sym^d B to wedge^d(A\otimes B).
 restart
 load "~/src/Goettingen-2011/TensorComplexes/TensorComplexes.m2"
 kk = ZZ/101
 S = kk[a,b,c]
-F2 = S^2
-F3 = S^3
-F5 = S^5
-B =makeExteriorPower(makeTensorProduct{F3,F5},2)
-A = makeTensorProduct{makeExteriorPower(F3, 2), makeSymmetricPower(F5,2)}
-bB = basisList B
-bA = basisList A
-wedgeSymToWedge(F3,F5,2)
-rank A
-rank B
-rank oo
-BU = basisList U;
-flatten(BT_0)
-
-
+FF2 = S^4
+FF3 = S^3
+DbFF2 = makeSymmetricPower(FF2, 2)
+WbFF3 = makeExteriorPower(FF3,2)
+F = makeTensorProduct{WbFF3, DbFF2}
+G = makeExteriorPower(makeTensorProduct{FF3,FF2},2)
+wedgeDToWedge(F,G)
+for i from 0 to rank G -1 do for j from 0 to rank F -1 do(
+     BG = (fromOrdinal G) i;
+     BF = (fromOrdinal F) j;
+     BG0 = BG/first; -- corresponds to an element of wedge^b F0
+     BG1 = BG/last; -- corresponds to an element of wedge^b F1
+     BF0 =  BF_{0..b -1};
+     BF1 = BF_{b..2*b-1};-- corresponds to an element of D^b F1
+     print (BG1, BF1))
+)
 ///
 end
 
