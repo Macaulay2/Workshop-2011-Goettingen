@@ -14,11 +14,10 @@ blowup(AbstractVarietyMap) :=
      iupper := map(B,A, iuppermatrix);
      N :=  (incl^* tangentBundle Y) - tangentBundle X;
      x := local x;
-     y := local y;
      d := rank N;
-     PN := projectiveBundle(N, VariableNames => {x,y}); -- x = chern(1,OO_PN(-1))
+     PN := projectiveBundle'(dual N, VariableNames => {,{x}}); -- x = chern(1,OO_PN(1))
      C := intersectionRing PN;
-     (BasAModule, bas, iLowerMod) := pushFwd(iupper);     
+     (BasAModule, bas, iLowerMod) := pushFwd iupper;     
      -- iLowerMod(element b of B) = one column matrix over A whose product with bas is b
      n := numgens BasAModule;
      -- the fundamental idea: we build the Chow ring of the blowup as an algebra over A
@@ -56,39 +55,53 @@ blowup(AbstractVarietyMap) :=
 	       );
 	  f1 + (-1)^d * f2);
      -- Finally, we impose the defining relation on the Chow ring of PN, that is, we impose that
-     -- the sum of chern(1,O(-1))^i * chern(d-i, N) for i from 0 to d is 0. 
+     -- the sum of chern(1,O(1))^i * chern(d-i, N) for i from 0 to d is 0. 
      I4 := ideal {sum for i from 0 to d list (
 	       (-D1_(E_0))^i * ((vars D1) * iLowerMod(chern(d-i, N)))
 	       )};
      D := D1/(I1 + I2 + I3 + I4); -- the Chow ring of the blowup
      Ytilde := abstractVariety(dim Y, D); 
      xpowers := matrix {for i from 0 to d-1 list x^i};
-     -- need to check this next line!
-     E0powers := transpose matrix {for i from 0 to d-1 list (D1_(E_0))^i};
+     -- 
+     E0powers := transpose matrix {for i from 0 to d-1 list (-D1_(E_0))^i};
      jLower := (f) -> (
 	  -- takes an element f of C, returns an element of D
-	  -- this is currently wrong; dualizing ruined this!
 	  cf := last coefficients(f, Monomials => xpowers);
 	  cf = lift(cf, B);
 	  cfA := matrix {apply(flatten entries cf, iLowerMod)};
 	  (vars D * cfA * E0powers)_(0,0)
 	  );
-     error "debug me!";
      pushforwardPN := method();
      pushforwardPN C := a -> jLower a;
      -- need to push forward sheaves as well
      -- to pull back a class from the blowup to PN we take E_i to x*alphas#i; this corresponds to
-     -- the fact that pushing forward and then pulling back a class on PN is the same as multiplying by x = c_1(O(-1))
-     jUpper := map(C, D, matrix {(for i from 0 to n-1 list x * alphas#i) | apply(flatten entries iuppermatrix, b -> promote(b,C))});
+     -- the fact that pushing forward and then pulling back a class on PN is the same as multiplying by x = c_1(O(1))
+     -- CHECK SIGNS IN NEXT LINE
+     jUpper := map(C, D, matrix {(for i from 0 to n-1 list -x * alphas#i) | apply(flatten entries iuppermatrix, b -> promote(b,C))});
      pullbackPN := method();
      pullbackPN ZZ := pullbackPN QQ := a -> promote(a,C);
      pullbackPN D := a -> jUpper a;
      pullbackPN AbstractSheaf := F -> (
 	  if variety F =!= Ytilde then error "pullback: variety mismatch";
 	  abstractSheaf(PN,Rank => rank F,ChernClass => pullbackPN chern F));
-     -- have to check the next formula, since it involves O(-1)!
-     Ytilde.TangentBundle = abstractSheaf(Ytilde, 
-	  ChernCharacter => ch tangentBundle Y - jLower(ch tangentBundle(PN/X) * (todd OO(x))^-1));
+     -- earlier formula, appears to be incorrect
+     {*Ytilde.TangentBundle = abstractSheaf(Ytilde, 
+	  ChernCharacter => ch tangentBundle Y - jLower(ch tangentBundle(PN/X) * (todd OO(x))^-1));*}
+     pullbackY := method();
+     pullbackY ZZ := pullbackY QQ := pullbackY A := a -> promote(a,D);
+     pullbackY AbstractSheaf := F -> (
+	  if variety F =!= Y then error "pullback: variety mismatch";
+	  abstractSheaf(Ytilde,Rank => rank F,ChernClass => pullbackY chern F)
+	  );
+     -- We construct the tangent bundle using GRR without denominators
+     -- Specifically, we use the formula of Fulton Example 15.4.1
+     g := PN / X;
+     alpha := sum for j from 0 to d list (
+     	  sum for k from 0 to d-j list (
+	       (binomial(d-j, k) - binomial(d-j, k+1)) * x^k * (g^* chern(j, N))));
+     Ytilde.TangentBundle = abstractSheaf(Ytilde,
+	  Rank => dim Y,
+	  ChernClass => chern(pullbackY tangentBundle Y) + jLower (chern(g^* tangentBundle X) * alpha));
      PNmap := new AbstractVarietyMap from {
 	  global target => Ytilde,
 	  global source => PN,
@@ -108,12 +121,6 @@ blowup(AbstractVarietyMap) :=
      pushforwardY D := a -> (
 	  lift(coefficient(1_D, a), A)
 	  );
-     pullbackY := method();
-     pullbackY ZZ := pullbackY QQ := pullbackY A := a -> promote(a,D);
-     pullbackY AbstractSheaf := F -> (
-	  if variety F =!= Y then error "pullback: variety mismatch";
-	  abstractSheaf(Ytilde,Rank => rank F,ChernClass => pullbackY chern F)
-	  );
      Ymap := new AbstractVarietyMap from {
 	  global target => Y,
 	  global source => Ytilde,
@@ -124,6 +131,7 @@ blowup(AbstractVarietyMap) :=
 	  if variety F =!= Ytilde then error "pushforward: variety mismatch";
 	  abstractSheaf(Y, ChernCharacter => pushforwardY (ch F * todd Ymap))
 	  );
+     integral D := a -> integral Ymap_* a;
      (Ytilde, PN, PNmap, Ymap)
      )
 
@@ -137,19 +145,9 @@ Y = flagBundle({1,2}, VariableNames =>{a,b})
 f = X / point
 i = map(Y,X, dual first bundles X)
 (Ytilde, PN, PNmap, Ymap) = blowup(i)
-Atilde = intersectionRing Ytilde
-describe Atilde
-Ymap_* (E_0^2)
-F = tangentBundle Ytilde
-Ymap_* F
-c = D_(E_0)^2
-PNpart := bas * iupper lift(last coefficients((-1)^(d-1) * c, Monomials => relativePoint), A)
-pushforwardY D_(E_0)^2
-RPN = intersectionRing PN
-PNmap_* last last entries vars RPN
-PNmap
-f = PN / point
-f_* PNmap^* E_0
+assert (integral Ymap_* (E_0^2) == -1)
+assert (integral PNmap^* E_0 == -1)
+assert (integral ctop tangentBundle Ytilde == 4)
 
 X = flagBundle({2,3}, VariableNames => {s,q})
 S = first bundles X

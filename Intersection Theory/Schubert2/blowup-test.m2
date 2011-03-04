@@ -1,4 +1,5 @@
-load "./blowup.m2"
+restart
+load "./Schubert2/blowup.m2"
 
 -- blow up of P5 along the Veronese
 A = QQ[z]/z^6
@@ -22,12 +23,13 @@ A = QQ[z]/z^3
 B = QQ[h]/(h)
 P2 = abstractVariety(2, A)
 pt = abstractVariety(0, B)
-P2.TangentBundle = abstractSheaf(P2, Rank=>5, ChernClass=>(1+z)^3)
+P2.TangentBundle = abstractSheaf(P2, Rank=>2, ChernClass=>(1+z)^3)
 pt.TangentBundle = abstractSheaf(pt, Rank=>0, ChernClass=>1_B)
 iupper = map(B,A)
 ilower = map(A^1, A^1/(z), {{z^2}})
 (Ytilde,Xtilde,jlower) = blowup(pt,P2,iupper,ilower)
 tangentBundle Ytilde
+chern tangentBundle Ytilde
 ctop tangentBundle Ytilde
 assert ( oo == 0)
 

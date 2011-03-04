@@ -1,5 +1,5 @@
 needsPackage "Schubert2"
-needs "Schubert2/pushfor.m2"
+needsPackage "PushForward"
 blowup = method()
 blowup(AbstractVariety, AbstractVariety, RingMap, Matrix) := 
   (X,Y,iupper, ilower) -> (
