@@ -141,21 +141,19 @@ convertDotFileToHashTable String := HashTable => filename -> (
   numLines := #content;
   content = apply( numLines-2, i -> content_(i+1) );
   nameLines := select( content, l -> match( "label", l) );
-  variableNames = new MutableHashTable;
+  variableNames := new MutableHashTable;
   scan( nameLines, l -> if match( ///^(.+)\s.*"(.+)",///, l ) then (
     node := substring( lastMatch_1, l);
     name := substring( lastMatch_2, l);
     variableNames#node = name;
     )
   );
-  dependencies = new MutableHashTable;
+  dependencies := new MutableHashTable;
   dependencyLines := select( content, l -> match( "->", l) );
   scan(dependencyLines, l -> (
     match( ///^(.*)\s->\s(.*);///, l );
-    print toString lastMatch;
     source := substring( lastMatch_1, l);
     target := substring( lastMatch_2, l);
-    print (source | target);
     if dependencies#?target then 
       dependencies#target = dependencies#target | {source}
     else 
@@ -163,7 +161,14 @@ convertDotFileToHashTable String := HashTable => filename -> (
     )
   );
   variableNames;
-  dependencies 
+  dependencies;
+  dep := new MutableHashTable;
+  dependencies = new HashTable from dependencies;
+  scanPairs (dependencies, (target, sourceList) -> (
+    dep#(variableNames#target) = apply( sourceList, s -> variableNames#s)
+    )
+  );
+  dep
 )
 
 
