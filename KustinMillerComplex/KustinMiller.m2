@@ -59,15 +59,12 @@ chainComplex {g,A,transpose g,map(R^1,R^0,0)});
 
 
 -------------------------------------------------------------------------
--- Cyclic polytopes
+-- Boundary complex of a cyclic polytope
 
+-- find out the index of a variable
 positionRing=method()
 positionRing(RingElement):=(m)->(
-v:=(entries vars ring m)#0;
-for q from 0 to #v-1 do (
-if v#q==m then return(q);
-);
-);
+position(gens ring m,j->j==m));
 
 --R=QQ[x_1..x_10]
 --positionRing(x_1)
@@ -78,8 +75,7 @@ if X=={} then return(false);
 X1:=sort(X);
 p2:=X1#(#X1-1);
 p1:=X1#0;
-if abs(positionRing(p2)-positionRing(p1))==#X1-1 then return(true);
-false);
+abs(positionRing(p2)-positionRing(p1))==#X1-1);
 
 {*
 isContigous({x_2,x_3,x_6,x_4,x_5,x_8,x_7})
@@ -124,7 +120,6 @@ while j<#L and rm==-1 do (
     if j!=jj and isSubset(set L#j,set L#jj)==true then rm=j;
   jj=jj+1);
 j=j+1);
---print(rm);
 L1:={};
 j=0;
 while j<#L do (
@@ -159,12 +154,8 @@ isEndset({x_2,x_3})
 
 removeEndsets=method()
 removeEndsets(List):=(L)->(
-L1:={};
-j:=0;
-for j from 0 to #L-1 do (
-  if isEndset(L#j)==false then L1=append(L1,L#j);
-);
-L1);
+select(L,j->not isEndset(j)))
+
 
 {*
 removeEndsets({{x_1,x_2},{x_3,x_4}})
@@ -176,13 +167,8 @@ removeEndsets(maximalContigousSubsets({x_1,x_2,x_4,x_5,x_7,x_8}))
 
 oddContigousNonEndsets=method()
 oddContigousNonEndsets(List):=(L)->(
-L2:={};
-j:=0;
 L1:=removeEndsets(maximalContigousSubsets(L));
-for j from 0 to #L1-1 do (
-  if odd(#(L1#j)) then L2=append(L2,L1#j);
-);
-L2)
+select(L1,j->odd(#j)))
 
 {*
 maximalContigousSubsets({x_1,x_2,x_4,x_5,x_7,x_8,x_9})
@@ -200,50 +186,15 @@ isFaceOfCyclicPolytope({x_3,x_4},3)
 isFaceOfCyclicPolytope({x_4,x_9},3)
 *}
 
-facesOfBoundaryOfCyclicPolytope=method()
-facesOfBoundaryOfCyclicPolytope(ZZ,PolynomialRing):=(d,R)->(
-M:=(entries vars R)#0;
-L:={{{}}};
-S:={};
-S1:={};
-for j from 1 to #M do (
- if j<=d then (
-  S=subsets(M,j);
-  S1={};
-  for jj from 0 to #S-1 do (
-    if isFaceOfCyclicPolytope(S#jj,d)==true then S1=append(S1,face S#jj);
-  );
-  L=append(L,S1);
- ) else (
-  L=append(L,{});
- );
-);
-L);
-
-{*
-R=QQ[x_0..x_6]
-L=facesOfBoundaryOfCyclicPolytope(4,R)
-apply(L,j->#j)
-*}
-
-
-boundaryComplexOfCyclicPolytope=method()
-boundaryComplexOfCyclicPolytope(ZZ,PolynomialRing):=(d,R)->(
-M:=(entries vars R)#0;
-S:=subsets(M,d);
-S1:={};
-for jj from 0 to #S-1 do (
-  if isFaceOfCyclicPolytope(S#jj,d)==true then S1=append(S1,face S#jj);
-);
+-- boundary complex of a cyclic polytope
+delta=method()
+delta(ZZ,PolynomialRing):=(d,R)->(
+S1:=apply(select(subsets(gens R,d),j->isFaceOfCyclicPolytope(j,d)),face);
 simplicialComplex S1);
 
 
-delta=method()
-delta(ZZ,PolynomialRing):=(d,R)->(boundaryComplexOfCyclicPolytope(d,R))
-
-
 -----------------------------------------------------------------------------
--- Kustin-Miller complex
+-- Constructing the Kustin-Miller complex
 
 kustinMillerComplex=method(Options=>{verbose=>0})
 
@@ -251,9 +202,7 @@ kustinMillerComplex(Ideal,Ideal,PolynomialRing):=opt->(I,J,T0)->(
 if ring I =!= ring J then error("expected ideals in the same ring");
 if I+J!=J then error("expected first ideal contained in second");
 if codim(I) != -1+codim(J) then error("expected codim 1 unprojection locus");
-cI:=res I;
-cJ:=res J;
-kustinMillerComplex(cI,cJ,T0,opt));
+kustinMillerComplex(res I,res J,T0,opt));
 
 
 kustinMillerComplex(ChainComplex,ChainComplex,PolynomialRing):=opt->(cI0,cJ0,T0)->(
@@ -343,12 +292,8 @@ h:={0_S};
 for j from 1 to g-1 do (
   tC1:= chainComplex { id_(S^(rank (cI#j)))};
   tC2:= chainComplex { cI.dd_j };
-  --print(tC1);
-  --print(tC2);
-  --print(beta#(j-1)*alpha#(j-1));
   hi:= (extend ( tC2, tC1, map (tC2#0, tC1#0,  beta#(j-1)*alpha#(j-1) - h#(j-1)*cI.dd_j  )));
   h=append(h,hi_1);
-  --print(h);
 );
 if opt.verbose>1 then (
    for j from 1 to #h-1 do (
@@ -392,8 +337,6 @@ for j from 1 to g do (
      betai:=beta#(j-1);
      him1:=h#(j-1);
      inL={bi,betai,him1,ai,alphaim1,bim1,S_0};
-     --print inL;
-     --print apply(inL,j->(rank target j,rank source j));
    );
    if j>=3 and j==g-1 then (
      ai=cJ.dd_j;
@@ -420,7 +363,6 @@ if opt.verbose>1 then (
    print("------------------------------------------------------------------------------------------------------------------------");
    print("");
 );
---return(L);
 chainComplex(L))
 
 --kustinMillerComplex(I,J,QQ[t])
@@ -451,7 +393,7 @@ cc.dd_4
 
 
 
-
+-- some auxiliary procedures
 
 checkSameRing=method()
 checkSameRing(List):=(L)->(
@@ -616,7 +558,7 @@ error("wrong index"))
 
 
 ------------------------------------------------------------------------------
--- Find the unprojection homomorphism
+-- Compute the unprojection homomorphism phi
 
 unprojectionHomomorphism=method()
 unprojectionHomomorphism(Ideal,Ideal):=(I,J)->(
@@ -624,6 +566,7 @@ R:=ring I;
 if ring I =!= ring J then error("expected ideals in the same ring");
 if I+J!=J then error("expected first ideal contained in second");
 M:=Hom(J,R^1/I);
+-- give some feedback on wrong input
 if rank source gens M != 2 then (
    for j from 0 to -1+rank source gens M do (
       phi:=homomorphism M_{j};
@@ -676,7 +619,7 @@ shiftComplex(ChainComplex,ZZ) := (CJ,p) ->  (
     for i from min(CJ) -p+1  to max (CJ)-p   do  CJShifted.dd_i = CJ.dd_(i+p);
     CJShifted   )
 
-
+-- not introducing the alternating sign as M2 does
 dualComplex= method()
 dualComplex(ChainComplex)  := (CJ) -> (
   dual CJ;
@@ -691,24 +634,6 @@ dualComplex(ChainComplex)  := (CJ) -> (
 
 --------------------------------------------------------------------------
 -- Stellar subdivision code
-
-listMinus=method()
-listMinus(List,List):=(L1,L2)->(
-L3:={};
-q:=0;
-while q<#L1 do (
-  if member(L1#q,L2)==false then L3=append(L3,L1#q);
-q=q+1);
-L3)
-
-
-
-coFace=method()
-coFace(Face,Face):=(F,G)->(
-v1:=vertices F;
-v2:=vertices G;
-R:=ring G;
-face(listMinus(v2,v1),R))
 
 
 
@@ -746,6 +671,25 @@ joinFaces(Face,Face):=(F,G)->(
 v1:=vertices F;
 v2:=vertices G;
 face(v1|v2))
+
+listMinus=method()
+listMinus(List,List):=(L1,L2)->(
+L3:={};
+q:=0;
+while q<#L1 do (
+  if member(L1#q,L2)==false then L3=append(L3,L1#q);
+q=q+1);
+L3)
+
+
+
+coFace=method()
+coFace(Face,Face):=(F,G)->(
+v1:=vertices F;
+v2:=vertices G;
+R:=ring G;
+face(listMinus(v2,v1),R))
+
 
 
 subdivideFace=method()
@@ -1239,6 +1183,7 @@ doc ///
         Computes the stellar subdivision of a simplicial complex D by subdividing the face F with a new vertex
         corresponding to the variable of S.
         The result is a complex on the variables of R**S. It is a subcomplex of the simplex on the variables of R**S.
+        
    Example
      R=QQ[x_0..x_4];
      I=monomialIdeal(x_0*x_1,x_1*x_2,x_2*x_3,x_3*x_4,x_4*x_0);
