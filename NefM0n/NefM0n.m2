@@ -179,6 +179,21 @@ fCurveIneqsLPSOLVE (ZZ, String) := (n, fileName)->(
      fileName << close;
      );
 
+m1 = method();
+m1(List, List) := (F, c) -> (
+     zeros := transpose matrix {toList (numRows (matrix F) : 0)};
+     A := zeros | matrix F;
+     val := minimalValue(A, vector flatten {0,c});
+     if val == "-inf" then (
+	  --todo
+	  matrix flatten {entries A,{flatten {{1},c}}, {flatten {{-1},-c}}}
+	  )
+     else (
+	  value val
+	  )
+     )
+     
+
 minimalValue = method()
 minimalValue(Matrix, Vector) := (A, u) -> (
      S := replace("\\}","]",replace("\\{", "[", toString entries A));
@@ -393,9 +408,12 @@ tex keelAvgIndices( (1,2,3), {{2,3,4,5}}, R)
 tex keelAvgIndices( (1,2,3), {{1,2,4,5}, {1,2,4,6}, {1,2,5,6}, {1,3,4,5}, {1,3,4,6}, {1,3,5,6}, {2,3,4,5}, {2,3,4,6}, {2,3,5,6}},R)
 
 fCurveIneqsLPSOLVE(6, "fIneqs6.txt") 
-M = matrix fCurveIneqsMatrix 5
+M = fCurveIneqsMatrix 9;
+
 
 cJinDDI((1,2), {1,2,3,4,5,6,7,8})
-v = cJinD((1,2), 8)
+v = cJinD((1,2), 9)
 w = cJinD((3,4,5,6,7,8), 8)
 v - w
+
+m1(M,v)
