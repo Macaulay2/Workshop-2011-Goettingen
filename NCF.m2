@@ -108,15 +108,17 @@ getSingleNcfList (HashTable, List, ZZ, List) := List => (T, sigma, p, gensR) -> 
 -- given a subset S \subseteq [n], return the relation of that generator
 ncfIdeal = method()
 ncfIdeal (RingElement, Ring, List) := RingElement => (c, QC, sigma) -> (
-  n := numgens QC;
+  n := lift(log( char QC, numgens QC),ZZ);
+  S := subsets n;
+  T := new MutableHashTable;
+  scan( subsets n, gens QC, (S,c) -> T#S = c );
   i := position( gens QC, x -> x == c );
-  rS := max (subsets n)_i;
-  rSset := toList(1..rS);
-  complement := toList set rSset - set (subsets n)_i;
-  c - QC_position(subsets n, l -> l == rSset) * 
+  rS := max ( S_i );
+  rSset := set (0..rS);
+  complement := toList( rSset - set S_i );
+  c - T#(toList rSset) * 
     product( complement, i -> (
-      pos := position( subsets n, i -> i == (set complement - set {i})  );
-      QC_pos
+      T#(toList(set last S - set {i} ) )
       )
     )
 )
@@ -388,7 +390,8 @@ TEST ///
   S = {1,2,4};
   QC_22
   p = ncfIdeal(QC_22, QC, {} ) 
-  assert( p == c_{1,2,4} - c_{1,2,3,4}*c_{1,2,4,5} )
+  -- w = F* (E*x) 
+  assert( p == value "x*E*F + w" )
   ///
 
 TEST ///
