@@ -16,7 +16,19 @@ newPackage(
 export {}
 
 -- Code here
-export {listComplement, keelSum, keelSumList, keelAvg, keelAvgIndices, boundaryRing, fCurveIneqsLPSOLVE, fCurveIneqsMatrix, cJinDDI, cJinD, m1}
+export {listComplement, 
+        keelSum, 
+	keelSumList, 
+	keelAvg, 
+	keelAvgList, 
+	bndJList,
+	keelAvgIndices, 
+	boundaryRing, 
+	fCurveIneqsLPSOLVE, 
+	fCurveIneqsMatrix, 
+	cJinDDI, 
+	cJinD, 
+	m1}
 
 BoundaryRing = new Type of HashTable
 
@@ -161,17 +173,60 @@ keelSumList (List, ZZ) := (K,n)-> (
      nList := toList(1..n);
      if #(set K_0 * set K_1) != 0 then error "expected pairs in the list to be disjoint";
      
-     bndIndices := select (subsets(nList), J -> ( (#J >= 2 and #J < floor n/2) or (#J == floor n/2 and isSubset({1},J) ) ) );
+     bndIndices := select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );
      apply(bndIndices, j-> (
-      	     if (isSubset(K_0, set j ) and isSubset( K_1, set listComplement(nList, j)) )
-	     then print "hey"
-	     --  else 0
+      	     if ( (isSubset(K_0, set j ) and isSubset( K_1, set listComplement(nList, j)) )
+		  or (isSubset(K_0, set listComplement(nList,j) ) and isSubset( K_1, set j)) )
+	     then 1
+	     else 0
 	       )
        	  )  
      )
+
+--**************************************************************************      
+--**************************************************************************
+bndJList = method()
+bndJList (Sequence, ZZ) := (J,n) -> (
+     --Inputs sequence J and integer n, where J is the index of a boundary divisor D_J, n is from \M_{0,n}, and
+     -- outputs a list giving the coordinate of \D_J in list indexed by all boundary divisors
+      nList := toList(1..n);
+      bndIndices := select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );
+      apply(bndIndices, j -> if j==toList J then 1 else 0)
+     
+     )
+
+--**************************************************************************      
+--**************************************************************************
+keelAvgList = method()
+keelAvgList (Sequence, ZZ) := (J, n) -> (
+     --Input sequence J (index of boundary divisor D_J) and Boundary Ring R
+     -- and output average of numerical equivalence class of D_J
+     -- over all Keel relations involving D_J
+     nList := toList(1..n);
+        
+     bndIndices := select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );	
+     avg:= apply(bndIndices, i->0);
+     counter:= 0; --should be 0
+     apply(toList subsets(J, 2), i-> 
+     	  --loop over subsets of cardinality two in J
+     	  apply(toList subsets(listComplement(nList, J), 2), j->
+	       --loop over subsets of cardinality two in J^c
+	       (
+		    counter = counter + 2;
+		    avg = avg - 2*keelSumList({i,j}, n) 
+		          + keelSumList({{i_0, j_0}, {i_1, j_1}}, n)
+		    	  + keelSumList({{i_0, j_1}, {i_1, j_0}}, n)
+		    	  + 2*bndJList(J,n);
+	     		  )
+		     )
+		);
+
+	   avg/counter
+	   )
       
 --**************************************************************************      
 --**************************************************************************
+
 fCurveIneqsLPSOLVE = method()
 fCurveIneqsLPSOLVE (ZZ, String) := (n, fileName)->(
      --input an integer n and a string
@@ -232,6 +287,9 @@ fCurveIneqsLPSOLVE (ZZ, String) := (n, fileName)->(
      fileName << close;
      );
 
+--**************************************************************************      
+--**************************************************************************
+
 m1 = method();
 m1(List, List) := (F, c) -> (
      zeros := transpose matrix {toList (numRows (matrix F) : 0)};
@@ -246,6 +304,8 @@ m1(List, List) := (F, c) -> (
 	  )
      )
      
+--**************************************************************************      
+--**************************************************************************
 
 minimalValue = method()
 minimalValue(Matrix, Vector) := (A, u) -> (
@@ -265,6 +325,9 @@ minimalValue(Matrix, Vector) := (A, u) -> (
      get(tmp | ".out")
      )
 
+--**************************************************************************      
+--**************************************************************************
+
 minimalVertex = method()
 minimalVertex(Matrix, Vector) := (A, u) -> (
      S := replace("\\}","]",replace("\\{", "[", toString entries A));
@@ -283,6 +346,9 @@ minimalVertex(Matrix, Vector) := (A, u) -> (
      polyOut := get(tmp | ".out");
      polyOut = vector apply(separate(" ", polyOut), n-> value n)
      )
+
+--**************************************************************************      
+--**************************************************************************
 
 getLinComb = method()
 getLinComb(Matrix, Vector, Vector) := (A, u, v) -> (
@@ -458,7 +524,11 @@ S = R#Ring
 tex keelAvg((1,2,3), R)
 
 print keelSum({{1,3},{2,4}}, R)
-keelSumList({{1,3},{2,4}},5)
+keelSumList({{1,2},{4,5}},6)
+bndJList((1,2),6)
+
+keelAvgList ((1,2,3), 6)
+
 tex keelAvgIndices( (1,2,3), {{2,3,4,5}}, R)
 tex keelAvgIndices( (1,2,3), {{1,2,4,5}, {1,2,4,6}, {1,2,5,6}, {1,3,4,5}, {1,3,4,6}, {1,3,5,6}, {2,3,4,5}, {2,3,4,6}, {2,3,5,6}},R)
 
@@ -472,3 +542,14 @@ v = cJinD((1,2), 5)
 v - w
 
 m1(M,v)
+
+ bndIndices = select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );	
+     avg= apply(bndIndices, i->0)
+avg = {};
+i = {1,2}
+j = {3,4}
+J = (1,2,6)
+n=6
+keelSumList({i,j},n)
+avg = avg - 2*keelSumList({i,j}, n) + keelSumList({{i_0, j_0}, {i_1, j_1}}, n) + keelSumList({{i_0, j_1}, {i_1, j_0}}, n) + 2*bndJList(J,n)
+2*bndJList(J,n) + keelSumList({i,j}, n)
