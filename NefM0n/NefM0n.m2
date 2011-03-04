@@ -259,11 +259,67 @@ fCurveIneqsMatrix (ZZ) := (n)->(
 	  	   )-- end F-> ()
           
      	  )-- end apply     
-     --fileName << close;
-     --fMatrix
      )
 )
 
+
+end
+
+--**************************************************************************      
+--**************************************************************************
+
+--Calculate the coefficient of \D_J in the divisor D_I
+cJinDI = (I,J) -> (
+     cJ:= 0;
+     k := #(set(I)*set(J));
+     i := #set(I);
+     if odd i then print "Warning: the cardinality of I must be even."; 
+     if even #(set I *set J) 
+     	  then (
+	    cJ = k*(i - k)/(4*(i-1));
+	       )--end if then |I*J| even
+	  else (
+	       cJ =(k-1)*(i - k - 1)/(4*(i-1));
+	       );--end else |I*J| odd 
+	 cJ
+     );
+
+
+
+--Generate coefficient c_J of the boundary divisors \D_J in 
+-- D = \sum_{I, 4 \leq |I| \leq n, |I| even} d_I D_I = \sum_{J} c_J \D_J
+cJcoeff = (J, out) -> (
+     --Inputs a boundary index and appendable output file out
+     -- outputs coefficient c_J of \D_J to the file out
+     out << "c_" << J << "=";
+     cJ:=0; --holds the coefficient of \D_J in D
+     apply(subsets(nList), I -> (
+	       if (#(set I) >= 4 and even #(set I) and cJinDI(I,J) != 0) 
+	       then(	   
+	      	    out << " +" << texMath cJinDI(I,J) << " d_" << I;
+	      	    )--end if then  
+     	       )--end I->()
+     	  );--end apply
+     out << endl;
+     )--end cJcoeff
+
+--Output all coefficients of boundary divisors
+apply(subsets(nList), J -> (
+	  (
+	  if (2 <= #(set(J)) and #(set(J)) < n/2)
+	  then (
+	       --print " in loop ";
+	       cJcoeff(J, ofile);
+	       --cJcoeff(J);
+	       )-- end if 2 <= |J| < n/2
+	  else if (#(set(J)) == n/2 and isSubset({1},J)) 
+	  then (
+	       cJcoeff(J, ofile);
+	       )-- end else if |J| == n/2
+	  
+	  );-- end J-> ()
+	  )
+     );-- end apply
 end
 beginDocumentation()
 
