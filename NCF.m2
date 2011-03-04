@@ -11,7 +11,7 @@ newPackage(
 needsPackage "RationalPoints";
 
 
-export{interpolate, idealOfPoints, ncfIdeal, kernPhi, getSingleNcfList,
+export{mainNCF, interpolate, idealOfPoints, ncfIdeal, kernPhi, getSingleNcfList,
 getNcfLists, convertDotFileToHashTable, extractTimecourse}
 
 
@@ -105,7 +105,8 @@ mainNCF (List, HashTable, Matrix) := List => (L, W, D) -> (
   apply(L, x -> (
     partialData := extractTimecourse( D, L, x, W);
     n := getSingleNcfList( partialData, {}, 2, W#x);
-    print ("The functions for " | x | " are " | toString n)
+    print ("The functions for " | x | " are " | toString n);
+    n
     )
   )
 )
@@ -185,12 +186,19 @@ kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, QC) -> (
 -- T#(xi) = all xjs that influcence xi 
 convertDotFileToHashTable = method()
 convertDotFileToHashTable String := HashTable => filename -> (  
-  content := lines get filename;
+  content := get filename;
+  convertDotFileToHashTable( content )
+)
+
+convertDotFileToHashTable String := HashTable => content -> (
+  content = lines content;
   numLines := #content;
+  print numLines;
+  print content;
   content = apply( numLines-2, i -> content_(i+1) );
   nameLines := select( content, l -> match( "label", l) );
   variableNames := new MutableHashTable;
-  scan( nameLines, l -> if match( ///^(.+)\s.*"(.+)",///, l ) then (
+  scan( nameLines, l -> if match( ///^\s*(.+)\s.*"(.+)",///, l ) then (
     node := substring( lastMatch_1, l);
     name := substring( lastMatch_2, l);
     variableNames#node = name;
@@ -199,7 +207,7 @@ convertDotFileToHashTable String := HashTable => filename -> (
   dependencies := new MutableHashTable;
   dependencyLines := select( content, l -> match( "->", l) );
   scan(dependencyLines, l -> (
-    match( ///^(.*)\s->\s(.*);///, l );
+    match( ///^\s*(.*)\s->\s(.*);///, l );
     source := substring( lastMatch_1, l);
     target := substring( lastMatch_2, l);
     if dependencies#?target then 
@@ -208,8 +216,6 @@ convertDotFileToHashTable String := HashTable => filename -> (
       dependencies#target = {source};
     )
   );
-  variableNames;
-  dependencies;
   dep := new MutableHashTable;
   dependencies = new HashTable from dependencies;
   scanPairs (dependencies, (target, sourceList) -> (
@@ -395,13 +401,43 @@ TEST ///
   assert( toString getSingleNcfList(T, {}, 2, {"var1", "var2"}) == "{var1*var2, var1*var2+var1+1, var1*var2+var2+1, var1*var2+var1+var2}" )
 ///
 
+TEST ///
+  --W = convertDotFileToHashTable "wiring.out1.dot"
+  W = convertDotFileToHashTable "digraph test {
+node1 [label=\"x1\", shape=\"box\"];
+node2 [label=\"x2\", shape=\"box\"];
+node1 -> node1;
+node2 -> node1;
+node1 -> node2;
+}"
+  D = matrix { {0,0}, {0,1}, {0,1} }
+  L = {"x1", "x2" }
+  --extractTimecourse( D, L, "x1", W)
+  --extractTimecourse( D, L, "x2", W)
+  s := mainNCF( L, W, D);
+  assert( toString s == "{{x1*x2, x1*x2+x1}, {x1+1}}")
+///
+
+TEST ///
+  --W = convertDotFileToHashTable "wiring.out1.dot"
+  W = convertDotFileToHashTable "digraph test {
+  node1 [label=\"x1\", shape=\"box\"];
+  node2 [label=\"x2\", shape=\"box\"];
+  node1 -> node1;
+  node2 -> node1;
+  node1 -> node2;
+  }"
+  L = {"x1", "x2" }
+  D = matrix { {0,0}, {0,1}, {0,1} }
+  s := mainNCF( L, W, D);
+  assert( toString s == "{{x1*x2, x1*x2+x1}, {x1+1}}")
+///
 
 end
 
 --
 
 restart 
-load "./Goettingen-2011/NCF.m2"
 loadPackage "NCF"
 check "NCF"
 T=new MutableHashTable	   
@@ -449,7 +485,14 @@ check "NCF"
 
 restart 
 loadPackage "NCF"
-convertDotFileToHashTable "wiring.out1.dot"
+W = convertDotFileToHashTable "wiring.out1.dot"
+D = matrix { {0,0}, {0,1}, {0,1} }
+L = {"x1", "x2" }
+--extractTimecourse( D, L, "x1", W)
+--extractTimecourse( D, L, "x2", W)
+mainNCF( L, W, D)
+
+
 D = matrix { {0,0,1,0}, {1,0,1,0}, {0,1,1,1}, {1,0,0,1}, {1,0,1,0}}
 D = matrix { {0,0,1,0}, {1,0,1,0}, {0,1,1,1}, {1,0,0,1}, {1,0,1,0}, {0, 0,0,0}}
 D = matrix { {0,0,1,0}, {1,0,1,0}, {0,1,1,1}, {1,0,0,1}, {1,0,1,0}, {1,0,0,0}}
@@ -460,4 +503,3 @@ extractTimecourse( D, L, "GeneA", W)
 restart 
 loadPackage "NCF"
 check "NCF"
-
