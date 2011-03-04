@@ -72,25 +72,25 @@ TEST ///
 -- Expected Betti Tableaus --
 -----------------------------
 
--- convert c*t^d to (c,R^(abs(c):-d))
+-- convert c*t^d to (c,({d},d))
 -- assumes only one term c*t^d
 -- ring of t must be over ZZ or QQ
 -- and singly graded
 --
 -- this funciton is needed to construct 
--- ChainComplexes of expected shape from
+-- expected betti tables from
 -- a HilberNumerator
-oneTermToFreeModule = (mon,R) -> (
+termToBettiKey = (mon) -> (
      -- the coefficient of the monomial
      c := lift((last coefficients mon)_0_0,ZZ);
      -- the degree of the monmial
      d := sum degree mon;
-     (c,R^{abs(c):-d})
+     (c,({d},d))
      )
 
 TEST ///
   T = QQ[t];
-  assert (oneTermToFreeModule(-4*t^3,T)==(-4,T^{4:-3}))
+  assert (termToBettiKey(-4*t^3,T)==(-4,({3},3)))
 ///
 
 
@@ -98,51 +98,46 @@ TEST ///
 expectedBetti=method()
 
 
--- calculates a minimal free resolution with expected betti tableau
+-- calculates the expected betti tableau
 -- from a hilbert Numerator
 --
 -- For this every term a_i*t^i will represent a summand R^{abs(a_i):-i}
+-- in the ChainComplex represented by the desired BettiTableau
 -- The step where this summand is used depends on the number of
 -- sign switches that occur in the hilbert numerator befor this monomial  
 --
 -- the ring of the hilbert numerator is expected to singly graded 
 -- and contain only one variable
 expectedBetti(RingElement):= (hilbNum) ->(
-     T := ring hilbNum;
      -- find terms of hilbert Numerator
      -- smallest degree first
      termsHilbNum := reverse terms hilbNum;
-     -- convert terms into pairs (coefficient, FreeModule)
-     summands := apply(termsHilbNum,m->oneTermToFreeModule(m,T));
-     -- make empty chain comples
-     F := new ChainComplex;
-     F.ring = ring hilbNum;
+     -- convert terms into pairs (coefficient, ({d},d))
+     bettiKeys := apply(termsHilbNum,m->termToBettiKey(m));
      -- put the summands into the appropriate step of F
      -- j contains the current step
      j := -1;
      -- previous Coefficient is needed to detect sign changes
-     previousCoefficient := -(first summands)#0;
-     -- step through all summands     
-     for s in summands do (
+     previousCoefficient := -(first bettiKeys)#0;
+     -- step through all keys and calculate which step a
+     -- given entry must go based on the number of sign-changes
+     L := for b in bettiKeys list (
 	  -- has a sign change occured?
-     	  if (s#0*previousCoefficient) < 0 then (
+     	  if (b#0*previousCoefficient) < 0 then (
 	       -- sign change => next step in the resolution
 	       j = j+1;
-	       -- start new step with current summand
-	       F_j = s#1 )
-     	  else (
-	       -- no sign change => add currend summand to currend step
-     	       F_j = F_j ++ s#1;
 	       );
 	  -- store previous coefficient
-     	  previousCoefficient = s#0;
+     	  previousCoefficient = b#0;
+	  -- make entry for the betti Tally
+	  (prepend(j,b#1) => abs(b#0))
      	  );
      -- return the complex
-     betti F
+     new BettiTally from L
      )
 
 TEST ///
-    e = expectedBetti(t^5-5*t^4+5*t^3-1)
+    e = expectedBetti2(t^5-5*t^4+5*t^3-1)
     b = new BettiTally from {
 	 (0,{0},0) => 1, 
 	 (1,{3},3) => 5,
@@ -151,6 +146,7 @@ TEST ///
     	 }
     assert(e == b)
 ///
+
 
 
 -- calculate the expected betti tableau

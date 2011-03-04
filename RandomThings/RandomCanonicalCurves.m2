@@ -103,19 +103,16 @@ beginDocumentation()
 
 doc ///
   Key
-    randomCanonicalCurve
-    (randomCanonicalCurve,ZZ,PolynomialRing)
+    canonicalCurve
   Headline
     Compute a random canonical curve of genus at most 14  
   Usage
-    I=randomCanonicalCurve(g,S)
+    I=(random canonicalCurve)(g,S)
   Inputs
     g: ZZ
        the genus
     R: PolynomialRing
        homogeneous coordinate ring of $\PP^{ g-1}$
-    Certify => Boolean
-       whether to certify the result
   Outputs
     I: Ideal 
        of a canonical curve $C$ of genus $g$
@@ -128,11 +125,17 @@ doc ///
       FF=ZZ/10007;
       R=FF[x_0..x_(g-1)];
       setRandomSeed "alpha";
-      time betti(I=randomCanonicalCurve(g,R))
+      time betti(I=(random canonicalCurve)(g,R))
       genus I == g and degree I ==2*g-2      
 /// 
 
-
+-- check that the number of generators of the constructed 
+-- canonical curve is as expected
+TEST ///
+apply(5..14,g->(
+	  assert (binomial(g-2,2) == rank source mingens (I=randomCanonicalCurve(g,(ZZ/101)[x_0..x_(g-1)])))
+     ))
+///
 
 end
 
@@ -141,8 +144,4 @@ uninstallPackage("RandomCanonicalCurves")
 installPackage("RandomCanonicalCurves",RerunExamples=>true,RemakeAllDocumentation=>true);
 --viewHelp"RandomCanonicalCurves"
 
-restart
-needsPackage"RandomCanonicalCurves"
-apply(4..14,g->(
-	  time print (g,binomial(g-2,2), rank source mingens (I=randomCanonicalCurve(g,(ZZ/101)[x_0..x_(g-1)])))
-     ))
+time check ("RandomCanonicalCurves")
