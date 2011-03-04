@@ -107,6 +107,14 @@ keelAvg (Sequence, BoundaryRing) := (J, R) -> (
       
 --**************************************************************************      
 --**************************************************************************
+keelAvgJcoeff = method()
+keelAvgJcoeff (Sequence, Sequence, BoundaryRing) := (J, K, R) -> (
+     
+     
+     ) 
+      
+--**************************************************************************      
+--**************************************************************************
 keelAvgIndices = method()
 keelAvgIndices (Sequence, List, BoundaryRing) := (J, IList, R) -> (
      --Input a sequence J (i.e. a boundary index J), 
@@ -421,19 +429,19 @@ TEST ///
 end
 restart
 loadPackage "NefM0n"
-R = boundaryRing 6;
+R = boundaryRing 5;
 S = R#Ring
-keelAvg((1,2,3), R)
-tex keelSum({{1,3},{2,4}}, R)
+tex keelAvg((1,2,3), R)
+print keelSum({{1,3},{2,4}}, R)
 tex keelAvgIndices( (1,2,3), {{2,3,4,5}}, R)
 tex keelAvgIndices( (1,2,3), {{1,2,4,5}, {1,2,4,6}, {1,2,5,6}, {1,3,4,5}, {1,3,4,6}, {1,3,5,6}, {2,3,4,5}, {2,3,4,6}, {2,3,5,6}},R)
 
 fCurveIneqsLPSOLVE(6, "fIneqs6.txt") 
-M = fCurveIneqsMatrix 6
+M = fCurveIneqsMatrix 5
 
 
 cJinDDI((1,2), {1,2,3,4,5,6,7,8})
-v = cJinD((1,2), 6)
+v = cJinD((1,2), 5)
 w = cJinD((3,4,5,6,7,8), 8)
 v - w
 
