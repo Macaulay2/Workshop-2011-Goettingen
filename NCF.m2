@@ -138,9 +138,15 @@ kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, QR) -> (
 convertDotFileToHashTable = method()
 convertDotFileToHashTable String := HashTable => filename -> (  
   content := lines get filename;
-  numLines := # content;
+  numLines := #content;
   content = apply( numLines-2, i -> content_(i+1) );
-  select( content, l -> match( "label", l) )
+  nameLines := select( content, l -> match( "label", l) );
+  variableNames := apply( nameLines, l -> if match( ///"(.+)",///, l ) then (
+    m := last lastMatch;
+    substring( m, l )
+    )
+  );
+
 )
 
 
