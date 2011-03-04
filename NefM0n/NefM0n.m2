@@ -241,9 +241,9 @@ fCurveIneqsMatrix (ZZ) := (n)->(
 	 
 	 
 	fMatrix := toList apply(fCurves, F -> (
-		flatten flatten apply (toList(2..floor(n/2)), i-> (
-		     apply(subsets(nList, 2*i), I -> (
-	       		 	  -- Calculate the intersection of the F-curve F with the CB-divisor D_I,
+		   apply(select (subsets(nList), I-> (#(set I) >= 4 and even (#(set I ))) ), 
+	                           I -> (
+	        		 -- Calculate the intersection of the F-curve F with the CB-divisor D_I,
 	       		 	  --  namely, F \cdot DD_I = 1 if \prod i=1^4 #(F_i \cap I)  odd, 0 else
 	       		 	  parity := (#(set I * set F_0 ) * #(set I * set F_1 ) * #(set I * set F_2 ) * #(set I * set F_0 ) );
 	       		 	  if odd parity 
@@ -252,15 +252,16 @@ fCurveIneqsMatrix (ZZ) := (n)->(
 			      	       --fileName << " 1";
 			      	       )
 				  else ( 0 )
-			 	  )--end I -> ()
-	  	    	     )--end apply over I
-     	       		)-- end apply over i, the cardinality of I
-	  	   --fileName << ">= 0" << endl;
+     	       				)--end I->()
+				   
+     	  )--end apply
+		  
+
 	  	   )-- end F-> ()
           
      	  )-- end apply     
      )
-)
+
 
 
 
@@ -370,7 +371,9 @@ tex keelAvgIndices( (1,2,3), {{2,3,4,5}}, R)
 tex keelAvgIndices( (1,2,3), {{1,2,4,5}, {1,2,4,6}, {1,2,5,6}, {1,3,4,5}, {1,3,4,6}, {1,3,5,6}, {2,3,4,5}, {2,3,4,6}, {2,3,5,6}},R)
 
 fCurveIneqsLPSOLVE(6, "fIneqs6.txt") 
-M = matrix fCurveIneqsMatrix 8
+M = matrix fCurveIneqsMatrix 5
 
 cJinDDI((1,2), {1,2,3,4,5,6,7,8})
-v = cJinD((1,2), 7)
+v = cJinD((1,2), 8)
+w = cJinD((3,4,5,6,7,8), 8)
+v - w
