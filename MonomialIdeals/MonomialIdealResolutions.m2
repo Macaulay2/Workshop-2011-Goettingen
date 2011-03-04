@@ -1,7 +1,6 @@
 needsPackage ("SimplicialComplexes");
 needsPackage ("ChainComplexExtras");
 
-
 newPackage (
   "MonomialIdealResolutions",
   Version=>"0.1",
@@ -15,6 +14,7 @@ newPackage (
 
 needsPackage ("SimplicialComplexes");
 needsPackage ("ChainComplexExtras");
+
 -------------------
 -- Exports
 -------------------
@@ -125,9 +125,9 @@ isStable(MonomialIdeal) := Boolean => (I) -> (
 isSQStable = method();
 isSQStable(MonomialIdeal) := Boolean => (I) -> (
   S:=ring I;
-  not any( I_*, g-> (
+  all( I_*, g-> (
     mv:=maxVar(g); vars:=positions((first exponents g)_{0..mv},i->i==0);f:=lift(g/S_mv,S);
-    any(vars, j -> not isElement(f*S_j,I))
+    all(vars, j -> isElement(f*S_j,I))
     )
   )
 );
@@ -309,154 +309,163 @@ doc ///
    Description
        Text
           This package includes multiple resolutions for monomial ideals. There are methods to compute the Eliahou-Kervaire resolution for stable monomial ideals, the Aramova-Herzog-Hibi resolution for squarefree stable monomial ideals (note that squarefree stable is different from "squarefree and stable") and it also contains methods for computing monomial resolutions supported on simplicial complexes.
+	  The package uses the packages SimplicialComplexes and ChainComplexExtras.
 
            References:
 
-	   [AHH] A.Aramova, J. Herzog and T. Hibi, "Squarefree lexsegment ideals"
-	   Mat. Zeitschrift 228 (1998), 353-378
-	   [BPS] D. Bayer, I. Peeva, B. Sturmfels, "Monomial resolutions", Math. Res. Lett. 5 (1998), 31-46
-           [EK] S. Eliahou and M. Kervaire, "Minimal Resolutions of Some Monomial Ideals"
+	   [AHH] A. Aramova, J. Herzog and T. Hibi, "Squarefree lexsegment ideals"
+	   Mat. Zeitschrift 228 (1998), 353-378.
+	   
+	   [BPS] D. Bayer, I. Peeva, B. Sturmfels, "Monomial resolutions", Math. Res. Lett. 5 (1998), 31-46.
+           
+	   [EK] S. Eliahou and M. Kervaire, "Minimal Resolutions of Some Monomial Ideals"
 	    J. Algebra 129 (1990), 1-25.
+   SeeAlso
+       SimplicialComplexes
+       ChainComplexExtras
 ///
 
 doc ///
-   Key
-       isStable
-		 (isStable, MonomialIdeal)
-   Headline
-       checks whether a monomial ideal is stable
-   Usage
-       isStable I
-   Inputs
-       I: MonomialIdeal
-   Outputs
-       B: Boolean
-           returns true if and only if I is stable
-   Description
-       Text
-           Determines if the monomial ideal I is stable. It uses the ordering of variables given by the ring of I. 
-       Example
-           R = QQ[x,y,z];
-           I = monomialIdeal(x^3,x^2*y,x*y^2,y^3);
-           isStable I
-           J = monomialIdeal(x^3,x*y^2,y^3);
-           isStable J
-   SeeAlso
-     MonomialIdeal
-     isElement 
-     isSQStable
-///
-doc ///
-   Key
-       isSQStable
-		 (isSQStable, MonomialIdeal)
-   Headline
-       checks whether a monomial ideal is squarefree stable
-   Usage
-       isSQStable I
-   Inputs
-       I: MonomialIdeal
-   Outputs
-       B: Boolean
-           returns true if and only if I is squarefree stable
-   Description
-       Text
-           Determines if the monomial ideal I is squarefree stable. It uses the ordering of variables given by the ring of I. 
-       Example
-           R = QQ[x,y,z];
-           I = monomialIdeal(x*y,x*z,y*z);
-           isSQStable I
-           J = monomialIdeal(x,y*z);
-           isSQStable J
-   SeeAlso
-     MonomialIdeal
-	  isElement 
-	  isStable
-///
-doc ///
-   Key
-       isElement
-		 (isElement, RingElement, MonomialIdeal)
-   Headline
-       check whether an element of the ring is in the monomial ideal or not
-   Usage
-       isElement(f,I)
-   Inputs
-       f: RingElement 
-       I: MonomialIdeal
-   Outputs
-       B: Boolean
-   Description
-       Text
-           This function check if f belongs to I
-       Example
-         R=QQ[x,y,z];
-         f=x*y^2+x^3*y*z+z^2;
-         g=x^2*y+x*y*z+x^3*z^3;
-         I=monomialIdeal(x*y,x^3*z);
-         isElement(f,I)
-         isElement(g,I)
-   SeeAlso
-      isSubset
+  Key
+    isStable
+    (isStable, MonomialIdeal)
+  Headline
+    checks whether a monomial ideal is stable
+  Usage
+    isStable I
+  Inputs
+    I: MonomialIdeal
+  Outputs
+    B: Boolean
+      returns true if and only if I is stable
+  Description
+    Text
+      Determines if the monomial ideal I is stable. It uses the ordering of variables given by the ring of I.
+    Example
+      R = QQ[x,y,z];
+      I = monomialIdeal(x^3,x^2*y,x*y^2,y^3);
+      isStable I
+      J = monomialIdeal(x^3,x*y^2,y^3);
+      isStable J
+  SeeAlso
+    MonomialIdeal
+    isElement 
+    isSQStable
 ///
 
 doc ///
-   Key
-       EK
-       (EK,ZZ,MonomialIdeal)
-   Headline
-       constructs the n-th step of the Eliahou-Kervaire resolution
-   Usage
-       EK(n,I)
-   Inputs
-       n: ZZ
-		 I: MonomialIdeal
-   Outputs
-       M: Matrix
-   Description
-       Text
-          Returns a Matrix representing the map for the n-th step of the Eliahou-Kervaire resolution.
-          WARNING: The function does not check if I is stable.
-       Example
-         R=QQ[x,y,z];
-         I=monomialIdeal(x^2,x*y,y^2,y*z);
-         EK(2,I)
+  Key
+    isSQStable
+    (isSQStable, MonomialIdeal)
+  Headline
+    checks whether a monomial ideal is squarefree stable
+  Usage
+    isSQStable I
+  Inputs
+    I: MonomialIdeal
+  Outputs
+    B: Boolean
+      returns true if and only if I is squarefree stable
+  Description
+    Text
+      Determines if the monomial ideal I is squarefree stable. It uses the ordering of variables given by the ring of I. 
+    Example
+      R = QQ[x,y,z];
+      I = monomialIdeal(x*y,x*z,y*z);
+      isSQStable I
+      J = monomialIdeal(x,y*z);
+      isSQStable J
+  SeeAlso
+    MonomialIdeal
+    isElement 
+    isStable
+///
+
+doc ///
+  Key
+    isElement
+    (isElement, RingElement, MonomialIdeal)
+  Headline
+    check whether an element of the ring is in the monomial ideal or not
+  Usage
+    isElement(f,I)
+  Inputs
+    f: RingElement 
+    I: MonomialIdeal
+  Outputs
+    B: Boolean
+  Description
+    Text
+      This function check if f belongs to I
+    Example
+      R=QQ[x,y,z];
+      f=x*y^2+x^3*y*z+z^2;
+      g=x^2*y+x*y*z+x^3*z^3;
+      I=monomialIdeal(x*y,x^3*z);
+      isElement(f,I)
+      isElement(g,I)
+  SeeAlso
+    isSubset
+///
+
+doc ///
+  Key
+    EK
+    (EK,ZZ,MonomialIdeal)
+  Headline
+    constructs the n-th step of the Eliahou-Kervaire resolution
+  Usage
+    EK(n,I)
+  Inputs
+    n: ZZ
+    I: MonomialIdeal
+  Outputs
+    M: Matrix
+  Caveat
+    The function does not check if I is stable.
+  Description
+    Text
+      Returns a Matrix representing the map for the n-th step of the Eliahou-Kervaire resolution.
+    Example
+      R=QQ[x,y,z];
+      I=monomialIdeal(x^2,x*y,y^2,y*z);
+      EK(2,I)
         
-   SeeAlso
-      EKResolution
-      isStable
+  SeeAlso
+    EKResolution
+    isStable
 ///
 
 doc ///
-   Key
-       EKResolution
-		 (EKResolution,MonomialIdeal)
-   Headline
-       constructs the minimal free resolution given by S. Eliahou and M. Kervaire in [EK] for a stable monomial ideal. 
-   Usage
-       EKResolution I
-   Inputs
-       I: MonomialIdeal
-   Outputs
-       C: ChainComplex
-   Description
-       Text
-         The Eliahou-Kervaire resolution is a minimal resolution for stable monomial ideals as shown in [EK]. This function computes degrees of modules and differencials in the minimal resolution of I according to the formulas in [EK].
-         WARNING: The function does not check if I is stable. If it is not the result may not be a resolution!
-       Example
-         R=QQ[x,y,z];
-         I=monomialIdeal(x^2,x*y,y^2,y*z);
-         EKResolution(I)
-   SeeAlso
-      EK
-      AHHResolution
-      isStable
-      MonomialIdeal
-      ChainComplex
-      isResolution
-      res
+  Key
+    EKResolution
+    (EKResolution,MonomialIdeal)
+  Headline
+    constructs the minimal free  Eliahou-Kervaire resolution for a stable monomial ideal. 
+  Usage
+    EKResolution I
+  Inputs
+    I: MonomialIdeal
+  Outputs
+    C: ChainComplex
+  Caveat
+    The function does not check if I is stable. If it is not the result may not be a resolution!
+  Description
+    Text
+      The Eliahou-Kervaire resolution is a minimal resolution for stable monomial ideals as shown in [EK]. This function computes degrees of modules and differencials in the minimal resolution of I according to the formulas in [EK].
+    Example
+      R=QQ[x,y,z];
+      I=monomialIdeal(x^2,x*y,y^2,y*z);
+      EKResolution(I)
+  SeeAlso
+    EK
+    AHHResolution
+    isStable
+    MonomialIdeal
+    ChainComplex
+    isResolution
+    res
 ///
-
 
 doc ///
    Key
@@ -464,7 +473,7 @@ doc ///
       (AHH,ZZ,MonomialIdeal)
    
    Headline
-       Constructs the n-th step of the minimal free resolution given by A.Aramova, J. Herzog and T. Hibi in [AHH] for a squarefree stable monomial ideal. 
+       Constructs the n-th step of the Aramova-Herzog-Hibi resolution resolution for a squarefree stable monomial ideal. 
    Usage
        AHH(n, I)
    Inputs
@@ -472,11 +481,13 @@ doc ///
        I: MonomialIdeal
    Outputs
        C: Matrix
+   Caveat
+     The function does not check if I is squarefree stable.
    Description
-       Text
-         Returns a matrix representing the map for the n-th step of the Aramova-Herzog-Hibi resolution.
-         WARNING: The function does not check if I is squarefree stable.
-       Example
+     Text
+         Returns a matrix representing the map for the n-th step of the Aramova-Herzog-Hibi resolution which is a minimal free resolution given by A.Aramova, J. Herzog and T. Hibi in [AHH] for a squarefree stable monomial ideal. 
+
+     Example
          R=QQ[x,y,z];
          I=monomialIdeal(x*y,x*z,y*z);
          AHH(2,I)
@@ -490,19 +501,20 @@ doc ///
    Key
        AHHResolution
       (AHHResolution,MonomialIdeal)
-   
    Headline
-       Constructs the minimal free resolution given by A.Aramova, J. Herzog and T. Hibi in [AHH] for a squarefree stable monomial ideal. 
+       Constructs the Aramova-Herzog-Hibi resolution for a squarefree stable monomial ideal. 
    Usage
        AHHResolution I
    Inputs
        I: MonomialIdeal
    Outputs
        C: ChainComplex
+   Caveat
+     The function does not check if I is squarefree stable. If it is not the result may not be a resolution!
    Description
        Text
+         Constructs the minimal free resolution given by A.Aramova, J. Herzog and T. Hibi in [AHH] for a squarefree stable monomial ideal. 
          The Aramova-Herzog-Hibi resolution is a minimal resolution for squarefree stable monomial ideals as shown in [AHH]. This function computes degrees of modules and differencials in the minimal resolution of I according to the formulas in [AHH].
-         WARNING: The function does not check if I is squarefree stable. If it is not the result may not be a resolution!
        Example
          R=QQ[x,y,z];
          I=monomialIdeal(x*y,x*z,y*z);
@@ -523,7 +535,7 @@ doc ///
      simplicialResolutionDifferential
      (simplicialResolutionDifferential,ZZ,MonomialIdeal,SimplicialComplex)
   Headline
-    Constructs the matrix representing the n-th step of a chain complex supported on a simplicial complex SC labeled by the generators of the monomial ideal I.
+    Constructs the n-th step of a chain complex supported on a simplicial complex.
   Usage
     simplicialResolutionDifferential(n, I, SC)
   Inputs
@@ -552,7 +564,7 @@ doc ///
     simplicialResolution
     (simplicialResolution, MonomialIdeal, SimplicialComplex)
   Headline
-    Constructs a chain complex supported on a simplicial complex SC labeled by the generators of the monomial ideal I.
+    Constructs a chain complex supported on a simplicial complex labeled by the generators of the monomial ideal.
   Usage
     simplicialResolution(I, SC)
   Inputs
@@ -560,11 +572,13 @@ doc ///
     SC: SimplicialComplex
   Outputs
     C: ChainComplex
+  Caveat
+    The function does not check if the output is a resolution!
   Description
     Text
       Constructs a chain complex supported on a simplicial complex SC labeled by the generators of the monomial ideal I. This chain complex may or may not be a resolution of I. The function checks if the number of generators of the ideal equals the number of vertices of the simplicial complex. 
       A condition for SC to be a resolution is given in [BPS].
-      WARNING: The function does not check if the output is a resolution!
+
     Example
          R=QQ[x,y,z];
          I=monomialIdeal(x*y,x*z,y*z);
@@ -581,23 +595,46 @@ doc ///
 ///
 
 doc ///
+  Key
+    scarf
+    (scarf, MonomialIdeal)
+  Headline
+    Constructs the scarf complex, a simplical complex supported on the generators of the monomial ideal.
+  Usage
+    simplicialResolution(I)
+  Inputs
+    I: MonomialIdeal
+  Outputs
+    SC: SimplicialComplex
+  Description
+    Text
+      --TODO--
+    Example
+      R=QQ[x,y,z];
+      I=monomialIdeal(x*y,x*z,y*z);
+      SC = scarf(I)
+  SeeAlso
+      simplicialResolution
+///
+
+doc ///
    Key
-      isResolution
+     isResolution
      (isResolution, ChainComplex, MonomialIdeal)
    Headline
-       checks whether a ChainComplex is a resolution of a monomial ideal
+     checks whether a ChainComplex is a resolution of a monomial ideal
    Usage
-      isResolution(C,I)
+     isResolution(C,I)
    Inputs
      C: ChainComplex
      I: MonomialIdeal
    Outputs
      B: Boolean
-         returns true if and only if C is a resolution of I
+       returns true if and only if C is a resolution of I
   Description
     Text
-        Determines if the ChainComplex is a resolution of a monomial ideal I. It verifies if the complex is exact except at homological degree 0 where the homology is isomorphic to the ideal. 
-	NOTE: It uses homology computations form the package ChainComplexExtras.
+      Determines if the ChainComplex is a resolution of a monomial ideal I. It verifies if the complex is exact except at homological degree 0 where the homology is isomorphic to the ideal. 
+      NOTE: It uses homology computations form the package ChainComplexExtras.
     Example
       R = QQ[x,y,z];
       I = monomialIdeal(x^3,x^2*y,x*y^2,y^3);
@@ -632,7 +669,6 @@ assert(not isElement(x*y^2+x^3*y*z+z^2, J));
 assert(  isElement(x^2*y+x*y*z+x^3*z^3, J));
 ///
 
-
 -- Tests isStable
 TEST ///
 R = QQ[x,y,z];
@@ -643,4 +679,31 @@ assert(not isStable J);
 assert(not isStable monomialIdeal z);
 ///
 
+-- Tests isSQStable
+TEST ///
+R = QQ[x,y,z];
+I = monomialIdeal(x*z,y*z);
+assert (not isSQStable I);
+assert (isSQStable monomialIdeal(gens I,x*y));
+J = monomialIdeal(x,y*z);
+assert (isSQStable J);
+///
+
+-- Tests EK, EKResolution
+TEST ///
+R = QQ[x,y,z];
+I=monomialIdeal(x^2,x*y,y^2,y*z);
+EKR=EKResolution(I);
+assert (isResolution(EKR,I));
+assert (betti EKR == betti res I);
+///
+
+-- Tests AHH, AHHResolution
+TEST ///
+R = QQ[x,y,z];
+I=monomialIdeal(x*y,x*z,y*z);
+AHHR=AHHResolution(I);
+assert (isResolution(AHHR,I));
+assert (betti AHHR == betti res I);
+///
 
