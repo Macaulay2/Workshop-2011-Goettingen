@@ -25,14 +25,20 @@ extractTimecourse (Matrix, List, String, HashTable) := HashTable => ( D, L, x, W
   inputs := W#x;
   xPos := position(L, l -> l==x);
   T := new MutableHashTable;
+  inconsistentTransitions := {};
   pos := positions( L, l -> member(l, inputs) );
   scan( drop(entries D, -1), drop(entries D, 1), (inputRow, outputRow) -> (
-    if T#?(inputRow_pos) then (
-      if T#(inputRow_pos) != outputRow_xPos then 
-        debug "error, inconsistent time course";
-    )  
-    else
-      T#(inputRow_pos) = outputRow_xPos;
+    if not member( inputRow_pos, inconsistentTransitions) then (
+      if T#?(inputRow_pos) then (
+        if T#(inputRow_pos) != outputRow_xPos then (
+          remove(T, inputRow_pos);
+          inconsistentTransitions = inconsistentTransitions | {inputRow_pos};
+          print "Inconsistent data found, ignoring it"
+        )
+      )  
+      else
+        T#(inputRow_pos) = outputRow_xPos
+      )
     )
   );
   T
@@ -502,6 +508,7 @@ restart
 loadPackage "NCF"
 convertDotFileToHashTable "wiring.out1.dot"
 D = matrix { {0,0,1,0}, {1,0,1,0}, {0,1,1,1}, {1,0,0,1}, {1,0,1,0}}
+D = matrix { {0,0,1,0}, {1,0,1,0}, {0,1,1,1}, {1,0,0,1}, {1,0,1,0}, {0, 0,0,0}}
 D = matrix { {0,0,1,0}, {1,0,1,0}, {0,1,1,1}, {1,0,0,1}, {1,0,1,0}, {1,0,0,0}}
 L = { "GeneA", "GeneB", "ProteinC", "GeneD"}
 W = new HashTable from { "GeneA" => {"GeneA", "ProteinC"} }
