@@ -1,4 +1,3 @@
-
 newPackage(
     "NCF",
     Version => "0.1", 
@@ -9,11 +8,30 @@ newPackage(
     DebuggingMode => true
 )
 
-installPackage "RationalPoints";
+needsPackage "RationalPoints";
 
 
 export{interpolate, idealOfPoints, ncfIdeal, kernPhi, getSingleNcfList,
-getNcfLists, convertDotFileToHashTable}
+getNcfLists, convertDotFileToHashTable, extractTimecourse}
+
+
+-- given a matrix with time course data for the variables in L
+-- extract only those time points of variables in inputs
+-- deal with inconsistenties
+-- T has the form T#{0,1,0,} = 1
+-- make table for x, depending on W#x
+extractTimecourse = method()
+extractTimecourse (Matrix, List, String, HashTable) := HashTable => ( D, L, x, W) -> (
+  inputs := W#x;
+  xPos := position(L, l -> l==x);
+  T := new MutableHashTable;
+  pos := positions( L, l -> member(l, inputs) );
+  scan( drop(entries D, -1), drop(entries D, 1), (inputRow, outputRow) -> (
+    T#(inputRow_pos) = outputRow_xPos;
+    )
+  );
+  T
+)
 
 
 --returns a List of Nested Canalyzing Functions for the given HashTable of one variable
@@ -478,3 +496,7 @@ check "NCF"
 restart 
 loadPackage "NCF"
 convertDotFileToHashTable "wiring.out1.dot"
+D = matrix { {0,0,1,0}, {1,0,1,0}, {0,1,1,1}, {1,0,0,1}, {1,0,1,0}}
+L = { "GeneA", "GeneB", "ProteinC", "GeneD"}
+W = new HashTable from { "GeneA" => {"GeneA", "ProteinC"} }
+extractTimecourse( D, L, "GeneA", W)
