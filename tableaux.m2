@@ -202,13 +202,18 @@ towardStandard = T -> (
 -- List t: a tableau
 -- MutableHashTable h: a hash table which memoizes recursive calls and 
 -- stores the coefficients of the straightening of t into standard tableaux
+STRAIGHT = new MutableHashTable;
 straighten = method()
 straighten(List) := t -> (
      sg := t/(i->sgn i)//product;
-     h := new MutableHashTable from {};
      t = apply(t, i->sort(i));
+     if STRAIGHT#?t then new HashTable from apply(keys STRAIGHT#t,i->(i=> sg*STRAIGHT#t#i)) else
+     (
+     h := new MutableHashTable from {};
      straighten(t, h);
+     STRAIGHT#t = new HashTable from h#t; 
      new HashTable from apply(keys h#t,i->(i => sg*h#t#i))
+     )
      )
 
 straighten(List, MutableHashTable) := (t, h) -> (
@@ -246,29 +251,165 @@ sgn(List) := l ->
      sg
      )
 
+-------Generate all the partitions of a set
+-------with a given shape
+locS = local locS;
+locL = local locL;
+locLengthL = local locLengthL;
+locParts = local locParts;
+locPartitions = local locPartitions;
+genPartitions = local genPartitions;
+
+genPartitions = method()
+genPartitions(ZZ) := (k)->
+(
+     if k==length locS then (locLPos = locLPos | {toList locPos}) else
+     (
+     for i from 0 to locLengthL-1 do
+     	  if (#locParts#i<locL#i) then
+	  (
+	       locParts#i = locParts#i | {locS#k};
+	       locPos#k = i+1;
+	       genPartitions(k+1);
+	       locParts#i = drop(locParts#i,-1);
+	       );
+     )
+);
+
+partitions(List,BasicList) := (S,L)->
+(
+     locS = toList S;
+     locL = L;
+     locLengthL = #L;
+     locParts = new MutableList;
+     locPos = new MutableList;
+     for i from 0 to locLengthL-1 do locParts#i = {};
+     locLPos = {};
+     genPartitions(0);
+     locLPos
+     )
+
+--------end generate partitions
+
+----2nd secant
+secondSecant = method()
+secondSecant(List,List,List) := (lam0,lam1,lam2) ->
+(
+     tlam0 := toList conjugate new Partition from lam0;
+     spar := 0;
+     T0 := for i from 0 to #tlam0 - 1 list (l = splice{spar+1..spar+tlam0#i};spar = spar + tlam0#i;l);
+     sTab1 := StdTab#(lam1,splice{d:1});
+     sTab2 := StdTab#(lam2,splice{d:1});
+     indR := flatten for i in sTab1 list for j in sTab2 list {i,j};
+     print(#indR);
+     gensR := indR/(i->z_i);
+     R := QQ[gensR];
+     rels := {};
+     time for T in indR do
+     (
+	  T1 = T#0;
+	  T2 = T#1;
+	  for col in T0 do
+     	       for i from 0 to #col-2 do
+--	       	    for j from i+1 to #col-1 do
+	       	    for j from #col-1 to #col-1 do
+		    (
+			 newT1 = T1/(c->(c/(r->if r == col#i then col#j
+					else if r == col#j then col#i
+					else r)));
+			 newT2 = T2/(c->(c/(r->if r == col#i then col#j
+					else if r == col#j then col#i
+					else r)));
+			 strT1 = straighten newT1;
+			 strT2 = straighten newT2;
+			 pol = sum flatten for a in keys strT1 list
+			                   for b in keys strT2 list
+					   strT1#a*strT2#b*z_({a,b});
+			 rels = rels | {z_T+pol};
+			 );
+--new relations
+     	  for c from 0 to #T0-2 do
+	  (
+	       col := T0#c;
+	       j := T0#(c+1)#0;
+	       rel = z_T;
+	       for i from 0 to #col-1 do
+	       (
+			 newT1 = T1/(c->(c/(r->if r == col#i then j
+					else if r == j then col#i
+					else r)));
+			 newT2 = T2/(c->(c/(r->if r == col#i then j
+					else if r == j then col#i
+					else r)));
+			 strT1 = straighten newT1;
+			 strT2 = straighten newT2;
+			 pol = sum flatten for a in keys strT1 list
+			                   for b in keys strT2 list
+					   strT1#a*strT2#b*z_({a,b});
+		    	 rel = rel - pol;
+		    ); 
+     	       rels = rels | {rel};	       
+	       );
+	  );
+     time if rels != {} then
+     (
+     	  print(#rels);
+	  grb := gb(ideal rels,DegreeLimit=>1);
+     	  grbin := forceGB leadTerm grb;
+     	  mat := matrix{gens R} % grbin;
+     	  indR = select(for i from 0 to #indR-1 list if mat_i_0 != 0 then indR#i else null,i->i=!= null);
+     	  gensR = indR/(i->z_i);
+     	  R = QQ[gensR];
+     	  print(#indR);
+	  print(#indR == scalarProduct(internalProduct(Q_(lam0),Q_(lam1)),Q_(lam2)));
+	  );
+     kerf := ideal(1_R);
+     
+for p in kpar do
+(
+     sT0 := StdTab#(lam0,p);
+     sT1 := StdTab#(lam1,p);
+     sT2 := StdTab#(lam2,p);
+     gensS := sT0/(i->A_i)|sT1/(i->B_i)|sT2/(i->C_i);
+     time S := QQ[gensS];
+     if #gensS == 0 then continue;--because kernel of map to QQ[] has a bug
+     time f := map(S,R,for T in indR list
+	  (
+     	       T1 := T#0;
+	       T2 := T#1;
+	       pars := partitions(splice{1..d},p);
+	       sum for pa in pars list
+	       (
+		    sTr0 := straighten(T0/(i->(i/(j->pa#(j-1)))));
+		    pA := apply(keys sTr0,i->if (sTr0#i == 0) then 0 else sTr0#i * A_i)//sum;
+		    sTr1 := straighten(T1/(i->(i/(j->pa#(j-1)))));
+		    pB := apply(keys sTr1,i->if (sTr1#i == 0) then 0 else sTr1#i * B_i)//sum;
+		    sTr2 := straighten(T2/(i->(i/(j->pa#(j-1)))));
+		    pC := apply(keys sTr2,i->if (sTr2#i == 0) then 0 else sTr2#i * C_i)//sum;
+		    pA*pB*pC
+		    )
+	       ));
+     kerf = intersect(kerf, ker f);
+     kerf = ideal({0_R}|select(flatten entries gens kerf,i->degree i == {1}));
+     );
+--(numgens R-numgens source mingens kerf,(gens R)%kerf)
+numgens R-numgens source mingens kerf
+--mingens kerf
+)
+
+recsyz = method()
+recsyz (Thing) := (el) -> min(el,0)
+recsyz (RingElement) := (el) ->
+(
+     T := ring el;
+     listForm el/((u,v)->T_u*recsyz(v))//sum
+     )
+----end 2nd secant
 
 end
 
 restart
 load "tableaux.m2"
-straighten({{3,2},{1}})
-straighten({{2,3},{1}})
-straighten({{3,2},{2,3}})
-straighten({{4,1},{3,2}})
-straighten({{3,2,1},{3,2}})
-straighten({{4,2,3,3,3},{1,2}})
-
-straighten({{3,2},{3,2},{1},{1}})
-t = {{3,2},{3,2},{1},{1}}
-
-compositions({6,0,0,0},5)
-standardTableaux({3},{1,1,1})
-standardTableaux({2,1},{1,1,1})
-standardTableaux({1,1,1},{1,1,1})
-standardTableaux({2,1},{3})
-
-standardTableaux({3,3,3},{1,1,1,1,1,1,1,1,1})
-#oo
 loadPackage"SchurRings"
 S = schurRing(QQ,s,6)
 scalarProduct(s_{2}^3,s_{4,2}) == #standardTableaux({4,2},{2,2,2})
@@ -278,38 +419,109 @@ load "tableaux.m2"
 loadPackage"SchurRings"
 --sym^n(sym^d)
 
-n = 3
-d = 2
+n = 5
+d = 3
 
 S = schurRing(QQ,s,n*d)
 pl = plethysm(s_{n},s_{d})
 s_{d}^n
 
 rho = toList(n:d)
-lam = {4,2}
+lam = {5,5,3,1,1}
 
-sTab = standardTableaux(lam,rho)
+sTab = standardTableaux(lam,rho);
+#sTab
 R = QQ[apply(sTab,i->z_i)]
 
-perms = permutations splice{1..n}
+perms = permutations splice{1..n};
 rels = {}
 
-per = perms#2
-tab = sTab#1
-
-for per in perms do
+time for per in perms do
      for tab in sTab do
      (
-	  str = straighten perTab(per,tab);
+     	  print(per,tab);
+	  time str = straighten perTab(per,tab);
      	  rels = rels | {z_tab-sum for ke in keys str list(try z_ke * str#ke else 0)};
 	  )
      
-I = ideal rels
+I = ideal rels;
 #sTab - numgens source mingens I
-mingens I
-rels
-straighten({{3,2},{1}})
-straighten({{2,1},{3}})
-straighten({{3,2},{3,2},{1},{1}})
-straighten({{2,1},{2,1},{3},{3}})
-straighten({{4,1},{3,2}})
+mgI = mingens I;
+mgI
+
+k = 3
+kpar = select(partitions n,i->#i==k)
+kers = {}
+
+par = kpar#0
+
+for par in kpar do
+(
+     sTabs = standardTableaux(lam,d*toList(par));
+     T = QQ[apply(sTabs,i->z_i)];
+     f = map(T,R,some list);--what's the list?
+     kers = kers | {ker f};
+     )
+
+
+--Weyman,Landsberg - 2nd secant of Segre
+restart
+loadPackage"SchurRings"
+load"tableaux.m2"
+
+d = 10
+k = 3
+
+Q = schurRing(QQ,q,d)
+S1 = schurRing(QQ,s1,3)
+S2 = schurRing(S1,s2,3)
+S3 = schurRing(S2,s3,3)
+
+s = s1_{1}*s2_{1}*s3_{1}
+sP = symmetricPower(d,s);
+
+
+partsd = select(partitions d,i->#i<=k)/(i->toList i);
+kpar = select(partsd,i->#i==k);
+
+StdTab = new MutableHashTable;
+time for lam in partsd do
+     for par in kpar do
+     	  StdTab#(lam,par) = standardTableaux(lam,par)
+
+par = splice{d:1}
+time for lam in partsd do
+     StdTab#(lam,par) = standardTableaux(lam,par);
+     
+pd = partsd
+
+hilbFcnd = 0
+
+for i0 from 0 to #pd-1 do
+     for i1 from i0 to #pd-1 do
+     	  for i2 from i1 to #pd-1 do
+	  (
+     	       lam0 := pd#i0;
+	       lam1 := pd#i1;
+	       lam2 := pd#i2;
+	       if recsyz(sP - S1_lam0*S2_lam1*S3_lam2) == 0 then
+	       (
+		    print(lam0,lam1,lam2);
+		    coeff := secondSecant(lam2,lam1,lam0);
+     	       	    plam = permutations({lam2,lam1,lam0});
+		    for pe in plam do
+		    (
+			 mon = S1_(pe#0)*S2_(pe#1)*S3_(pe#2);
+			 if recsyz(hilbFcnd-mon) != 0 then hilbFcnd = hilbFcnd + coeff*mon;
+			 )
+		    )
+     	       )
+hilbFcnd
+
+--hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*s--degree 5--works
+--hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(2,s)-S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}-S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}-S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2}-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*s--degree 6--works
+hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(3,s)-(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*s-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(2,s)+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*s--degree 7--works
+
+
+Q = schurRing(QQ,q,6)
+internalProduct(q_{3,1,1},q_{3,1,1})
