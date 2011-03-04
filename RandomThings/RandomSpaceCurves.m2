@@ -41,14 +41,15 @@ nextPrime ZZ:=n->(
 ------------------------------------
 
 -- calculate the numerator of a Hilbert function 
--- from the frist d+r+1 values where
+-- from the first d+r+1 values where
 -- d is the regularity of the corresponding module
 -- and r is the dimension of the ambient space
 --
 -- L = a list of dimensions
 -- r = the dimension of the ambient space
 -- t = the variable to be used in the numerator
-hilbertNumerator = (L,r,t) -> (
+hilbertNumerator=method()
+hilbertNumerator(List,ZZ,RingElement):=(L,r,t)->(
      -- the beginning of the hilbert series
      p:=sum(#L,i->L#i*t^i); 
      -- the numerator
@@ -181,7 +182,7 @@ TEST ///
 -- calculate the expected betti tableau
 -- for a curve of degree d, genus g in IP^r.
 -- we assume C non-degenerate, O_C(2) nonspecial and maximal rank
-expectedBetti(ZZ,ZZ,ZZ) := (d,g,r)->(
+expectedBetti(ZZ,ZZ,ZZ) := (g,r,d)->(
      b := d+r+1;
      L := apply(b,i->(if i>1 then 
 	       min(d*i+1-g,binomial(r+i,r)) 
@@ -190,7 +191,7 @@ expectedBetti(ZZ,ZZ,ZZ) := (d,g,r)->(
      )
 
 TEST ///
-    e = expectedBetti(5,1,3)
+    e = expectedBetti(1,3,5)
     b = new BettiTally from {
 	 (0,{0},0) => 1, 
 	 (1,{3},3) => 5,
@@ -234,9 +235,6 @@ TEST ///
 --------------------
 -- Finite Modules --
 --------------------
-
-
-randomHartshorneRaoModule=method(TypicalValue=>Module,Options=>{Attempts=>0})
 
 -- calculate the number of expected syzygies of a
 -- random a x b matrix with linear entries in R
@@ -396,7 +394,9 @@ randomHartshorneRaoModuleDiameter1 = (HRao,R)->(
      return coker (vars R**R^{HRao#0:0})
      )
 
-randomHartshorneRaoModule(ZZ,List,PolynomialRing):=opt->(e,HRao,R)->(
+randomHartshorneRaoModule=method()
+
+randomHartshorneRaoModule(ZZ,List,PolynomialRing):=(e,HRao,R)->(
      if dim R != 4 then error "expected a polynomial ring in 4 variables";
      if degrees R !={{1}, {1}, {1}, {1}} then error "polynomial ring is not standard graded";
      if #HRao > 3 then error "no method implemented for Hartshorne Rao modue of diameter >3";
@@ -424,11 +424,11 @@ randomHartshorneRaoModule(ZZ,List,PolynomialRing):=opt->(e,HRao,R)->(
 -- constructing the Harshorne Rao Module an therefore
 -- the last matrix in the minimal free resolution of 
 -- the curve
-randomSpaceCurve=method(TypicalValue=>Ideal,Options=>{Attempts=>0,Certify=>false})
+randomSpaceCurve=method(TypicalValue=>Ideal,Options=>{Certify=>false})
 
 randomSpaceCurve(ZZ,ZZ,PolynomialRing) := opt->(d,g,R)->(			 
      if not knownUnirationalComponentOfSpaceCurves(d,g) then return null;
-     G:=R^(expectedBetti(d,g,dim R-1));
+     G:=R^(expectedBetti(g,dim R-1,d));
      -- calculate values of h^1 that are forced by the maximal rank assumption
      h1 := for i from 0 when ((i<4) or(d*i+1-g)>binomial(i+3,3)) list max(d*i+1-g-binomial(3+i,3),0);
      -- calculate offset (i.e. number of leading 0's in h1)
@@ -456,6 +456,8 @@ randomSpaceCurve(ZZ,ZZ,PolynomialRing) := opt->(d,g,R)->(
      return ideal syz transpose N
      )
 
+undocumented randomSpaceCurve
+
 certifyRandomSpaceCurve=method()
 
 -- old certification for SpaceCurves 
@@ -464,6 +466,7 @@ certifyRandomSpaceCurve(Ideal,ZZ,ZZ,PolynomialRing) := (J,d,g,R)->(
      (dim singJ==0) and (g == genus J) and (d == degree J) and (2 == codim J)
 )
 
+undocumented certifyRandomSpaceCurve
 
 knownUnirationalComponentOfSpaceCurves=method()
 knownUnirationalComponentOfSpaceCurves(ZZ,ZZ) := (d,g)->(
@@ -472,7 +475,7 @@ knownUnirationalComponentOfSpaceCurves(ZZ,ZZ) := (d,g)->(
      d*n+1-g>binomial(n+3,3)  
      do n=n+1;
      HRao1:=select(apply(toList(1..n),n->(n,max(d*n+1-g-binomial(3+n,3),0))), i-> i_1 !=0);
-     G:=R^(expectedBetti(d,g,3));
+     G:=R^(expectedBetti(g,3,d));
      if length G >3 then return false;
      if #HRao1 >3 then return false;
      if #HRao1 <=1 then return true;
@@ -524,7 +527,6 @@ doc ///
     randomSpaceCurve
     (randomSpaceCurve,ZZ,ZZ,PolynomialRing)
     [randomSpaceCurve,Certify]
-    [randomSpaceCurve,Attempts] 
   Headline
     Generates the ideal of a random space curve of genus g and degree d
   Usage
@@ -538,8 +540,6 @@ doc ///
     	 homogeneous coordinate ring of $\PP^{ 3}$
     Certify => Boolean
        whether to certify the result
-    Attempts => ZZ
-       the maximum number of times to try to find an example
   Outputs
     :Ideal 
           of R
@@ -584,6 +584,8 @@ doc ///
   Key 
     knownUnirationalComponentOfSpaceCurves
     (knownUnirationalComponentOfSpaceCurves,ZZ,ZZ)
+  Headline
+    check whether there is a unirational construction for a component of the Hilbert scheme of space curves
   Usage 
     knownUnirationalComponentOfSpaceCurves(d,g)
   Inputs
@@ -596,17 +598,29 @@ doc ///
 	  that have a natural free resolution
   Description
     Text
-      For diameter = 3 the construction is possible
+      * diameter = 1. All modules can be constructed
+      
+      * diameter = 2. The modules can be constructed if the resolution of the generic module is minimal. This is for instance not the case for 
+      {\tt (d,g) } being among {\tt (2,1), (1,2), (1,1) }.
+
+      * diameter = 3. The construction is possible
       unless the expected Betti table of the Hartshorne-Rao module has shape
     
-     a b c1 - - 
+     {\tt a b c_1 - - }
      
-     - - c2 - -
+     {\tt - - c_2 - - }
       
-     - - c3 d e 
+     {\tt - - c_3 d e }
     
-     with both 4b-10c1 < a and 4d-10c3 < e. For diameter > 4 the routine returns false,
-     though we actually do know a couple of constructions which work in a few further cases.
+     with both {\tt 4b-10c_1 < a} and {\tt 4d-10c_3 < e}. 
+     
+  
+     diameter {\ge} 4. he routine returns false, although we actually do know a couple of constructions which work in a few further cases.
+     
+     The following example prints an overview table for the constructable cases:
+   Example
+     matrix apply(toList(2..18),d-> apply(toList(0..26),g-> 
+	  if knownUnirationalComponentOfSpaceCurves(d,g) then 1 else 0))
 ///
 
 doc ///
@@ -614,44 +628,33 @@ doc ///
     randomHartshorneRaoModule
 --    (randomHartshorneRaoModule,ZZ,ZZ,PolynomialRing)
     (randomHartshorneRaoModule,ZZ,List,PolynomialRing)
-    [randomHartshorneRaoModule,Attempts]
   Headline
     Compute a random Hartshorne-Rao module
   Usage 
 --    randomHartshorneRaoModule(d,g,R)
     randomHartshorneRaoModule(e,HRao,R)
   Inputs
-    d: ZZ
-       the degree of the desired curve
-    g: ZZ
-       the genus of the desired curve
-    R: PolynomialRing
-       coordinate ring of $\PP^{ 3}$
     e: ZZ 
        smallest degree of the Hartshorne-Rao module
     HRao: List
        desired dimensions of $H^1(\PP^3,I_C(n))$
-    Attempts => ZZ
-       the maximum number of times to try to find an example
+    R: PolynomialRing
+       coordinate ring of $\PP^{ 3}$
   Outputs
      : Module
   Description
     Text
-      Returns the ideal of a maximal rank curves of degree d 
-      and genus g in $\PP^{ 3}$ with O_C(2) non-special and Hartshorne-Rao module of diameter $\le 3$, 
-      which have a natural free resolution.
-    Text
-      For diameter =3 the construction is possible
-      unless the expected Betti table of the Hartshorne-Rao module has shape
-    
-     a b c1 - - 
-     
-     - - c2 - -
-      
-     - - c3 d e 
-    
-     with both 4b-10c1 < a and 4d-10c3 < e. For diameter >4 the routine returns false,
-     though we actually do know of a couple of constructions which work in a few further cases.
+      Returns the Hartshorne-Rao Module over {\tt R} with Hilbert function {\tt HRao}. The constructions works only for modules with diameter {\le} 3.
+    Example
+      R = ZZ/101[x_0..x_3];
+      betti res randomHartshorneRaoModule(0,{1},R)
+      betti res randomHartshorneRaoModule(0,{1,4},R)
+      betti res randomHartshorneRaoModule(0,{1,4,1},R)
+      betti res randomHartshorneRaoModule(0,{1,4,2},R)
+      betti res randomHartshorneRaoModule(0,{1,3,2},R)
+      betti res randomHartshorneRaoModule(0,{2,3,1},R)
+  Caveat
+    The list {\tt HRao} needs only to contain the non-zero values of the Hilbert function.
 /// 
 
 doc ///
@@ -670,6 +673,9 @@ doc ///
        a Betti table that has Hilbert numerator q,
        assuming that each sign change in the coefficients of q corresponds to a step
   Description
+    Text
+      calculates a minimal free resolution with expected betti tableau from a given hilbert Numerator.
+    
     Example
       T=ZZ[t]
       q=1-3*t^2+2*t^3
@@ -682,66 +688,94 @@ doc ///
   Key
     (expectedBetti,ZZ,ZZ,ZZ)
   Usage
-    F=expectedBetti(d,g,r)
+    B=expectedBetti(g,r,d)
   Inputs
-    d: ZZ
-       the degree
     g: ZZ
        the genus
     r: ZZ
        dimension of $\PP^{ r}$
+    d: ZZ
+       the degree
   Outputs
     B: BettiTally 
        a Betti table that has Hilbert numerator the same as 
        for a nondegenerate maximal-rank curve of genus g and degree d in $\PP^{ r}$, with O_C(2) non-special.
   Description
     Example
-      betti expectedBetti(4,0,4)
-      betti expectedBetti(15,16,3)
+      betti expectedBetti(0,4,4)
+      betti expectedBetti(16,3,15)
 ///
+
+doc ///
+ Key 
+  (expectedBetti,List,ZZ)
+ Usage
+  B=expectedBetti(h,r)
+ Inputs
+  h: List
+      values of the hilbert function
+  r: ZZ 
+       dimension of ambient protective space
+ Outputs
+  B: BettiTally
+       expected Betti table of module with Hilbert function h
+ Description
+  Example
+    betti expectedBetti({0,0,4,6,3,0,0,0,0},3)
+ Caveat 
+  The hilbert function has to be given at positions {\tt 0} to {\tt d+r+1} where {\tt d} is the regularity of the considered variety
+///   
+
+
+doc ///
+ Key
+   hilbertNumerator
+   (hilbertNumerator,List,ZZ,RingElement)
+ Headline
+   calculate Hilbert numerator from Hilbert function
+ Usage
+   p=hilbertNumerator(L,r,t)
+ Inputs
+   L: List
+   	values of the hilbert function
+   r: ZZ
+       dimension of ambient projective space
+   t: RingElement
+       variable in which the hilbertNumerator is given
+ Description
+  Example
+    T=QQ[t];
+    hilbertNumerator({0,0,4,6,3,0,0,0,0},3,t)
+ Caveat 
+  The hilbert function has to be given at positions {\tt 0} to {\tt d+r+1} where {\tt d} is the regularity of the considered variety
+
+///
+     
+-- calculate the numerator of a Hilbert function 
+-- from the first d+r+1 values where
+-- d is the regularity of the corresponding module
+-- and r is the dimension of the ambient space
+--
+-- L = a list of dimensions
+-- r = the dimension of the ambient space
+-- t = the variable to be used in the numerator
 
 
 doc ///
   Key
-    "RandomCurves"
+    "RandomSpaceCurves"
   Headline
-    Construction of random curves of various kinds and related computations
+    Construction of random space curves of various kinds.
   Description
     Text
-      The moduli space $M_g$
-      of curves of genus $g \le 14$ is unirational, as proved by Severi, Sernesi, Chang-Ran and Verra.
-      The methods used in their proofs allow us to find points in $M_g$.
-      In particular, for a finite field $F$ we can try to find curves defined over $F$ at random, 
-      if we choose random values for the parameters
-      in the unirational construction. This yields various probabilistic algorithms for picking random curves
-      of various kinds.
-      
-      For example 
-      
-      * random plane curves of degree $d$ with $\delta$ nodes, provided $binomial(d+2,2)-3*\delta > 0$
-      
-      * random curves of degree $d$ and genus $g$ in $\PP^{ 3}$, provided the Hartshorne-Rao module is easy to construct
-      
-      * random canonical curves of genus $g \le 14$
-      
-      As a byproduct of this package we can prove that the Hilbert scheme of curves in $\PP^{ 3}$ has at least 60
-      unirational components corresponding to non-degenerate linearly normal maximal rank curves with $h^1 {\cal O}_C(2)=0$
-      For many details see the item randomSpaceCurves.
-      
-      Sometimes it is possible to find points over a very small finite field $F_q$ in moduli spaces or 
-      Hilbert schemes by searching: if the space is dominated by a parameter space $M$ that has small
-      codimension in an unirational variety $G$, and if we can test quickly enough whether a random point p of G(F_q) is in M(F_q),
-      for a finite field F_q, then we might find good points p in M(F_q) within reasonable
-      running time. We call an algorithm based on these ideas a {\em search algorithm}; in case M itself is
-      unirational we speak of {\em random choices}. We use this naming convention for the functions of this package.
-      
-      For both types of probabilistic algorithm we provide options. With the option {\tt Certify=>True}, 
-      the result of the probabilistic algorithm gets certified, for example that the ideal returned 
-      describes indeed a smooth curve. The option {\tt Attempts=>n} gives an upper bound {\tt n} for the number of
-      attempts to find the desired object. For a search algorithm, the option {\tt InCodim=>c} computes the expected 
-      running time of a search algorithm assuming that the codimension of M in G is c, and bounds the number of attempts
-      accordingly.
-///
+     This package provides the construction of random curves $C \subset \mathbb{P}^{ 3}$ for various values for its degree $d$ and genus $g$.
+     A space curve $C \subset \mathbb{P}^{ 3}$ is constructed via its Hartshorne-Rao module $M= H^1_*(\mathcal{I}_C(n))$.
+     In particular, there are constructions for random points in $M_g$ for $g=11,12,13$.
+     
+     For a algorithms and theoretical background see  
+     @ HREF("http://www.math.uiuc.edu/Macaulay2/Book/", "Needles in a Haystack") @ 
+
+  ///
 
 
 -------------- TESTS --------------------
@@ -787,6 +821,9 @@ uninstallPackage("RandomSpaceCurves")
 installPackage("RandomSpaceCurves",RerunExamples=>true,RemakeAllDocumentation=>true);
 viewHelp"RandomSpaceCurves"
 
+matrix apply(toList(2..18),d-> apply(toList(0..26),g-> 
+	  if knownUnirationalComponentOfSpaceCurves(d,g) then 1 else 0))
+
 restart
 needsPackage("RandomSpaceCurves")
 
@@ -800,3 +837,39 @@ time tally apply(10,i->time certifyRandomSpaceCurve(randomSpaceCurve(12,11,R),12
 R = ZZ[]/49
 (matrix{{11_R,12_R},{13_R,14_R}})^-1
 --
+
+
+
+    The moduli space $M_g$
+      of curves of genus $g \le 14$ is unirational, as proved by Severi, Sernesi, Chang-Ran and Verra.
+      The methods used in their proofs allow us to find points in $M_g$.
+      In particular, for a finite field $F$ we can try to find curves defined over $F$ at random, 
+      if we choose random values for the parameters
+      in the unirational construction. This yields various probabilistic algorithms for picking random curves
+      of various kinds.
+      
+      For example 
+      
+      * random plane curves of degree $d$ with $\delta$ nodes, provided $binomial(d+2,2)-3*\delta > 0$
+      
+      * random curves of degree $d$ and genus $g$ in $\PP^{ 3}$, provided the Hartshorne-Rao module is easy to construct
+      
+      * random canonical curves of genus $g \le 14$
+      
+      As a byproduct of this package we can prove that the Hilbert scheme of curves in $\PP^{ 3}$ has at least 60
+      unirational components corresponding to non-degenerate linearly normal maximal rank curves with $h^1 {\cal O}_C(2)=0$
+      For many details see the item randomSpaceCurves.
+      
+      Sometimes it is possible to find points over a very small finite field $F_q$ in moduli spaces or 
+      Hilbert schemes by searching: if the space is dominated by a parameter space $M$ that has small
+      codimension in an unirational variety $G$, and if we can test quickly enough whether a random point p of G(F_q) is in M(F_q),
+      for a finite field F_q, then we might find good points p in M(F_q) within reasonable
+      running time. We call an algorithm based on these ideas a {\em search algorithm}; in case M itself is
+      unirational we speak of {\em random choices}. We use this naming convention for the functions of this package.
+      
+      For both types of probabilistic algorithm we provide options. With the option {\tt Certify=>True}, 
+      the result of the probabilistic algorithm gets certified, for example that the ideal returned 
+      describes indeed a smooth curve. The option {\tt Attempts=>n} gives an upper bound {\tt n} for the number of
+      attempts to find the desired object. For a search algorithm, the option {\tt InCodim=>c} computes the expected 
+      running time of a search algorithm assuming that the codimension of M in G is c, and bounds the number of attempts
+      accordingly.
