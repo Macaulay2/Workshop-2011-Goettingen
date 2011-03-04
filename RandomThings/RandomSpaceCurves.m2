@@ -159,7 +159,7 @@ TEST ///
 -- where d is the regularity of the variety described 
 -- and r is the dimension of the ambient space
 expectedBetti(List,ZZ) := (L,r)->(
-     t := symbol t;
+     t := local t;
      T := QQ[t];
      expectedBetti(hilbertNumerator(L,r,t))
      )
@@ -519,18 +519,18 @@ doc ///
   Description
      Example
        p=nextPrime 10000
+  SeeAlso
+     isPrime
 ///
 
 
 doc ///
   Key
-    randomSpaceCurve
-    (randomSpaceCurve,ZZ,ZZ,PolynomialRing)
-    [randomSpaceCurve,Certify]
+    "spaceCurve"
   Headline
     Generates the ideal of a random space curve of genus g and degree d
   Usage
-    randomSpaceCurve(d,g,R)
+    (random spaceCurve)(d,g,R)
   Inputs
     d:ZZ
         the desired degree
@@ -538,25 +538,33 @@ doc ///
         the desired genus
     R:PolynomialRing
     	 homogeneous coordinate ring of $\PP^{ 3}$
-    Certify => Boolean
-       whether to certify the result
   Outputs
     :Ideal 
           of R
   Description
    Text
      Creates the ideal of a random curve of degree d and genus g via the construction of its expected 
-     Hartshorne-Rao module, which should have diameter $\le 3$. 
-   Text
-     The construction is implemented for non-degenerate, linearly normal curves C of maximal rank with O_C(2) non-special, where moreover
+     Hartshorne-Rao module, which should have diameter $\le 3$. The construction is implemented for non-degenerate, linearly normal curves C of maximal rank with O_C(2) non-special, where moreover
      both C and its Hartshorne-Rao module
-     have a "natural" free resolution. There are 63 possible families satifying the four conditions above. 
+     have a "natural" free resolution.
+   Text  
+     There are the following options:
+     
+     * {\tt Attempts => ... } a nonnegative integer or {\tt infinity} (default) that limits the maximal number of attempts for the construction of the curve 
+      
+     * {\tt Certify => ... } {\tt true} or {\tt false} (default) checks whether the output is of correct dimension and the constructed curve is smooth and actually has the desired degree d and genus g
+    
+   Text
+     There are 63 possible families satifying the four conditions above. 
      Our method can provide random curves in 60 of these families, simultaneously proving the unirationality of each of these 60 components of the 
-     Hilbert scheme. 
+     Hilbert scheme.
+     
+     If there is a construction can be checked with @ TO "knownUnirationalComponentOfSpaceCurves" @. 
+     
    Example
      R=ZZ/20011[x_0..x_3];
      d=10;g=7;
-     betti res (J=randomSpaceCurve(d,g,R))
+     betti res (J=(random spaceCurve)(d,g,R))
 --     betti res randomHartshorneRaoModule(d,g,R)
      degree J==d and genus J == g
    Text
@@ -574,9 +582,12 @@ doc ///
 	  knownUnirationalComponentOfSpaceCurves(d,g));
      #L
      hashTable apply(L,(d,g) -> (
-	       J = randomSpaceCurve(d,g,R);
+	       J = (random spaceCurve)(d,g,R);
 	       assert (degree J == d and genus J == g);
 	       (d,g) => g-4*(g+3-d) => betti res J))
+  SeeAlso
+    knownUnirationalComponentOfSpaceCurves
+    randomHartshorneRaoModule
 ///
    
 
@@ -621,6 +632,9 @@ doc ///
    Example
      matrix apply(toList(2..18),d-> apply(toList(0..26),g-> 
 	  if knownUnirationalComponentOfSpaceCurves(d,g) then 1 else 0))
+  SeeAlso
+    spaceCurve
+    randomHartshorneRaoModule
 ///
 
 doc ///
@@ -655,6 +669,9 @@ doc ///
       betti res randomHartshorneRaoModule(0,{2,3,1},R)
   Caveat
     The list {\tt HRao} needs only to contain the non-zero values of the Hilbert function.
+  SeeAlso
+    spaceCurve
+    knownUnirationalComponentOfSpaceCurves
 /// 
 
 doc ///
