@@ -168,7 +168,10 @@ if opt.useFaceClass then (
 )
 
 -- list of list of all faces
-faces SimplicialComplex := opt->(C)->(toList apply(-1..dim C,j->faces(j,C,opt)))
+faces SimplicialComplex := opt->(C)->(
+j:=0;
+f := j -> faces(j,C,opt);
+new MutableHashTable from toList apply(-1..dim C,j->j=>f j))
 
 
 -------------------------------------------------
@@ -1843,6 +1846,29 @@ doc ///
 
 doc ///
   Key
+    (ring,Face)
+  Headline
+    Ring of a face.
+  Usage
+    ring(F)
+  Inputs
+    F:Face
+  Outputs
+    :Ring
+  Description
+   Text
+        Ring of a face.
+
+   Example
+     K=QQ;
+     R=K[x_0..x_4];
+     F=face {x_0,x_1,x_2}
+     ring F
+///
+
+
+doc ///
+  Key
     (substitute,SimplicialComplex,PolynomialRing)
   Headline
     Substitute a simplicial complex to a different ring.
@@ -1926,10 +1952,30 @@ doc ///
     Option to return faces in the class Face
   Description
    Text
-    @TO Boolean@ @TO Option@ to return in @TO faces@ and @TO facets@ instead of a matrix
-    a @TO List@ of @TO Face@s.
+    @TO Boolean@ @TO Option@ to return in the methods @TO faces@ and @TO facets@ a @TO List@ of @TO Face@s instead of a @TO Matrix@.
 ///
 
+doc ///
+  Key
+    (faces,SimplicialComplex)
+  Headline
+    Compute all faces of a simplicial complex.
+  Usage
+    faces(C)
+  Inputs
+    C:SimplicialComplex
+  Outputs
+    :MutableHashTable
+  Description
+   Text
+        Return a list of lists of the faces of a simplicial complex.
+
+   Example
+    K=QQ;
+    R=K[x_1..x_5];
+    C=simplicialComplex monomialIdeal (x_1*x_2,x_3*x_4*x_5)
+    faces C
+ ///
 
 
 -------------------------------------------------------------------
