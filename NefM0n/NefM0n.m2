@@ -218,7 +218,7 @@ minimalVertex(Matrix, Vector) := (A, u) -> (
 
 getLinComb = method()
 getLinComb(Matrix, Vector, Vector) := (A, u, v) -> (
-     pos = positions(entries A*v, i-> i==0);
+     pos := positions(entries A*v, i-> i==0);
      )
 
 --**************************************************************************      
