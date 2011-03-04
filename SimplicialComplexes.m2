@@ -464,7 +464,7 @@ ring Face :=F->F.ring;
 
 -- construct a face from a List of vertices
 face=method()
-face(List):= (L)-> new Face from {symbol vertices => L, symbol ring=>L#0}
+face(List):= (L)-> new Face from {symbol vertices => L, symbol ring=> ring L#0}
 face(List,PolynomialRing):= (L,R)-> new Face from {symbol vertices => L, symbol ring=>R}
 
 -- construct a face from a monomial
@@ -1637,6 +1637,302 @@ R = QQ[a..e]
 D = simplicialComplex monomialIdeal(a*b*c*d*e)
 assert(D==simplicialComplex facets(D,useFaceClass =>true))
 ///
+
+-------------------------------------------------------------------
+-- Documentation added by Janko
+
+
+doc ///
+  Key
+    Face
+  Headline
+   The class of faces of simplicial complexes.
+  Description
+   Text
+        The class of faces of simplicial complexes on the variables of a polynomial ring.
+        The faces are @TO MutableHashTable@s F with two @TO keys@
+        
+        F.vertices is a @TO List@ of vertices in the @TO PolynomialRing@ F.ring
+
+   Example
+     R=QQ[x_0..x_4];
+     F=face {x_0,x_2}
+     I=monomialIdeal(x_0*x_1,x_1*x_2,x_2*x_3,x_3*x_4,x_4*x_0);
+     D=simplicialComplex I
+     fc=faces(1,D,useFaceClass=>true)
+     select(fc,j->j==F)
+  SeeAlso
+     SimplicialComplex
+     faces
+     facets
+///
+
+
+doc ///
+  Key
+    (symbol ==,Face,Face)
+  Headline
+   Compare two faces.
+  Usage
+    F==G
+  Inputs
+    F:Face
+    G:Face
+  Outputs
+    :Boolean
+  Description
+   Text
+        Checks whether F and G are equal.
+
+   Example
+     K=QQ;
+     R=K[x_0..x_4];
+     F=face {x_0,x_1}
+     G1=face {x_1,x_0}
+     G2=face {x_1,x_2}
+     F==G1
+     F==G2
+  SeeAlso
+     Face
+     face
+///
+
+
+doc ///
+  Key
+    face
+    (face,List)
+    (face,List,PolynomialRing)
+    (face,RingElement)
+  Headline
+    Generate a face.
+  Usage
+    face(L)
+    face(L,R)
+    face(m)
+  Inputs
+    L:List
+    R:PolynomialRing
+    m:RingElement
+        a monomial
+  Outputs
+    :Face
+  Description
+   Text
+        Generates a face out of a list L or a squarefree monomial.
+        If L is not empty or a monomial the argument R is not required.
+
+   Example
+     K=QQ;
+     R=K[x_0..x_4];
+     F=face {x_0,x_1}
+  SeeAlso
+     SimplicialComplex
+     faces
+     facets
+///
+
+doc ///
+  Key
+    (dim,Face)
+  Headline
+    The dimension of a face.
+  Usage
+    dimension(F)
+  Inputs
+    F:Face
+  Outputs
+    :ZZ
+      bigger or equal to -1
+  Description
+   Text
+        Returns the dimension of a @TO Face@, i.e., the number of @TO vertices@ F minus 1.
+
+   Example
+     K=QQ;
+     R=K[x_0..x_4];
+     I=monomialIdeal(x_0*x_1,x_1*x_2,x_2*x_3,x_3*x_4,x_4*x_0);
+     D=simplicialComplex I
+     fc=faces(D,useFaceClass=>true)
+     apply(fc, j->dim j#0)
+  SeeAlso
+     face
+     facets
+     faces
+///
+
+doc ///
+  Key
+    vertices
+    (vertices,Face)
+  Headline
+    The vertices of a face of a simplicial complex.
+  Usage
+    vertices(F)
+  Inputs
+    F:Face
+  Outputs
+    :List
+  Description
+   Text
+        Returns a @TO List@ with the vertices of a @TO Face@ of a simplicial complex.
+
+   Example
+     K=QQ;
+     R=K[x_0..x_4];
+     I=monomialIdeal(x_0*x_1,x_1*x_2,x_2*x_3,x_3*x_4,x_4*x_0);
+     D=simplicialComplex I
+     fc=facets(D,useFaceClass=>true)
+     vertices fc#1
+  SeeAlso
+     face
+     facets
+     faces
+///
+
+doc ///
+  Key
+    isSubface
+    (isSubface,Face,Face)
+  Headline
+    Test whether a face is a subface of another face.
+  Usage
+    isSubface(F,G)
+  Inputs
+    F:Face
+    G:Face
+  Outputs
+    :Boolean
+  Description
+   Text
+        Test whether F is a subface of G.
+
+   Example
+     K=QQ;
+     R=K[x_0..x_4];
+     G=face {x_0,x_1,x_2}
+     F1=face {x_0,x_2}
+     F2=face {x_0,x_3}
+     isSubface(F1,G)
+     isSubface(F2,G)
+///
+
+doc ///
+  Key
+    (substitute,Face,PolynomialRing)
+  Headline
+    Substitute a face to a different ring.
+  Usage
+    substituteFace(F,R)
+  Inputs
+    F:Face
+    R:PolynomialRing
+  Outputs
+    :Face
+  Description
+   Text
+        Substitute a face to a different ring.
+
+   Example
+     K=QQ;
+     R=K[x_0..x_4];
+     F=face {x_0,x_1,x_2}
+     S=R**K[y]
+     substitute(F,S)
+///
+
+doc ///
+  Key
+    (substitute,SimplicialComplex,PolynomialRing)
+  Headline
+    Substitute a simplicial complex to a different ring.
+  Usage
+    substitute(C,R)
+  Inputs
+    C:SimplicialComplex
+    R:PolynomialRing
+  Outputs
+    :SimplicialComplex
+  Description
+   Text
+        Substitute a simplicial complex to a different ring. R should contain the variables of the @TO ring@ of C.
+
+   Example
+     K=QQ;
+     R=K[x_0..x_4];
+     I=monomialIdeal(x_0*x_1,x_1*x_2,x_2*x_3,x_3*x_4,x_4*x_0);
+     C=simplicialComplex I
+     S=R**K[y]
+     C1=substitute(C,S)
+     ring C1
+  SeeAlso
+     (substitute,Face,PolynomialRing)
+///
+
+doc ///
+  Key
+    isFaceOf
+    (isFaceOf,Face,SimplicialComplex)
+  Headline
+    Substitute a face to a different ring.
+  Usage
+    substitute(F,R)
+  Inputs
+    F:Face
+    R:PolynomialRing
+  Outputs
+    :Face
+  Description
+   Text
+        Substitute a face to a different ring.
+
+   Example
+     K=QQ;
+     R=K[x_1..x_5];
+     C=simplicialComplex monomialIdeal (x_1*x_2,x_3*x_4*x_5)
+     F1=face {x_1,x_2}
+     F2=face {x_1,x_3}
+     isFaceOf(F1,C)
+     isFaceOf(F2,C)
+///
+
+doc ///
+  Key
+    (net,Face)
+  Headline
+    Printing a face.
+  Usage
+    net(F)
+  Inputs
+    F:Face
+  Outputs
+    :Net
+  Description
+   Text
+        Prints a face. The vertices are printed without any brackets and with one space between them. Also prints the polynomial ring which contains the vertices.
+
+   Example
+     K=QQ;
+     R=K[x_0..x_4];
+     face {x_0,x_1}
+///
+
+doc ///
+  Key
+    useFaceClass
+    [faces,useFaceClass]
+    [facets,useFaceClass]
+  Headline
+    Option to return faces in the class Face
+  Description
+   Text
+    @TO Boolean@ @TO Option@ to return in @TO faces@ and @TO facets@ instead of a matrix
+    a @TO List@ of @TO Face@s.
+///
+
+
+
+-------------------------------------------------------------------
 
 
 {*
