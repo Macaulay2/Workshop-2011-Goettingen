@@ -179,6 +179,23 @@ fCurveIneqsLPSOLVE (ZZ, String) := (n, fileName)->(
      fileName << close;
      );
 
+minimalValue = method()
+minimalValue(Matrix, Vector) := (A, u) -> (
+     S := replace("\\}","]",replace("\\{", "[", toString entries A));
+     S = "my $p = new Polytope<Rational>(INEQUALITIES =>" | S | ");";
+     tmp := temporaryFileName()|".poly";
+     polyIn := openOut(tmp);
+     polyIn << "use application \"polytope\";" << endl;
+     polyIn << S << endl;
+     polyIn << "my $u = new Vector<Rational>(";
+     polyIn << replace("\\{|\\}","", toString entries u);
+     polyIn << ");" << endl;
+     polyIn << "$p->LP = new LinearProgram<Rational>(LINEAR_OBJECTIVE=>$u);" << endl;
+     polyIn << "print $p->LP->MINIMAL_VALUE;";
+     close polyIn;
+     run("polymake --script " | tmp | " > " | tmp | ".out");
+     get(tmp | ".out")
+     )
 
 minimalVertex = method()
 minimalVertex(Matrix, Vector) := (A, u) -> (
@@ -197,6 +214,11 @@ minimalVertex(Matrix, Vector) := (A, u) -> (
      run("polymake --script " | tmp | " > " | tmp | ".out");
      polyOut := get(tmp | ".out");
      polyOut = vector apply(separate(" ", polyOut), n-> value n)
+     )
+
+getLinComb = method()
+getLinComb(Matrix, Vector, Vector) := (A, u, v) -> (
+     pos = positions(entries A*v, i-> i==0);
      )
 
 --**************************************************************************      
