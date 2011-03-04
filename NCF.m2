@@ -11,8 +11,7 @@ newPackage(
 needsPackage "RationalPoints";
 
 
-export{mainNCF, interpolate, idealOfPoints, ncfIdeal, kernPhi, getSingleNcfList,
-getNcfLists, convertDotFileToHashTable, extractTimecourse}
+export{mainNCF, interpolate, idealOfPoints, ncfIdeal, kernPhi, getSingleNcfList, getNcfLists, convertDotStringToHashTable, convertDotFileToHashTable, extractTimecourse}
 
 
 -- given a matrix with time course data for the variables in L
@@ -187,10 +186,11 @@ kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, QC) -> (
 convertDotFileToHashTable = method()
 convertDotFileToHashTable String := HashTable => filename -> (  
   content := get filename;
-  convertDotFileToHashTable( content )
+  convertDotStringToHashTable( content )
 )
 
-convertDotFileToHashTable String := HashTable => content -> (
+convertDotStringToHashTable = method()
+convertDotStringToHashTable String := HashTable => content -> (
   content = lines content;
   numLines := #content;
   print numLines;
@@ -403,7 +403,7 @@ TEST ///
 
 TEST ///
   --W = convertDotFileToHashTable "wiring.out1.dot"
-  W = convertDotFileToHashTable "digraph test {
+  W = convertDotStringToHashTable "digraph test {
 node1 [label=\"x1\", shape=\"box\"];
 node2 [label=\"x2\", shape=\"box\"];
 node1 -> node1;
@@ -420,7 +420,7 @@ node1 -> node2;
 
 TEST ///
   --W = convertDotFileToHashTable "wiring.out1.dot"
-  W = convertDotFileToHashTable "digraph test {
+  W = convertDotStringToHashTable "digraph test {
   node1 [label=\"x1\", shape=\"box\"];
   node2 [label=\"x2\", shape=\"box\"];
   node1 -> node1;
