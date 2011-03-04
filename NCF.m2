@@ -51,27 +51,55 @@ extractTimecourse (Matrix, List, String, HashTable) := HashTable => ( D, L, x, W
 --and fieldChar is the Characteristic
 -- gens: a list of names of generators
 getSingleNcfList = method()
-getSingleNcfList (HashTable, List, ZZ, List) := List => (MHT, Permutation, fieldChar, gens) -> (
-     n := #first keys MHT; -- Get number of variables
-     L := subsets n;
-     L = apply( L, l -> apply( l, i -> i + 1) ) ;
-     C := ZZ/fieldChar[apply( L, l -> (getSymbol "c")_l)];
-     QC := C /ideal apply(gens C, x ->x^fieldChar-x);
-     B := QC[apply( L, l -> (getSymbol "b")_l), MonomialOrder => Eliminate 2^n];
-     QB := B / ideal apply(gens B, x -> x^fieldChar-x);
-     R := QB[(getSymbol "x")_1..(getSymbol "x")_n];
-     QR := R / ideal apply(gens R, x -> x^fieldChar-x);
-     g := interpolate(MHT,QR);
-     h := idealOfPoints(MHT,QR);
-     -- g+<h> F2[x1,x2, ..., xn]
-     ncf := ideal flatten entries gens gb ideal(apply( L, t -> 
-	       ncfIdeal( t, QR, Permutation))|{(gens C)#(numgens C-1)-1}
-     ); --F2[c0, c1, ..., c[n] ]
+getSingleNcfList (HashTable, List, ZZ, List) := List => (T, sigma, p, gensR) -> (
+     n := #first keys T; -- Get number of variables
+     assert(n == #gensR);
+     R := ZZ/p[gensR];
+     QR := R/ideal apply(gens R, x -> x^p - x);
+     g := interpolate(T, QR);
+     h := idealOfPoints(T, QR);
+
+     C := ZZ/p[ vars(0..2^n-1) ];
+     QC := C / ideal apply(gens C, x -> x^p - x);
+     ncf := ideal apply( gens C, x -> ncfIdeal( x, QC, sigma) );
+     ncf = ncf + ideal ( last gens C -1 );  -- c_[n] = 1
      ncf = lift(ncf, C);
+
+     R = QC[ gensR ];
+     QR = R / ideal apply(gens R, x -> x^p - x);
+
+
      G := kernPhi(g,h,QR);
      solutions := primaryDecomposition(G+ncf);
      s := apply( solutions, I -> rationalPoints I );
      apply( s, ss -> sum ( subsets gens R, flatten ss, (x, c) -> c*(product x) ) )   
+
+--     B(getSymbol "x")_1..(getSymbol "x")_n];
+--     B := QC[apply( L, l -> (getSymbol "b")_l), MonomialOrder => Eliminate 2^n];
+--     QB := B / ideal apply(gens B, x -> x^fieldChar-x);
+--     R := QB[(getSymbol "x")_1..(getSymbol "x")_n];
+--     QR := R / ideal apply(gens R, x -> x^fieldChar-x);
+--     g := interpolate(MHT,QR);
+--     h := idealOfPoints(MHT,QR);
+--     L := subsets n;
+--     L = apply( L, l -> apply( l, i -> i + 1) ) ;
+--     C := ZZ/fieldChar[apply( L, l -> (getSymbol "c")_l)];
+--     QC := C /ideal apply(gens C, x ->x^fieldChar-x);
+--     B := QC[apply( L, l -> (getSymbol "b")_l), MonomialOrder => Eliminate 2^n];
+--     QB := B / ideal apply(gens B, x -> x^fieldChar-x);
+--     R := QB[(getSymbol "x")_1..(getSymbol "x")_n];
+--     QR := R / ideal apply(gens R, x -> x^fieldChar-x);
+--     g := interpolate(MHT,QR);
+--     h := idealOfPoints(MHT,QR);
+--     -- g+<h> F2[x1,x2, ..., xn]
+--     ncf := ideal flatten entries gens gb ideal(apply( L, t -> 
+--	       ncfIdeal( t, QR, Permutation))|{(gens C)#(numgens C-1)-1}
+--     ); --F2[c0, c1, ..., c[n] ]
+--     ncf = lift(ncf, C);
+--     G := kernPhi(g,h,QR);
+--     solutions := primaryDecomposition(G+ncf);
+--     s := apply( solutions, I -> rationalPoints I );
+--     apply( s, ss -> sum ( subsets gens R, flatten ss, (x, c) -> c*(product x) ) )   
    )
 
 -- construct the generators for the ideal that encodes the relation of
@@ -79,19 +107,17 @@ getSingleNcfList (HashTable, List, ZZ, List) := List => (MHT, Permutation, field
 -- equation 3.8 in Jarrah et al
 -- given a subset S \subseteq [n], return the relation of that generator
 ncfIdeal = method()
-ncfIdeal (List, Ring, List) := RingElement => (S, QR, Sigma) -> (
-  n := numgens QR;
-  -- c_{ l } = (gens QR)#indeces#l
-  indeces := new MutableHashTable;
-  L := subsets n;
-  L = apply( L, l -> apply( l, i -> i + 1 ));
-  apply( #L, i -> indeces#(L#i) = Sigma#i );
-  rS := max S;
-  compl := toList (set( 1..rS)  -  set S);
-  C := gens coefficientRing coefficientRing QR;
-  C#(indeces#S) - C#(indeces#(toList (1..rS))) *
-    product( compl, i -> 
-      C#( indeces#(toList (set (1..n) - set {Sigma#i} ) ))
+ncfIdeal (RingElement, Ring, List) := RingElement => (c, QC, sigma) -> (
+  n := numgens QC;
+  i := position( gens QC, x -> x == c );
+  rS := max (subsets n)_i;
+  rSset := toList(1..rS);
+  complement := toList set rSset - set (subsets n)_i;
+  c - QC_position(subsets n, l -> l == rSset) * 
+    product( complement, i -> (
+      pos := position( subsets n, i -> i == (set complement - set {i})  );
+      QC_pos
+      )
     )
 )
 
@@ -340,17 +366,12 @@ assert(solutions_0==referenceSolutions)
 TEST ///
   -- test code and assertions here
   -- may have as many TEST sections as needed
-  n = 5
-  L = subsets n
-  L = apply( L, l -> apply( l, i -> i + 1) ) 
-  C = ZZ/2[apply( L, l -> c_l)];
+  nnn = 5
+  C = ZZ/2[ vars(0..2^nnn-1) ] 
   QC = C /ideal apply(gens C, x -> x^2-x)
-  B = QC[apply( L, l -> b_l)]
-  QB = B / ideal apply(gens B, x -> x^2-x)
-  R = QB[x_1..x_n];
-  QR = R / ideal apply(gens R, x -> x^2-x);
   S = {1,2,4};
-  p = ncfIdeal(S, QR, toList(0..#L-1)) 
+  QC_22
+  p = ncfIdeal(QC_22, QC, {} ) 
   assert( p == c_{1,2,4} - c_{1,2,3,4}*c_{1,2,4,5} )
   ///
 
@@ -494,22 +515,6 @@ rationalPoints first solutions
 
 list sigma 
 
-ncfIdeal = method()
-ncfIdeal (List, Ring, List) := RingElement => (S, QR, sigma) -> (
-  n := numgens QR;
-  -- c_{ l } = (gens QR)#indeces#l
-  indeces := new MutableHashTable;
-  L := subsets n;
-  L = apply( L, l -> apply( l, i -> i + 1 ));
-  apply( #L, i -> indeces#(L#i) = sigma#i );
-  rS := max S;
-  compl := toList (set( 1..rS)  -  set S);
-  C := gens coefficientRing coefficientRing QR;
-  C#(indeces#S) - C#(indeces#(toList (1..rS))) *
-    product( compl, i -> 
-      C#( indeces#(toList (set (1..n) - set {sigam#i} ) ))
-    )
-)
 
 
 restart 
