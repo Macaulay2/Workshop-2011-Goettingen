@@ -471,13 +471,13 @@ latticeBasisIdeal = (R,L) -> (
      )
 
 saturatePChar = (pc) -> (
-     -- This function saturates a partial character.  A saturated character is distinguished from its saturation as the
-     -- saturation has a list as third entry.  
-     
+     -- This function saturates a partial character and returns the result
+     -- as a list, even if the input was saturated.
+          
      -- If the lattice is saturated, the character is saturated
      -- Note that this shortcircuits all problems with c being non-constant.
      if image Lsat pc#"L" == image pc#"L" then (
-	  return (pc);
+	  return {pc};
 	  );
      
      -- The saturated lattice
@@ -761,6 +761,20 @@ removeEmbedded = l -> (
      return l;
      )
 
+isBetween = (a,b,c) -> (
+     	  -- Checks if a lies between b and c in divisibility order.
+	  -- b and c need not be comparable, or sorted.
+	  if (b%c == 0) then (
+	       -- c divides b
+	       if ( (a%c==0) and (b%a==0)) then return true;
+	       )
+	  else if (c%b == 0) then (
+	       if ( (a%b==0) and (c%a==0)) then return true;
+	       );
+	  -- b and c are not comparable
+	  return false;
+     )
+
 cellularBinomialAssociatedPrimes = method (Options => {cellVariables => null, verbose=>true}) 
 cellularBinomialAssociatedPrimes Ideal := Ideal => o -> I -> ( 
      -- Computes the associated primes of cellular binomial ideal
@@ -787,39 +801,58 @@ cellularBinomialAssociatedPrimes Ideal := Ideal => o -> I -> (
      	  else <<  #ml << " monomials to consider for this cellular component" << endl;
 	  );
 
+     -- Saves all witness monomials for a given partialCharacter
      seenpc := new MutableHashTable;
 
      -- A dummy ideal and partial Characters:
      Im := ideal;
      pC := {}; sat := {};
-     for m in ml do (
+     -- save 1 as the bottom witness
+     seenpc#(partialCharacter (I, cellVariables=>cv))={1_R};
+     todolist := delete(1_R, ml);
+     -- While we have monomials to check
+     while #todolist > 0 do (
+--	  print ("On todolist: " | toString (#todolist));
+	  -- sample a random monomial:
+	  i := random(0, #todolist-1);
+	  m := todolist#i;
 	  Im = I:m;
 	  pC = partialCharacter(Im, cellVariables=>cv);
-	  -- Skip if we already had this character
-	  if seenpc#?pC then continue
-	  else seenpc#pC = true;
-	  if pC#"L" == 0 then (
-	       primes = primes | {ideal(0_R)}; 
-	       continue;
-	       );
-	  if image Lsat pC#"L" == image pC#"L" then (
-	       sat = {Im};
+	  if seenpc#?pC then (
+	       -- We have seen this lattice: Time to prune the todolist
+--	       print ("Todolist items before: " | toString (#todolist));
+	       for n in seenpc#pC do (
+		    todolist = select (todolist , (mm -> not isBetween (mm, n, m))
+		    ));
+--	       print ("Todolist items after: " | toString (#todolist));
+	       -- add m to the pruning list
+	       todolist = delete(m, todolist);
+	       addmon := true;
+	       for mmm in seenpc#pC do if m%mmm==0 then (addmon = false; break);
+	       if addmon then seenpc#pC = seenpc#pC | {m};
+--	       print (#(seenpc#pC));
+	       )   
+	  else (
+	       -- a new associated lattice
+	       seenpc#pC = {m};
+	       todolist = delete(m, todolist);
+	       )
+	  );
+--     print ("Todolist items: " | toString (#todolist));
+     for pc in keys seenpc do (
+	  sat = satIdeals pc;
+	  -- If the coefficientRing is QQ, we map back to R
+	  F := coefficientRing ring sat#0;
+	  if F === QQ then (
+	       f = map (R, ring sat#0);
+	       sat = sat / f ;
 	       )
 	  else (
-	       sat = satIdeals pC;
-	       -- If the coefficientRing is QQ, we map back to R
-	       F := coefficientRing ring sat#0;
-	       if F === QQ then (
-		    f = map (R, ring sat#0);
-		    sat = sat / f ;
-		    )
-	       else (
-		    -- otherwise to the extended ring
-		    -- this is necessary since satIdeals does not know about the non-cell variables
-		    S := F monoid R;
-		    f = map (S, ring sat#0);
-		    sat = sat / f;
-		    );
+	       -- otherwise to the extended ring
+	       -- this is necessary since satIdeals does not know about the non-cell variables
+	       S := F monoid R;
+	       f = map (S, ring sat#0);
+	       sat = sat / f;
 	       );
 	  primes = primes | sat;
 	  );
@@ -921,23 +954,26 @@ cellularEmbeddedLatticeWitnesses Ideal := Ideal => o -> I -> (
      redundant := true;
      bottomlattice := partialCharacter (I, cellVariables=>cv);
      -- For each monomial, check if I:m has a different lattice !
-     for m in ml do (
-	  -- if m is divisible by another witness: skip
-	  redundant=false;
-	  for w in witnesses do (
-	       if m%w == 0_R then (
-		    redundant=true;
-		    break;
-		    );
-	       );
-	  if redundant then continue;
+     todolist := ml;
+--     print ("Number of monomials to consider : " | toString (#todolist));
+     while (#todolist > 0) do (
+	  i := random(0, #todolist-1); -- a random monomial
+	  m := todolist#i;
+	  -- Now two possibilities:
+	  -- if m witnesses an embedded lattice: Remove everything that is above m;
 	  Im = I:m;
-	  -- We already know the cell variables in the following computation
 	  pc = partialCharacter(Im, cellVariables=>cv);
-	  -- test if we have an embedded lattice at m:
-	  if (image pc#"L" == image bottomlattice#"L") then continue
-	  else witnesses = witnesses | {m};
-	  ); -- for m in ml
+	  if (image pc#"L" == image bottomlattice#"L") then (
+	       -- m is the same like 1. Remove everything between them
+	       todolist = select (todolist, (mm) -> not isBetween(mm, 1,m))
+	       )
+	  else (
+	       -- found a witness
+	       witnesses = witnesses | {m};
+	       todolist = for t in todolist list if t%m==0 then continue else t
+	       );
+--	  print ("Number of monomials to consider : " | toString (#todolist));
+	  ); -- while
      return witnesses;
      ) -- cellularEmbeddedLatticeWitnesses
 
