@@ -2820,7 +2820,7 @@ newMinkSum = (P,Q) -> (
      --Debug checks:
      ch = fourierMotzkin (HS,HP);
      ch1 = fourierMotzkin fourierMotzkin V;
-     if promote(ch#0,QQ) != ch1#0 then error "Wut?"; 
+     if promote(ch#0,QQ) != ch1#0 then error "What?"; 
          
      --print sort matrix {unique apply(apply(numColumns V,i->V_{i}), makePrimitiveMatrix)};
      << "V:" << V << endl;
