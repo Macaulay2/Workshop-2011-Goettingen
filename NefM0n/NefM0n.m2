@@ -333,14 +333,13 @@ cJinDDI (Sequence, List) := (J, I) -> (
 
 cJinD = method()
 cJinD (Sequence, ZZ) := (J, n) -> (
-     --Inputs a boundary index and appendable output file out
-     -- outputs coefficient c_J of \D_J to the file out
+     --Inputs a boundary index and integer
+     -- outputs coefficient c_J of \D_J as a vector
      nList := toList(1..n);
      apply(select (subsets(nList), I-> (#(set I) >= 4 and even (#(set I ))) ), 
 	                           I -> (
 	        			cJinDDI(J,I)
      	       				)--end I->()
-				   
      	  )--end apply
      )--end cJcoeff
 
