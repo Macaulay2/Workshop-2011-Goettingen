@@ -16,7 +16,7 @@ newPackage(
 export {}
 
 -- Code here
-export {keelSum, keelAvgIndices, boundaryRing, fCurveIneqsLPSOLVE, fCurveIneqsMatrix, cJinDDI, cJinD}
+export {keelSum, keelAvgIndices, keelAvg, boundaryRing, fCurveIneqsLPSOLVE, fCurveIneqsMatrix, cJinDDI, cJinD, m1}
 
 BoundaryRing = new Type of HashTable
 
@@ -71,7 +71,7 @@ keelSum (List, BoundaryRing) := (K,R)-> (
      if #(set K_0 * set K_1) != 0 then error "expected pairs in the list to be disjoint";
      bndsum:= 0;
      apply(R.M0nIndices, j-> (
-      	       if (isSubset(K_0, set(j)) and isSubset( K_1, set R.M0nComplement j) )
+      	       if (isSubset(K_0, set j ) and isSubset( K_1, set R.M0nComplement j) )
 	       then bndsum = bndsum + (R#Variables)#j;
 	       )
        	  );
@@ -81,7 +81,32 @@ keelSum (List, BoundaryRing) := (K,R)-> (
 
 --**************************************************************************      
 --**************************************************************************
+keelAvg = method()
+keelAvg (Sequence, BoundaryRing) := (J, R) -> (
+     --Input sequence J (index of boundary divisor D_J) and Boundary Ring R
+     -- and output average of numerical equivalence class of D_J
+     -- over all Keel relations involving D_J
+     avg:= 0;
+     counter:= 0; --should be 0
+     apply(toList subsets(J, 2), i-> 
+     	  --loop over subsets of cardinality two in J
+     	  apply(toList subsets(R.M0nComplement J, 2), j->
+	       --loop over subsets of cardinality two in J^c
+	       (
+		    counter = counter + 2;
+		    avg = avg - 2*keelSum({i,j}, R) 
+		          + keelSum({{i_0, j_0}, {i_1, j_1}}, R)
+		    	  + keelSum({{i_0, j_1}, {i_1, j_0}}, R)
+		    	  + 2*(R#Variables)#J;
+	     		  )
+		     )
+		);
 
+	   avg/counter
+	   )
+      
+--**************************************************************************      
+--**************************************************************************
 keelAvgIndices = method()
 keelAvgIndices (Sequence, List, BoundaryRing) := (J, IList, R) -> (
      --Input a sequence J (i.e. a boundary index J), 
@@ -89,12 +114,7 @@ keelAvgIndices (Sequence, List, BoundaryRing) := (J, IList, R) -> (
      -- and the BoundaryRing R,
      -- and output average of numerical equivalence class of D_J
      -- over all Keel relations I_x 
-     
-     --error messages
-    --if not all (IList, x-> #x == 4) then error "expected elements of the list of the second argument to all have cardinality four";
-    
-     
-     
+ 
      avg:= 0;
      counter:= 0;
      i:={};
@@ -113,7 +133,8 @@ keelAvgIndices (Sequence, List, BoundaryRing) := (J, IList, R) -> (
 			  + keelSum({{i_0, j_1}, {i_1, j_0}},R)
 			  + 2*(R#Variables)#J;
 			  );
-	   return (avg/counter))
+	   return (avg/counter)
+	   )
       
       
       
@@ -402,16 +423,17 @@ restart
 loadPackage "NefM0n"
 R = boundaryRing 6;
 S = R#Ring
-keelSum({{1,3},{2,4}}, R)
+keelAvg((1,2,3), R)
+tex keelSum({{1,3},{2,4}}, R)
 tex keelAvgIndices( (1,2,3), {{2,3,4,5}}, R)
 tex keelAvgIndices( (1,2,3), {{1,2,4,5}, {1,2,4,6}, {1,2,5,6}, {1,3,4,5}, {1,3,4,6}, {1,3,5,6}, {2,3,4,5}, {2,3,4,6}, {2,3,5,6}},R)
 
 fCurveIneqsLPSOLVE(6, "fIneqs6.txt") 
-M = fCurveIneqsMatrix 9;
+M = fCurveIneqsMatrix 6
 
 
 cJinDDI((1,2), {1,2,3,4,5,6,7,8})
-v = cJinD((1,2), 9)
+v = cJinD((1,2), 6)
 w = cJinD((3,4,5,6,7,8), 8)
 v - w
 
