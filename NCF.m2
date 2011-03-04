@@ -44,11 +44,11 @@ extractTimecourse (Matrix, List, String, HashTable) := HashTable => ( D, L, x, W
 )
 
 
---Returns a List of Nested Canalyzing Functions for the given HashTable of one variable
---T is the table with the expermental data, 
---sigma is a list with the wanted permutation,
---p is the Characteristic
---gensR: a list of names of generators
+-- Returns a List of Nested Canalyzing Functions for the given HashTable of one variable
+-- T is the table with the expermental data, 
+-- sigma is a list with the wanted permutation,
+-- p is the Characteristic
+-- gensR: a list of names of generators
 getSingleNcfList = method()
 getSingleNcfList (HashTable, List, ZZ, List) := List => (T, sigma, p, gensR) -> (
      n := #first keys T; -- Get number of variables
@@ -74,7 +74,7 @@ getSingleNcfList (HashTable, List, ZZ, List) := List => (T, sigma, p, gensR) -> 
      apply( s, ss -> sum ( subsets gens R, flatten ss, (x, c) -> c*(product x) ) )   
 )
 
--- construct the generators for the ideal that encodes the relation of
+-- Construct the generators for the ideal that encodes the relation of
 -- coefficients for n-- ideal with relation of coefficients for nested canalyzing functions
 -- equation 3.8 in Jarrah et al
 -- given a subset S \subseteq [n], return the relation of that generator
@@ -112,7 +112,7 @@ mainNCF (List, HashTable, Matrix) := List => (L, W, D) -> (
 
 
 -- Returns a list "Ls" of lists of CNFs for each variable,
---"Ls"_i is a list with the CNFs of the ith variable matching the input data 
+-- "Ls"_i is a list with the CNFs of the ith variable matching the input data 
 getNcfLists = method()
 getNcfLists (Matrix , List, ZZ) := List=> (inputMatrix,Permutation,fieldChar) ->
 (
@@ -146,15 +146,15 @@ getNcfLists (Matrix , List, ZZ) := List=> (inputMatrix,Permutation,fieldChar) ->
 
 
   
--- generate a function that interpolates a given time course
+-- Generate a function that interpolates a given time course
 -- T is a Hash table, with T#Input(t)=Output(t+1)
 interpolate = method() 
 interpolate (HashTable, Ring) := (T, R) -> (
   sum (keys T, A -> T#A * product(numgens R, i -> ( 1- ( (gens R)_i - A_i) )))
 ) 
 
--- construct generator for the ideal that vanishes on all given time points
--- only access the keys of the hashtable T
+-- Construct generator for the ideal that vanishes on all given time points
+-- Only access the keys of the hashtable T, with T#Input(t)=Output(t+1)
 idealOfPoints = method()
 idealOfPoints(HashTable, Ring) := (T,R) -> (
   product (keys T, A -> 
@@ -181,7 +181,7 @@ kernPhi (RingElement, RingElement, Ring) := Ideal => (g, h, QC) -> (
 )
  
 
--- given the filename of a .dot file, return the hash table T
+-- Given the filename of a .dot file, return the hash table T
 -- T#(xi) = all xjs that influcence xi 
 convertDotFileToHashTable = method()
 convertDotFileToHashTable String := HashTable => filename -> (  
@@ -242,7 +242,6 @@ getWiring(List, Matrix) := HashTable => (variableNames, adjDataMatrix) -> (
   );
   dependencies
 )
-
 
 beginDocumentation()
 
@@ -321,11 +320,25 @@ Description
 
 doc ///
 Key
-  interpolate 
+  mainNCF
 Headline
-  construct polynomial that interpolates the data test
+  Inferring nested canalyzing functions for given time-course data
 Usage
-  interpolate HashTable
+  ncfList = mainNCF(varibleNames, wiringDiagram, timeCourseDataMatrix, sigma) 
+Inputs
+  variableNames : List
+    strings with the names of all variables
+  wiringDiagram : HashTable
+    discribing the dependencies of all the variables  
+  timeCourseDataMatrix : Matrix
+    with the time-course data	    
+  sigma : List
+    with the wanted variable ordering
+Outputs
+   ncfList : List
+    of Lists of nested canalyzing functions fitting the data for each variable,
+    "ncfList"_i is a list with the CNFs of the ith variable matching the input data for the given ordering (Permutation)
+
 Consequences
 Description
   Text
