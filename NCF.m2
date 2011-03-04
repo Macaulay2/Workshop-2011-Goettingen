@@ -243,20 +243,22 @@ convertDotFileToHashTable String := HashTable => filename -> (
   dep
 )
 
-getWiring = method ()
-getWiring(List, Matrix) := HashTable => (varibleNames, adjDataMatrix) ->
-(
-     dependencies:=new MutableHashTable
-     assert(#variableNames==numgens source adjDataMatrix)
-     assert(#variableNames==numgens target adjDataMatrix)
-     apply(#variableNames, colindex -> (deplist := {}; 
-	  apply (#variableNames, rowindex -> (
-		    	       (if (adjDataMatrix_rowindex_colindex == 1) then
-		     deplist = deplist|{variableNames_rowindex};);
-	   dependencies#[variableNames_colindex]=deplist
-	   )))
-	   );
-      dependencies
+getWiring = method()
+getWiring(List, Matrix) := HashTable => (varibleNames, adjDataMatrix) -> (
+  dependencies := new MutableHashTable;
+  assert(#variableNames==numgens source adjDataMatrix);
+  assert(#variableNames==numgens target adjDataMatrix);
+  apply(#variableNames, colindex -> (
+    deplist := {}; 
+    apply (#variableNames, rowindex -> (
+      if (adjDataMatrix_rowindex_colindex == 1) then
+        deplist = deplist|{variableNames_rowindex}
+      );
+      dependencies#[variableNames_colindex]=deplist
+    )
+    )
+  );
+  dependencies
 )
 
 
