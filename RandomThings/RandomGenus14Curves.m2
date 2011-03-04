@@ -133,15 +133,15 @@ curveGenus14Degree18inP6 = new RandomObject from {
 randomCanonicalCurveGenus14 = method(TypicalValue => Ideal,Options => {Certify => false})
 
 -- S : a polynomial Ring with 14 variables
-randomCanonicalCurveGenus14 (PolynomialRing) := (R) -> opt -> (
-     	  y := symbol y;
+randomCanonicalCurveGenus14 (PolynomialRing) := opt -> (R) -> (
+     	  y := local y;
      	  S := coefficientRing(R)[y_0..y_6];
 	  RS := R**S;
-     	  I := (random curveGenus14Degree18inP6)(S,{opt.Certify,Attempts=>1});
+     	  I := (random curveGenus14Degree18inP6)(S,Certify=>opt.Certify,Attempts=>1);
      	  fI:=res I;
 	  omegaC:=presentation truncate(0,((coker transpose fI.dd_5)**S^{-7}));
      	  graph:=substitute(vars R,RS)*substitute(omegaC,RS);	  	    
-	  J:=saturate(ideal graph,substitute(S_(y_0),RS));
+	  J:=saturate(ideal graph,substitute(y_0,RS));
 	  -- does this saturation always work???	  
           I=ideal mingens substitute(J,R);
      	  --genus I==g and degree I == 2*g-2
