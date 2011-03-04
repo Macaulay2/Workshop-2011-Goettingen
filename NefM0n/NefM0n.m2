@@ -16,7 +16,7 @@ newPackage(
 export {}
 
 -- Code here
-export {keelSum, keelAvgIndices, keelAvg, boundaryRing, fCurveIneqsLPSOLVE, fCurveIneqsMatrix, cJinDDI, cJinD, m1}
+export {keelSum, keelSumList, keelAvg, keelAvgIndices, boundaryRing, fCurveIneqsLPSOLVE, fCurveIneqsMatrix, cJinDDI, cJinD, m1}
 
 BoundaryRing = new Type of HashTable
 
@@ -78,6 +78,26 @@ keelSum (List, BoundaryRing) := (K,R)-> (
      bndsum
      );
 
+--**************************************************************************      
+--**************************************************************************
+
+keelSumList = method()
+keelSumList (List, BoundaryRing) := (K,R)-> (
+     --Input a split four-tuple K = {{i,j}, {k,l}}
+     -- and output the sum
+     --  \sum_{{i,j} \subseteq J, {k,l} subseteq J^c} D_J
+     -- as a list indexed by D_J
+     
+     if #(set K_0 * set K_1) != 0 then error "expected pairs in the list to be disjoint";
+     apply(R.M0nIndices, j-> (
+      	       if (isSubset(K_0, set j ) and isSubset( K_1, set R.M0nComplement j) )
+	       then 1
+	       else 0
+	       )
+       	  )
+     )
+
+
 
 --**************************************************************************      
 --**************************************************************************
@@ -109,7 +129,12 @@ keelAvg (Sequence, BoundaryRing) := (J, R) -> (
 --**************************************************************************
 keelAvgJcoeff = method()
 keelAvgJcoeff (Sequence, Sequence, BoundaryRing) := (J, K, R) -> (
-     
+     --Inputs two sequences J, K, where J gives the index of the 
+     -- boundary divisors D_J averaged over the Keel relations,
+     -- namely in keelAvg(J,n), and 
+     -- K gives the index of the boundary divisor whose coefficient
+     -- we seek in the average of D_J;
+     --Outputs the coefficient of D_K in the average D_J = (...)
      
      ) 
       
@@ -432,7 +457,9 @@ loadPackage "NefM0n"
 R = boundaryRing 5;
 S = R#Ring
 tex keelAvg((1,2,3), R)
+
 print keelSum({{1,3},{2,4}}, R)
+keelSumList({{1,3},{2,4}},R)
 tex keelAvgIndices( (1,2,3), {{2,3,4,5}}, R)
 tex keelAvgIndices( (1,2,3), {{1,2,4,5}, {1,2,4,6}, {1,2,5,6}, {1,3,4,5}, {1,3,4,6}, {1,3,5,6}, {2,3,4,5}, {2,3,4,6}, {2,3,5,6}},R)
 
@@ -442,7 +469,7 @@ M = fCurveIneqsMatrix 5
 
 cJinDDI((1,2), {1,2,3,4,5,6,7,8})
 v = cJinD((1,2), 5)
-w = cJinD((3,4,5,6,7,8), 8)
+
 v - w
 
 m1(M,v)
