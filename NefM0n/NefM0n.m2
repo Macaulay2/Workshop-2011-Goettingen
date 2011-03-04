@@ -195,7 +195,7 @@ minimalVertex(Matrix, Vector) := (A, u) -> (
      polyIn << "print $p->LP->MINIMAL_VERTEX;";
      close polyIn;
      run("polymake --script " | tmp | " > " | tmp | ".out");
-     polyOut = get(tmp | ".out");
+     polyOut := get(tmp | ".out");
      polyOut = vector apply(separate(" ", polyOut), n-> value n)
      )
 
