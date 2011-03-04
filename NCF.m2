@@ -44,11 +44,11 @@ extractTimecourse (Matrix, List, String, HashTable) := HashTable => ( D, L, x, W
 )
 
 
---returns a List of Nested Canalyzing Functions for the given HashTable of one variable
---MHT is the table with the expermental data, 
---permutation is a list with the wanted permutation,
---and fieldChar is the Characteristic
--- gens: a list of names of generators
+--Returns a List of Nested Canalyzing Functions for the given HashTable of one variable
+--T is the table with the expermental data, 
+--sigma is a list with the wanted permutation,
+--p is the Characteristic
+--gensR: a list of names of generators
 getSingleNcfList = method()
 getSingleNcfList (HashTable, List, ZZ, List) := List => (T, sigma, p, gensR) -> (
      n := #first keys T; -- Get number of variables
@@ -95,7 +95,7 @@ ncfIdeal (RingElement, Ring, List) := RingElement => (c, QC, sigma) -> (
     )
 )
 
---main routine, the user interfaces with this routine
+-- Main routine, the user interfaces with this routine
 -- L list of variable names
 -- W wiring diagram 
 -- D time course data
@@ -111,7 +111,7 @@ mainNCF (List, HashTable, Matrix) := List => (L, W, D) -> (
 )
 
 
---returns a list "Ls" of lists of CNFs for each variable,
+-- Returns a list "Ls" of lists of CNFs for each variable,
 --"Ls"_i is a list with the CNFs of the ith variable matching the input data 
 getNcfLists = method()
 getNcfLists (Matrix , List, ZZ) := List=> (inputMatrix,Permutation,fieldChar) ->
@@ -308,7 +308,7 @@ Description
 	    For each variable, the complete list of all nested canalyzing 
 	    functions interpolating the given data set on the given time course data. 
 	    A function is in the output if it is nested canalyzing 
-	    in the given variable order
+	    in the given variable order (permutation)
   Example
     inputMatrix = matrix { {1,1},  {1,0},  {0,1}, {0,0} ,{0,0} };
     permutation = {0,1,2,3};
