@@ -204,7 +204,7 @@ minimalVertex(Matrix, Vector) := (A, u) -> (
 fCurveIneqsMatrix = method()
 fCurveIneqsMatrix (ZZ) := (n)->(
      --input an integer n and a string
-     -- outputs the matrix with row vectors corresponding to F-inequalities for M_{0,n}
+     -- outputs the array with row vectors corresponding to F-inequalities for M_{0,n}
      -- with respect to the sl_2 level 1 conformal block divisor class basis
      -- for N^1(\M_{0,n})_QQ
      nList := toList(1..n);
