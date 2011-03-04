@@ -61,6 +61,25 @@ cubic = chern(1,OO_Y(3))
 -- twisted cubic, and this formula counts that point.
 assert(integral (propertransform^2 *((Ymap^* cubic) - E)) == 1)
 
+--The same check, with variables.  Again, see Eisenbud and Harris
+B = base(r,s,t)
+X = flagBundle({1,1},B)
+Y = flagBundle({1,3},B)
+i = map(Y,X,OO_X(3))
+(Ytilde, PN, PNmap, Ymap) = blowup(i)
+intersectionRing Ytilde
+rsurf = chern(1,OO_Y(r))
+ssurf = chern(1,OO_Y(s))
+tsurf = chern(1,OO_Y(t))
+E = PNmap_* chern(0,OO_PN)
+rtrans = (Ymap^* rsurf) - E
+strans = (Ymap^* ssurf) - E
+ttrans = (Ymap^* tsurf) - E
+rtrans*strans*ttrans
+integral oo
+assert(oo == r*s*t - 3 * (r + s + t) + 10)
+
+
 -- G(2,5) is cut out by 5 quadrics in P^9
 X = flagBundle({2,3}, VariableNames => {s,q})
 S = first bundles X
