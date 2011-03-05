@@ -91,8 +91,15 @@ blowup(AbstractVarietyMap) :=
 	  if variety F =!= Ytilde then error "pullback: variety mismatch";
 	  abstractSheaf(PN,Rank => rank F,ChernClass => pullbackPN chern F));
      -- earlier formula, appears to be incorrect
+     -- correct version: 
+     -- ch tangentBundle Y - jLower(ch(tangentBundle(PN/X) ** OO_PN(-1)) * (todd OO_PN(-1))^-1)
+     -- == ch tangentBundle Y - jLower(ch(dual first bundles PN) * (todd OO(-x))^-1)
+     -- why this is correct: consider exact sequences:
+     -- (a) 0 -> tangentBundle Ytilde -> tangentBundle Y -> j_* Q -> 0 (Q the univ. quotient bundle of rank d on PN)
      {*Ytilde.TangentBundle = abstractSheaf(Ytilde, 
 	  ChernCharacter => ch tangentBundle Y - jLower(ch tangentBundle(PN/X) * (todd OO(x))^-1));*}
+     Ytilde.TangentBundle2 = abstractSheaf(Ytilde,
+	  ChernCharacter => ch tangentBundle Y - jLower(ch(dual first bundles PN) * (todd OO(-x))^-1));
      pullbackY := method();
      pullbackY ZZ := pullbackY QQ := pullbackY A := a -> promote(a,D);
      pullbackY AbstractSheaf := F -> (

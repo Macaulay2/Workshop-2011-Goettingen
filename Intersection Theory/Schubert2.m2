@@ -1019,24 +1019,27 @@ blowup(AbstractVarietyMap) :=
      pullbackPN AbstractSheaf := F -> (
 	  if variety F =!= Ytilde then error "pullback: variety mismatch";
 	  abstractSheaf(PN,Rank => rank F,ChernClass => pullbackPN chern F));
-     -- earlier formula, appears to be incorrect
-     {*Ytilde.TangentBundle = abstractSheaf(Ytilde, 
-	  ChernCharacter => ch tangentBundle Y - jLower(ch tangentBundle(PN/X) * (todd OO(x))^-1));*}
      pullbackY := method();
      pullbackY ZZ := pullbackY QQ := pullbackY A := a -> promote(a,D);
      pullbackY AbstractSheaf := F -> (
 	  if variety F =!= Y then error "pullback: variety mismatch";
 	  abstractSheaf(Ytilde,Rank => rank F,ChernClass => pullbackY chern F)
 	  );
-     -- We construct the tangent bundle using GRR without denominators
-     -- Specifically, we use the formula of Fulton Example 15.4.1
+     -- To calculate the Chern class of the tangent bundle, we use GRR without denominators, specifically
+     -- the formula of Fulton Example 15.4.1.
+     -- To calculate its Chern character, we use standard GRR as follows: we have an exact sequence
+     -- (**) 0 -> T_Ytilde -> p^* T_Y -> j_* Q -> 0 (where Q is the universal quotient of the pullback of N to PN) (see Fulton Lemma 15.4)
+     -- We have ch(T_Ytilde) = p^* (ch T_Y) - ch(j_* Q).  GRR (and the projection formula) applied to j and Q gives
+     -- ch(j_* Q) = j_*(ch(Q) * td(T_PN) / td(j^* T_Ytilde)).  Multiplicativity of Todd classes plus the fact that the normal bundle of
+     -- PN in Ytilde is O(-1) allow us to simplify this to j_*(ch(Q) / td(O(-1))), which is the formula below.
      g := PN / X;
      alpha := sum for j from 0 to d list (
      	  sum for k from 0 to d-j list (
 	       (binomial(d-j, k) - binomial(d-j, k+1)) * x^k * (g^* chern(j, N))));
      Ytilde.TangentBundle = abstractSheaf(Ytilde,
 	  Rank => dim Y,
-	  ChernClass => chern(pullbackY tangentBundle Y) + jLower (chern(g^* tangentBundle X) * alpha));
+	  ChernClass => chern(pullbackY tangentBundle Y) + jLower (chern(g^* tangentBundle X) * alpha),
+          ChernCharacter => ch tangentBundle Y - jLower(ch(dual first bundles PN) * (todd OO(-x))^-1));
      PNmap := new AbstractVarietyMap from {
 	  global target => Ytilde,
 	  global source => PN,
