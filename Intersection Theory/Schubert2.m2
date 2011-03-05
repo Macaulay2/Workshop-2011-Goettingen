@@ -1452,7 +1452,8 @@ sectionZeroLocus AbstractSheaf := (F) -> (
      X := variety F;
      A := intersectionRing X;
      classZ := ctop F;
-     B := A[Join=>false];		      -- a way to get a copy of A
+     -- the next line will generate an error if classZ is a non-zero-divisor
+     B := A/quotient(ideal 0_A, classZ); -- classes that go to 0 are precisely those that are 0 when intersected with the zero locus
      Z := abstractVariety(dim X - rank F, B);
      pullback := method();
      pullback ZZ := pullback QQ := pullback A := r -> promote(r,B);

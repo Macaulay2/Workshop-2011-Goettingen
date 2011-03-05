@@ -17,7 +17,6 @@ propertransform = (Ymap^* sextic) - 2* Ediv
 integral propertransform^5
 assert (integral propertransform^5 == 3264)
 
-
 -- blow up a point on P^2
 X = flagBundle({1,0})
 Y = flagBundle({1,2})
@@ -89,3 +88,22 @@ propertransform^5
 assert (propertransform^5 == 0)
 assert (Ediv^5 != 0)
 
+--The same excess intersection example of three surfaces of degrees r,s,t,
+--but now the common curve they contain is a curve of degree d and genus
+--c*(c-1)/2.  Obviously we build this curve as a plane curve and re-embed it
+BB = base(r,s,t,c,d)
+P2 = projectiveSpace(2,BB)
+P3 = projectiveSpace(3,BB)
+C = sectionZeroLocus(OO_P2(c)) -- plane curve of degree c
+g = (c-1)*(c-2)/2 -- and its genus
+ -- we map with degree d*c, but since d is a free variable, we can later replace
+ -- it by d/c to get the desired answer
+L = (C.StructureMap)^* OO_P2(d)
+incl = map(P3, C, L)
+(Ytilde, PN, PNmap, Ymap) = blowup(incl)
+Ediv = chern(1,exceptionalDivisor Ytilde)
+(rsurf, ssurf, tsurf) = (x -> chern(1,OO_P3(x))) \ (r,s,t)
+(ptr, pts, ptt) = (x -> (Ymap^* x) - Ediv) \ oo
+integral(ptr*pts*ptt)
+sub(oo, d=>(d/c)) -- replace d by d/c to account for the issue above
+assert(oo == r*s*t - d*(r+s+t) + (2*g - 2 + 4 * d))
