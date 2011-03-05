@@ -5,14 +5,13 @@ load "./blowups.m2"
 -- blow up of P5 along the Veronese
 P5 = flagBundle({1,5}, VariableNames=>{,z})
 P2 = flagBundle({1,2})
-B = intersectionRing P2
-A = intersectionRing P5
 incl = map(P5, P2, OO_P2(2))
 (Ytilde,PN,PNmap,Ymap) = blowup(incl)
+peek Ytilde
 ct = ctop tangentBundle Ytilde
 integral Ymap_* ct
 assert( oo == 12 )
-E = PNmap_* chern(0,OO_PN)
+E = chern(1,exceptionalDivisor Ytilde)
 quadric = chern(1,OO_P5(2))
 propertransform = (Ymap^* quadric) - E
 -- conics tangent to 5 lines
@@ -28,7 +27,7 @@ X = flagBundle({1,0}, VariableNames =>{s,q})
 Y = flagBundle({1,2}, VariableNames =>{a,b})
 i = map(Y,X, OO_X)
 (Ytilde, PN, PNmap, Ymap) = blowup(i)
-E = PNmap_* chern(0,OO_PN)
+E = chern(1,exceptionalDivisor Ytilde)
 assert (integral (E^2) == -1)
 assert (integral PNmap^* E == -1)
 assert (integral ctop tangentBundle Ytilde == 4)
@@ -47,7 +46,7 @@ Y = flagBundle({1,3})
 i = map(Y, X, OO_X(3))
 (Ytilde, PN, PNmap, Ymap) = blowup(i)
 quadric = chern(1,OO_Y(2))
-E = PNmap_* chern(0,OO_PN)
+E = chern(1,exceptionalDivisor Ytilde)
 propertransform = (Ymap^* quadric) - E
 assert(propertransform^3 == 0)
 cubic = chern(1,OO_Y(3))
@@ -71,7 +70,7 @@ intersectionRing Ytilde
 rsurf = chern(1,OO_Y(r))
 ssurf = chern(1,OO_Y(s))
 tsurf = chern(1,OO_Y(t))
-E = PNmap_* chern(0,OO_PN)
+E = chern(1,exceptionalDivisor Ytilde)
 rtrans = (Ymap^* rsurf) - E
 strans = (Ymap^* ssurf) - E
 ttrans = (Ymap^* tsurf) - E
@@ -87,11 +86,10 @@ L = exteriorPower(2, dual S)
 Y = flagBundle({1,9}, VariableNames => {a,b})
 i = map(Y,X,L)
 (Ytilde, PN, PNmap, Ymap) = blowup(i)
-E = PNmap_* chern(0, OO_PN)
+E = chern(1,exceptionalDivisor Ytilde)
 quadric = chern(1,OO_Y(2))
 propertransform = (Ymap^* quadric) - E
 -- 5 generic quadrics containing the Grassmannian cut it out
 propertransform^5
-E^5
-(Ymap^* quadric)^5
 assert (propertransform^5 == 0)
+assert (E^5 != 0)

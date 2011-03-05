@@ -1,5 +1,11 @@
 needsPackage "PushForward"
 needsPackage "Schubert2"
+
+exceptionalDivisor = method()
+exceptionalDivisor AbstractVariety := X -> (
+     if X.?ExceptionalDivisor then X.ExceptionalDivisor else
+     error "Variety is not a blowup")
+
 blowup = method()
 blowup(AbstractVarietyMap) := 
   (incl) -> (
@@ -72,6 +78,7 @@ blowup(AbstractVarietyMap) :=
 	  cfA := matrix {apply(flatten entries cf, iLowerMod)};
 	  (vars D * cfA * E0powers)_(0,0)
 	  );
+     Ytilde.ExceptionalDivisor = abstractSheaf(Ytilde, Rank => 1, ChernClass => 1_D + D_(E_0));
      pushforwardPN := method();
      pushforwardPN C := a -> jLower a;
      -- to pull back a class from the blowup to PN we take E_i to -x*alphas#i; this corresponds to

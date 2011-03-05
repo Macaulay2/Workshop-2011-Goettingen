@@ -615,7 +615,7 @@ tautologicalLineBundle FlagBundle := X -> (
 	  X.TautologicalLineBundle))
 
 --given L a basepoint-free line bundle on an AbstractVariety X over some other variety B,
---and P the projectivization of a bundle E on B, mapstope(X,P,L) builds the map
+--and P the projectivization of a bundle E on B, map(X,P,L) builds the map
 --from X to P such that the pullback of O_P(1) is L.  Note that while specifying such a map
 --requires a surjection from (the pullback of E to X) onto L, the intersection theory does
 --not depend on the choice of surjection

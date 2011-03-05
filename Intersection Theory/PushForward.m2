@@ -272,7 +272,7 @@ document{
   kerp = prune ker p
   ///
   }
-
+--test 0
 TEST ///
 
 kk=ZZ/32003
@@ -292,6 +292,7 @@ Q=pushFwd(P,F)
 assert (pdim Q==0)
 ///
 
+-- test 1
 TEST ///
 P3=QQ[a..d]
 M=comodule monomialCurveIdeal(P3,{1,2,3})
@@ -303,6 +304,7 @@ N=pushFwd(M,F)
 assert(hilbertPolynomial M==hilbertPolynomial N)
 ///
 
+-- test 2
 TEST ///
 kk = QQ
 R = kk[x,y]/(x^2-y^3-y^5)
@@ -313,6 +315,7 @@ use R
 assert(ann q==ideal(x,y))
 ///
 
+-- test 3
 TEST ///
 kkk=ZZ/23
 kk=frac(kkk[u])
@@ -345,6 +348,7 @@ assert(r1==r2)
 assert(r2==r3)
 ///
 
+-- test 4
 TEST ///
 kk=ZZ/3
 T=frac(kk[t])
@@ -366,6 +370,7 @@ p=pushFwd(i/i^3,f)
 assert(numgens p==2)
 ///
 
+-- test 5
 TEST ///
 kk=QQ
 A=kk[x]
@@ -377,6 +382,7 @@ d=map(B^1,B^1,matrix{{y^2}})
 assert(pushFwd(d,f)==0)
 ///
 
+-- test 6
 TEST ///
 kk=QQ
 A=kk[t]
@@ -387,6 +393,7 @@ f=map(B,A,{x})
 assert(isFreeModule pushFwd(module i,f))
 ///
 
+-- test 7
 TEST ///
 kk=ZZ/101
 n=3
