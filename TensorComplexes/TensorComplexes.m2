@@ -17,7 +17,7 @@ Note that explict free modules can be identified with their duals!
 ---
 makeExplicitFreeModule = method()
 makeExplicitFreeModule(Ring,ZZ) := (S,r) -> (
-     --Explicit free modules have cached data about and
+     --Explicit free modules have cache data about:
      --underlying free module or modules,
      --a list of objects that name basis elements (typically integer lists)
      --a function that takes a basis object and returns its ordinal position,
@@ -28,7 +28,7 @@ makeExplicitFreeModule(Ring,ZZ) := (S,r) -> (
      E.cache.fromOrdinal = j -> j;
      E.cache.toOrdinal = j -> j;
      E)
-makeExplicitFreeModule(Module) := F -> (
+makeExplicitFreeModule Module := F -> (
      --if F is not yet an "explicit" free module (as witnessed by the
      --absence of F.cache.basisList), make it into one.
      if F.cache.?basisList then F else (
@@ -62,19 +62,27 @@ makeExteriorPower(Module, ZZ) := (F,d) ->(
      --generators are given in revlex order. NOTE: that the basisList is 
      --a list of  subsets of basisList F, NOT a list of 0-1 lists.
      --Can convert back and forth with multisetToMonomial and monomialToMultiset
-     makeExplicitFreeModule F;
+--     makeExplicitFreeModule F;
+     print uM F;
      E := (ring F)^(binomial(rank F,d));
-     E.cache.underlyingModules = {F};     
-     E.cache.basisList = subsets(basisList F, d);
-     {*The following would give them as 0-1 vectors, but ONLY when basisList F
+     print uM F;
+          E.cache.underlyingModules = {F};     
+     error"";
+          E.cache.basisList = subsets(basisList F, d);
+
+     print uM F;
+
+          {*The following would give them as 0-1 vectors, but ONLY when basisList F
      is a list of integers:
      ((subsets(basisList F, d))/(s->
 	               apply(rank F, i-> #select(1,s,j->j==i))
 		       ));
      *}
      E.cache.fromOrdinal = j -> (basisList E)#j;
-     E.cache.toOrdinal = I -> position(basisList E, J->J==I);
-     E)
+     print uM F;
+          E.cache.toOrdinal = I -> position(basisList E, J->J==I);
+     print uM F;
+          E)
 
 ///
 restart
@@ -86,6 +94,22 @@ E = makeExteriorPower(F,2)
 basisList E
 E2 = makeExteriorPower(E,2)
 basisList E2
+
+F = makeTensorProduct{S^1,S^1}
+uM F
+makeExteriorPower(F,1)
+
+
+F.cache.underlyingModules
+E= S^3
+E.cache.underlyingModules = {F}
+uM F
+F.cache.underlyingModules
+
+
+E = makeExteriorPower(F,1)
+uM((uM E)_0)
+uM F
 ///
 
 multiSubsets = method()
@@ -153,8 +177,8 @@ productList(List):= L->(
      else if #L == 1 then L#0
      else if #L == 2 then flatten (apply(L_0,i->apply(L_1, j->{i,j})))
      else (
-	  P0 = productList drop (L, -1);
-	  P1 = last L;
+	  P0 := productList drop (L, -1);
+	  P1 := last L;
 	  Pp = (apply(P0,a->apply(P1,b->append(a,b))));
 	  --the following line removes the outermost-but-one set of parens
 	  splice(Pp/toSequence));
@@ -189,7 +213,7 @@ productList L
 ///
 
 makeTensorProduct = method()
-makeTensorProduct (List) := (L) ->(
+makeTensorProduct List := L ->(
      L/makeExplicitFreeModule;
      E := (ring L_0)^(product (L/rank));
      E.cache.underlyingModules = L;
@@ -197,6 +221,9 @@ makeTensorProduct (List) := (L) ->(
      E.cache.fromOrdinal = j -> (basisList E)#j;
      E.cache.toOrdinal = I -> position(basisList E, J->J==I);
      E)
+makeTensorProduct Module := M -> makeTensorProduct{M}
+makeTensorProduct (Module, Module) := (M1,M2) -> makeTensorProduct{M1,M2}
+makeTensorProduct (Module, Module,Module) := (M1,M2,M3) -> makeTensorProduct{M1,M2,M3}
 ///
 --Note: this is automatically associative!! the commutativity iso is just permuting
 --the basis elements.
@@ -208,6 +235,9 @@ F1 = makeExplicitFreeModule(S,2)
 F2 = makeExplicitFreeModule(S,3)
 F3 = makeExplicitFreeModule(S,5)
 E = makeTensorProduct {F1,F2,F3}
+makeTensorProduct(F1,F2,F3)
+makeTensorProduct {S^1,F2}
+uM oo
 --E = makeTensorProduct {S^1,S^2,S^3}
 basisList E
 (toOrdinal E) {0,2,3}
@@ -290,11 +320,11 @@ makeSymmetricMultiplication = method()
 makeSymmetricMultiplication(Module,ZZ, ZZ) := (F, d,e) ->(
      --make the map Sym^d(F)\otimes Sym^e F \to Sym^(d+e) F
      --Assume SdF = Sym_d F etc.
-     Sd = makeSymmetricPower(F,d);
-     Se = makeSymmetricPower(F,e);
-     Sde = makeSymmetricPower(F,d+e);
-     SdSe = makeTensorProduct{Sd,Se};
-     toMonomial = (M,I)->multisetToMonomial(basisList((underlyingModules M)#0),I);
+     Sd := makeSymmetricPower(F,d);
+     Se := makeSymmetricPower(F,e);
+     Sde := makeSymmetricPower(F,d+e);
+     SdSe := makeTensorProduct{Sd,Se};
+     toMonomial := (M,I)->multisetToMonomial(basisList((underlyingModules M)#0),I);
      map(Sde,SdSe , (i,j) -> if
        toMonomial(Sde,(fromOrdinal Sde)i) == toMonomial(Sde,(fromOrdinal SdSe)j)
             		    then 1_S else 0_S
@@ -376,58 +406,84 @@ wedgeDToWedge (Module, Module) := (F,G) -> (
      --creates the equivariant embedding F->G.
      
      --sort out the underlying modules and ranks
-     rankF := rank F;
      WbF0 := (underlyingModules F)#0;
-     F0 := (underlyingModules WbF0)#0;
-     f0 := rank F0;
      wbf0 := rank WbF0;
+     F0 := (underlyingModules WbF0)#0;
+     S := ring F0;
+     f0 := rank F0;
+
      DbF1 := (underlyingModules F)#1;
      dbf1 := rank DbF1;
      F1 := (underlyingModules DbF1)#0;
      f1 := rank F1;     
-     F0F1 = (underlyingModules G)#0;
-     if F0 != (underlyingModules F0F1)#0 then error"bad modules";
-     if F1 != (underlyingModules F0F1)#1 then error"bad modules";     
+
+     F0F1 := (underlyingModules G)#0;
 
      --find b
-     b:=0;     
+     b := 0;     
      while binomial(f1+b-1,b)<dbf1 do b = b+1;
      
+     --check setup
+     if F0 != (underlyingModules F0F1)#0 then error"bad underlying module 0";
+     if F1 != (underlyingModules F0F1)#1 then error"bad underlying module 1";
+     if rank F0F1 != f0*f1 then error"bad module F0F1";     
+     if rank G != binomial(rank F0F1, b) then error"bad module G";
+     if rank WbF0 != binomial(f0,b) then error "bad module wedge b F0";     
+     if rank DbF1 != binomial(f1+b-1,b) then error "bad module DbF1";          
+     if rank F != binomial(f0,b) *binomial(f1+b-1,b) then error "bad module F";    
+
      --make the map
+     I := id_(S^(binomial(f1,b)));
+	  
      map(G,F,(i,j)->(
-     BG = (fromOrdinal G) i;
-     BF = (fromOrdinal F) j;
-     BG0 = BG/first; -- corresponds to an element of wedge^b F0
-     BG1 = BG/last; -- corresponds to an element of wedge^b F1
-     BF0 =  BF_{0..b -1};
-     BF1 = BF_{b..2*b-1};-- corresponds to an element of D^b F1
-     error"";
-     if BG0 != BF0 then 0 -- this assumes that both BG0 and BF#0 will be in order. True??
-     else if contents BG1 != BF#1 then 0
-     else (perm = apply #B
-	  )
-     )	  
+     BF := (fromOrdinal F) j; -- a pair consisting of 
+     BF0 := BF#0; -- b-tuple of elts of F0 (distinct and in order)
+     BF1 := BF#1; -- b-tuple of elts of F1 (with repetitions and in order)
+
+     BG := (fromOrdinal G) i; -- a b-tuple of elts of F0F1
+     BG0 := BG/first; -- corresponds to an element of wedge^b F0 (in order, not nec distinct)
+     BG1 := BG/last; -- corresponds to an element of wedge^b F1 (maybe not in ord or distinct)
+
+     if BG0 != BF0 then return 0_S; -- this uses that both BG0 and BF0 are in order. 
+     SG1 := set BG1; 
+     if  #SG1 != binomial(f1,b) or SG1 != set BF1 then return 0_S;
+     det(I_BG1^BF1)
+     )
 	  )
 )
 
-permSign = method()
-permSign(List, List) := (L,M) ->(
-     --L,M are lists of the same length, possibly with repetitions.
-     -- Returns 0 if the elements and multiplicities don't match. 
-     )
 ///
 --map of wedge^d A \otimes Sym^d B to wedge^d(A\otimes B).
 restart
 load "~/src/Goettingen-2011/TensorComplexes/TensorComplexes.m2"
 kk = ZZ/101
-S = kk[a,b,c]
-FF2 = S^4
-FF3 = S^3
-DbFF2 = makeSymmetricPower(FF2, 2)
-WbFF3 = makeExteriorPower(FF3,2)
-F = makeTensorProduct{WbFF3, DbFF2}
-G = makeExteriorPower(makeTensorProduct{FF3,FF2},2)
+S = kk[x,y]
+b = 2
+F0 = S^2
+WbF0 = makeExteriorPower(F0,b)
+F1 = S^1
+DbF1 = makeSymmetricPower(F1, b)
+
+F = makeTensorProduct{WbF0, DbF1}
+uM F
+makeExplictFreeModule F
+
+uM F
+
+H = makeTensorProduct{F0,F1}
+uM F
+
+G = makeExteriorPower(H,b)
+uM F
+
 wedgeDToWedge(F,G)
+
+T = makeTensorProduct(FF2,FF3)
+
+BF0
+BF1
+BG0
+BG1
 for i from 0 to rank G -1 do for j from 0 to rank F -1 do(
      BG = (fromOrdinal G) i;
      BF = (fromOrdinal F) j;
