@@ -191,6 +191,7 @@ keelAvgList (Sequence, ZZ) := (J, n) -> (
      -- and output average of numerical equivalence class of D_J
      -- over all Keel relations involving D_J
      nList := toList(1..n);
+     if (#J > floor(n/2) or (#J == floor(n/2) and not isSubset({1},J)) ) then J = listComplement(nList, J);
         
      bndIndices := select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );	
      avg:= apply(bndIndices, i->0);
@@ -214,7 +215,7 @@ keelAvgList (Sequence, ZZ) := (J, n) -> (
 --**************************************************************************      
 --**************************************************************************
 coeffKinKeelAvgJ = method()
-coeffKinKeelAvgJ (Sequence, Sequence, ZZ) := (J, K, n) -> (
+coeffKinKeelAvgJ (Sequence, Sequence, ZZ) := (K, J, n) -> (
      --Inputs two sequences J, K, where J gives the index of the 
      -- boundary divisors D_J averaged over the Keel relations,
      -- namely in keelAvg(J,n), and 
@@ -222,10 +223,13 @@ coeffKinKeelAvgJ (Sequence, Sequence, ZZ) := (J, K, n) -> (
      -- we seek in the average of D_J;
      --Outputs the coefficient of D_K in the average D_J = (...)
      avgJ := keelAvgList(J,n);
+     nList := toList(1..n);
+     k:= 0;
      
      
      bndIndices := select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );	
-     apply(bndIndices, i->0);
+     for j from 0 to #bndIndices - 1 do (if toList K == bndIndices_j then k = j );
+     avgJ_k
      ) 
 
 --**************************************************************************      
@@ -553,7 +557,22 @@ avg = {};
 i = {1,2}
 j = {3,4}
 J = (1,2,6)
-n=
+
 keelSumList({i,j},n)
-avg = avg - 2*keelSumList({i,j}, n) + keelSumList({{i_0, j_0}, {i_1, j_1}}, n) + keelSumList({{i_0, j_1}, {i_1, j_0}}, n) + 2*bndJList(J,n)
-2*bndJList(J,n) + keelSumList({i,j}, n)
+J = (1,2,3)
+K = (1,2,3,4)
+coeffKinKeelAvgJ (K, J, 8)
+keelAvgList((1,2,3), 6)
+
+n=6
+nList = toList(1..n);
+avgJ = keelAvgList((1,2,3),n)
+keelAvgList((4,5,6), n)
+coeff= 0;
+   
+     avgJ#0
+     
+     bndIndices = select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );	
+     for j from 0 to #bndIndices - 1 do (if toList K == bndIndices_j then k = j )
+k
+     coeff
