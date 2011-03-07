@@ -1757,7 +1757,7 @@ doc ///
      I=monomialIdeal(x_0*x_1,x_1*x_2,x_2*x_3,x_3*x_4,x_4*x_0);
      D=simplicialComplex I
      fc=faces(D,useFaceClass=>true)
-     apply(fc, j->dim j#0)
+     apply(-1..1, j->apply(fc#j,dim))
   SeeAlso
      face
      facets
@@ -1974,12 +1974,82 @@ doc ///
     K=QQ;
     R=K[x_1..x_5];
     C=simplicialComplex monomialIdeal (x_1*x_2,x_3*x_4*x_5)
-    faces C
+    fc=faces(C,useFaceClass=>true)
+    fc#2
  ///
 
 
 -------------------------------------------------------------------
+-- some previously missing documentation
 
+doc ///
+  Key
+    (net,SimplicialComplex)
+  Headline
+    Printing a simplicial complex.
+  Usage
+    net(C)
+  Inputs
+    C:SimplicialComplex
+  Outputs
+    :Net
+  Description
+   Text
+        Prints a simplicial complex. 
+
+   Example
+    K=QQ;
+    R=K[x_1..x_5];
+    C=simplicialComplex monomialIdeal (x_1*x_2,x_3*x_4*x_5)
+///
+
+doc ///
+  Key
+    (symbol ==,SimplicialComplex,SimplicialComplex)
+  Headline
+   Compare two simplicial complexes.
+  Usage
+    C1==C2
+  Inputs
+    C1:SimplicialComplex
+    C2:SimplicialComplex
+  Outputs
+    :Boolean
+  Description
+   Text
+        Checks whether C1 and C2 are equal.
+
+   Example
+    K=QQ;
+    R=K[x_1..x_3];
+    C1=simplicialComplex monomialIdeal (x_1*x_2*x_3)
+    C2=simplicialComplex {face {x_1,x_2},face {x_2,x_3},face {x_3,x_1}}
+    C1==C2
+///
+
+doc ///
+  Key
+    faceIdeal
+  Headline
+    Key to simplicial complex.
+  Description
+   Text
+      This is a @TO Key@ to a @TO SimplicialComplex@ C storing its Stanley-Reisner ideal, which will be returned by C.faceIdeal.
+
+      The Stanley-Reisner ideal of C can also be obtained by @TO ideal@ C.
+
+   Example
+    K=QQ;
+    R=K[x_1..x_5];
+    C=simplicialComplex monomialIdeal (x_1*x_2,x_3*x_4*x_5)
+    C.faceIdeal
+    ideal C
+  SeeAlso
+   (ideal,SimplicialComplex)
+///
+
+
+-------------------------------------------------------------------
 
 {*
 check ("SimplicialComplexes",UserMode=>false)
