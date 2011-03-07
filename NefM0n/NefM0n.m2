@@ -304,6 +304,7 @@ m1(List, List) := (F, c) -> (
      zeros := transpose matrix {toList (numRows (matrix F) : 0)};
      A := zeros | matrix F;
      val := minimalValue(A, vector flatten {0,c});
+     << val << endl;
      if val == "-inf" then (
 	  --todo
 	  matrix flatten {entries A,{flatten {{1},c}}, {flatten {{-1},-c}}}
@@ -399,14 +400,15 @@ fCurveIneqsMatrix (ZZ) := (n)->(
 	       ) -- end t->(
 	  ); -- end apply	
 	  
-
+	
          --Output inequalities F(N1, N2, N3, N4) in CB coordinates to the file fileName,
 	 -- i.e. output \cdot D \geq 0, where [D] = \sum d_I [DD_I]
 	 
 	 
-	 
+	selection := select(subsets(nList), I-> (#I >=4) and even (#I));
+	<< "selection: " << #selection << endl;
 	fMatrix := toList apply(fCurves, F -> (
-		   apply(select (subsets(nList), I-> (#(set I) >= 4 and even (#(set I ))) ), 
+		   apply(selection, 
 	                           I -> (
 	        		 -- Calculate the intersection of the F-curve F with the CB-divisor D_I,
 	       		 	  --  namely, F \cdot DD_I = 1 if \prod i=1^4 #(F_i \cap I)  odd, 0 else
@@ -528,7 +530,7 @@ TEST ///
 end
 restart
 loadPackage "NefM0n"
-R = boundaryRing 5;
+R = boundaryRing 10;
 S = R#Ring
 tex keelAvg((1,2,3), R)
 
@@ -648,4 +650,4 @@ minimalValue(Ac123, vector flatten {0,c14})
 -- get c14 >= 0, need only c14 >= 1/6
 
 --Consider then -1 <= c145 <= 1/6
-Ac123c145 = matrix flatten {entries A,{flatten {{1},c}}, {flatten {{-1},-c}}};
+Ac123c145 = matrix flatten {entries A,{flatten {{1},c}}, {flatten {{-1},-c}}};>>>>>>> .r13079
