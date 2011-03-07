@@ -284,10 +284,10 @@ homology(ZZ,SimplicialComplex,Ring) := Module => opts -> (i,Delta,R) -> (
 homology(ZZ,SimplicialComplex) := Module => opts -> (i,Delta) -> (
      homology(i, chainComplex Delta))
 homology(Nothing,SimplicialComplex,Ring) :=
-homology(SimplicialComplex,Ring) := ChainComplex => opts -> (Delta,R) -> (
+homology(SimplicialComplex,Ring) := GradedModule => opts -> (Delta,R) -> (
      homology(chainComplex Delta ** R))
 homology(Nothing,SimplicialComplex) :=
-homology(SimplicialComplex) := ChainComplex => opts -> Delta -> (
+homology(SimplicialComplex) := GradedModule => opts -> Delta -> (
      homology(chainComplex Delta))
 
 fVector = method(TypicalValue => List)
@@ -2047,6 +2047,150 @@ doc ///
   SeeAlso
    (ideal,SimplicialComplex)
 ///
+
+
+
+doc ///
+  Key    
+    (chainComplex,SimplicialComplex)
+    simplicialChainComplex
+    (simplicialChainComplex,List,SimplicialComplex)
+  Headline
+    The chain complex of boundary maps.
+  Usage
+    chainComplex C
+  Inputs
+    C:SimplicialComplex
+  Outputs
+    :ChainComplex
+  Description
+   Text
+     The @TO ChainComplex@ of @TO boundary@ maps from i-faces to (i-1)-faces.
+
+   Example
+    R = QQ[a..f];
+    D = simplicialComplex monomialIdeal(a*b*c,a*b*f,a*c*e,a*d*e,a*d*f,b*c*d,b*d*e,b*e*f,c*d*f,c*e*f);
+    R' = ZZ/2[a..f];
+    D' = simplicialComplex monomialIdeal(a*b*c,a*b*f,a*c*e,a*d*e,a*d*f,b*c*d,b*d*e,b*e*f,c*d*f,c*e*f);
+    c = chainComplex D
+    c' = chainComplex D'
+    c.dd_1
+    c'.dd_1
+  SeeAlso
+   boundary
+///
+
+
+doc ///
+  Key    
+    (homology,ZZ,SimplicialComplex)
+  Headline
+    Compute the homology of a simplicial complex.
+  Usage
+    homology(j,C)
+  Inputs
+    j:ZZ
+    C:SimplicialComplex
+  Outputs
+    :Module
+  Description
+   Text
+     Compute the j-th reduced homology of C with coefficients in @TO (coefficientRing,SimplicialComplex)@ C.
+
+   Example
+    R=ZZ[x_0..x_5];
+    D=simplicialComplex apply({{x_0, x_1, x_2}, {x_1, x_2, x_3}, {x_0, x_1, x_4}, {x_0, x_3, x_4}, {x_2, x_3, x_4}, {x_0, x_2, x_5}, {x_0, x_3, x_5}, {x_1, x_3, x_5}, {x_1, x_4, x_5}, {x_2, x_4, x_5}},face)
+    prune homology(1,D)
+  SeeAlso
+    (homology,ZZ,SimplicialComplex,Ring)
+   boundary
+   (chainComplex,SimplicialComplex)
+///
+
+doc ///
+  Key    
+    (homology,ZZ,SimplicialComplex,Ring)
+  Headline
+    Compute the homology of a simplicial complex.
+  Usage
+    homology(j,C,R)
+  Inputs
+    j:ZZ
+    C:SimplicialComplex
+    R:Ring
+  Outputs
+    :Module
+  Description
+   Text
+     Compute the j-th reduced homology of C with coefficients in R.
+
+   Example
+    R=ZZ[x_0..x_5];
+    D=simplicialComplex apply({{x_0, x_1, x_2}, {x_1, x_2, x_3}, {x_0, x_1, x_4}, {x_0, x_3, x_4}, {x_2, x_3, x_4}, {x_0, x_2, x_5}, {x_0, x_3, x_5}, {x_1, x_3, x_5}, {x_1, x_4, x_5}, {x_2, x_4, x_5}},face)
+    prune homology(1,D,ZZ)
+    prune homology(1,D,QQ)
+    prune homology(1,D,ZZ/2)
+  SeeAlso
+    (homology,ZZ,SimplicialComplex)
+   boundary
+   (chainComplex,SimplicialComplex)
+///
+
+doc ///
+  Key    
+    (homology,SimplicialComplex,Ring)
+    (homology,Nothing,SimplicialComplex,Ring)
+  Headline
+    Compute the homology of a simplicial complex.
+  Usage
+    homology(C,R)
+  Inputs
+    C:SimplicialComplex
+    R:Ring
+  Outputs
+    :GradedModule
+  Description
+   Text
+     The graded module of reduced homologies of C with coefficients in R.
+
+   Example
+    R=ZZ[x_0..x_5];
+    D=simplicialComplex apply({{x_0, x_1, x_2}, {x_1, x_2, x_3}, {x_0, x_1, x_4}, {x_0, x_3, x_4}, {x_2, x_3, x_4}, {x_0, x_2, x_5}, {x_0, x_3, x_5}, {x_1, x_3, x_5}, {x_1, x_4, x_5}, {x_2, x_4, x_5}},face)
+    homology(D)
+    homology(D,QQ)
+    homology(D,ZZ/2)
+  SeeAlso
+    (homology,SimplicialComplex)
+    (homology,ZZ,SimplicialComplex)
+    (homology,ZZ,SimplicialComplex,Ring)
+///
+
+doc ///
+  Key    
+    (homology,SimplicialComplex)
+    (homology,Nothing,SimplicialComplex)
+  Headline
+    Compute the homology of a simplicial complex.
+  Usage
+    homology C
+  Inputs
+    C:SimplicialComplex
+  Outputs
+    :GradedModule
+  Description
+   Text
+     The graded module of reduced homologies of C with coefficients in R.
+
+   Example
+    R=ZZ[x_0..x_5];
+    D=simplicialComplex apply({{x_0, x_1, x_2}, {x_1, x_2, x_3}, {x_0, x_1, x_4}, {x_0, x_3, x_4}, {x_2, x_3, x_4}, {x_0, x_2, x_5}, {x_0, x_3, x_5}, {x_1, x_3, x_5}, {x_1, x_4, x_5}, {x_2, x_4, x_5}},face)
+    homology D
+  SeeAlso
+    (homology,SimplicialComplex,Ring)
+    (homology,ZZ,SimplicialComplex)
+    (homology,ZZ,SimplicialComplex,Ring)
+///
+
 
 
 -------------------------------------------------------------------
