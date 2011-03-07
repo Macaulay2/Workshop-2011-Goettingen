@@ -80,7 +80,8 @@ latticeIndex := A -> (
 --     	   computed as the index of the image lattice in the integer lattice
 --     	   a la Sturmfels--Tevelev
 extrinsicIndex := (C,A) -> (
-     latticeIndex (matrix C * transpose A) // latticeIndex(matrix(C))	  
+     latticeBasis := transpose gens kernel transpose gens kernel matrix C;
+     latticeIndex (latticeBasis * transpose A)	  
      )
 
 
@@ -129,7 +130,7 @@ tropicalMap (PolymakeObject, Matrix) := (T,A) -> (
      	 extrinMult := extrinsicIndex(C /(j -> T#"RAYS"#j) | T#"LINEALITY_SPACE", A);
 	 intrinMult * extrinMult	 
 	       ));
-     H = H | {"DIM" => newDim + numRows lineality , "RAYS" => apply(goodRayIndices, i-> imageRays#i), "MAXIMAL_CONES" => apply(goodConeIndices, C -> select(apply(T#"MAXIMAL_CONES"#C, i-> position(goodRayIndices, j -> j == i)), c -> not c === null)), "MULTIPLICITIES" => multList};
+     H = H | {"DIM" => newDim, "RAYS" => apply(goodRayIndices, i-> imageRays#i), "MAXIMAL_CONES" => apply(goodConeIndices, C -> select(apply(T#"MAXIMAL_CONES"#C, i-> position(goodRayIndices, j -> j == i)), c -> not c === null)), "MULTIPLICITIES" => multList};
      new TropicalVariety from hashTable H
      )
 
@@ -273,13 +274,16 @@ tropicalMap(T,A)
 eliminate({z,h},J)
 gens J
 
+gfanVerbose = true
 QQ[x,y,z,w,h]
-I = ideal{x+y+z, y^2+2*z^2+3*w^2}
+I = ideal{x+y+z+w, (x+y+z+w)^2}
 J = homogenize(I,h)
+dim J
 T = gfanTropicalVariety J
-Tstable = tropicalVariety(J, "stable" => true)
+Tstable = gfanTropicalVariety(J_*, "stable" => true)
 A = matrix{{1, 0, 0, -1, 0},{1,2,3,0,0},{0,2,3,4,5}}
 tropicalMap(T,A)
+tropicalMap(Tstable, A)
 
 I = ideal{x+y+z, y^2+2*z^2+3*w^2+1}
 J = homogenize(I,h)

@@ -74,7 +74,9 @@ export {
 	gfanTropicalVariety, -- done by Josephine
 	gfanTropicalWeilDivisor, -- v0.4
 	gfanFunctions, -- for testing purposes
-	gfanParsePolyhedralFan -- for external use
+	gfanParsePolyhedralFan, -- for external use
+	gfanRingToString, -- to make gfan input
+	gfanPolynomialListToString  -- to make gfan input
 }
 
 gfanPath = gfanInterface2#Options#Configuration#"path"
@@ -1595,6 +1597,8 @@ gfanTropicalWeilDivisor (PolymakeFan, PolymakeFan) := opts -> (F,G) -> (
 -- tropicalStartingCone and tropicalTraverse
 --------------------------------------------------------
 
+-- this function was made because there were some problems with parsing output from gfan_tropicalstartingcone
+
 gfanTropicalVariety = method( Options => {
 	"stable" => false, 
 	"symmetry" => null, 
@@ -1602,9 +1606,9 @@ gfanTropicalVariety = method( Options => {
 gfanTropicalVariety List := opts -> L -> (
  	data := gfanRingToString(ring first L) | gfanPolynomialListToString(L);
 	tmpFile := gfanMakeTemporaryFile data;
-	startArgs := gfanArgumentToString("gfan_tropicalstartingcone", "symmetry", opts#"symmetry");
+	startArgs := gfanArgumentToString("gfan_tropicalstartingcone", "stable", opts#"stable");
 	traverseArgs := concatenate apply(keys opts, key -> gfanArgumentToString("gfan_tropicaltraverse", key, opts#key));
-	ex := gfanPath | "gfan_tropicalstartingcone" | startArgs | " < " | tmpFile | " | " | gfanPath | "gfan_tropicaltraverse > " | tmpFile | ".out" | " 2> " | tmpFile | ".err";
+	ex := gfanPath | "gfan_tropicalstartingcone" | startArgs | " < " | tmpFile | " | " | gfanPath | "gfan_tropicaltraverse" | traverseArgs | " > " | tmpFile | ".out" | " 2> " | tmpFile | ".err";
 	if gfanVerbose then << ex << endl;
 	run ex;
 	out := get(tmpFile | ".out");
