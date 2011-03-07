@@ -206,6 +206,7 @@ STRAIGHT = new MutableHashTable;
 straighten = method()
 straighten(List) := t -> (
      sg := t/(i->sgn i)//product;
+     if sg == 0 then return new HashTable from {};
      t = apply(t, i->sort(i));
      if STRAIGHT#?t then new HashTable from apply(keys STRAIGHT#t,i->(i=> sg*STRAIGHT#t#i)) else
      (
@@ -217,7 +218,8 @@ straighten(List) := t -> (
      )
 
 straighten(List, MutableHashTable) := (t, h) -> (
-     if t != apply(t, i -> sort i) then error"Debug";
+     sg := t/(i->sgn i)//product;
+     if sg == 0 then (h#t = new HashTable from {};return null;);
      if h #? t then return null;
      if isStandard(t) === null then 
      h#t = new HashTable from {t => 1};
@@ -303,66 +305,87 @@ secondSecant(List,List,List) := (lam0,lam1,lam2) ->
      indR := flatten for i in sTab1 list for j in sTab2 list {i,j};
      print(#indR);
      gensR := indR/(i->z_i);
-     R := QQ[gensR];
-     rels := {};
-     time for T in indR do
-     (
-	  T1 = T#0;
-	  T2 = T#1;
-	  for col in T0 do
-     	       for i from 0 to #col-2 do
---	       	    for j from i+1 to #col-1 do
-	       	    for j from #col-1 to #col-1 do
-		    (
-			 newT1 = T1/(c->(c/(r->if r == col#i then col#j
-					else if r == col#j then col#i
-					else r)));
-			 newT2 = T2/(c->(c/(r->if r == col#i then col#j
-					else if r == col#j then col#i
-					else r)));
-			 strT1 = straighten newT1;
-			 strT2 = straighten newT2;
-			 pol = sum flatten for a in keys strT1 list
-			                   for b in keys strT2 list
-					   strT1#a*strT2#b*z_({a,b});
-			 rels = rels | {z_T+pol};
-			 );
---new relations
-     	  for c from 0 to #T0-2 do
+     R := QQ[gensR,MonomialSize=>4];
+     QR := QQ[];
+     rels := matrix{#indR:{0_QR}};
+
+     time for col in T0 do
+     	  for i from 0 to #col-2 do
 	  (
-	       col := T0#c;
-	       j := T0#(c+1)#0;
-	       rel = z_T;
-	       for i from 0 to #col-1 do
-	       (
-			 newT1 = T1/(c->(c/(r->if r == col#i then j
-					else if r == j then col#i
-					else r)));
-			 newT2 = T2/(c->(c/(r->if r == col#i then j
-					else if r == j then col#i
-					else r)));
-			 strT1 = straighten newT1;
-			 strT2 = straighten newT2;
-			 pol = sum flatten for a in keys strT1 list
-			                   for b in keys strT2 list
-					   strT1#a*strT2#b*z_({a,b});
-		    	 rel = rel - pol;
-		    ); 
-     	       rels = rels | {rel};	       
+	       j := #col-1;
+     	       print("straighten");
+	       time newsTab1 := apply(sTab1,T -> straighten(T/(c->(c/(r->if r == col#i then col#j
+					else if r == col#j then col#i
+					else r)))));
+	       time newsTab2 := apply(sTab2,T -> straighten(T/(c->(c/(r->if r == col#i then col#j
+					else if r == col#j then col#i
+					else r)))));
+	       print("relations");
+     	       rel := mutableMatrix(QR,#sTab1*#sTab2,#sTab1*#sTab2);
+	       c := 0;
+	       time for i1 from 0 to #sTab1-1 do
+	       	    for i2 from 0 to #sTab2-1 do
+		    (
+			 T := {sTab1#i1,sTab2#i2};
+			 strT1 := newsTab1#i1;
+			 strT2 := newsTab2#i2;
+			 for a in keys strT1 do
+			      for b in keys strT2 do
+			      	   rel_(index(z_({a,b})),c) = strT1#a*strT2#b;
+			 rel_(index(z_T),c) = rel_(index(z_T),c) + 1;
+			 c = c + 1;
+			 );
+	       rels = rels | matrix(rel);
 	       );
-	  );
-     time if rels != {} then
+      for co from 0 to #T0-2 do
+      (
+ 	       col := T0#co;
+	       j := T0#(co+1)#0;
+	       newsTab1 := new MutableList;
+	       newsTab2 := new MutableList;
+	       print("straighten");
+	       time for i from 0 to #col - 1 do
+	       (
+		    newsTab1#i = apply(sTab1,T -> straighten(T/(c->(c/(r->if r == col#i then j
+					     else if r == j then col#i
+					     else r)))));
+	       	    newsTab2#i = apply(sTab2,T -> straighten(T/(c->(c/(r->if r == col#i then j
+					     else if r == j then col#i
+					     else r)))));
+		    );
+	       print("relations");
+	       rel := mutableMatrix(QR,#sTab1*#sTab2,#sTab1*#sTab2);
+	       c := 0;
+     	       time for i1 from 0 to #sTab1-1 do
+	       	    for i2 from 0 to #sTab2-1 do
+     	       	    (
+		    T := {sTab1#i1,sTab2#i2};
+     		    for i from 0 to #col - 1 do
+		    (
+			 strT1 := newsTab1#i#i1;
+			 strT2 := newsTab2#i#i2;
+			 for a in keys strT1 do
+			      for b in keys strT2 do
+			      	   rel_(index(z_({a,b})),c) = rel_(index(z_({a,b})),c)+strT1#a*strT2#b;
+			 );
+		    rel_(index(z_T),c) = rel_(index(z_T),c) - 1;
+  		    c = c + 1;
+		    );
+	       rels = rels | matrix(rel);
+	   );
+     time if rels != 0 then
      (
-     	  print(#rels);
-	  grb := gb(ideal rels,DegreeLimit=>1);
+     	  print(numgens source rels);
+	  grb := gb(rels);
      	  grbin := forceGB leadTerm grb;
-     	  mat := matrix{gens R} % grbin;
-     	  indR = select(for i from 0 to #indR-1 list if mat_i_0 != 0 then indR#i else null,i->i=!= null);
+     	  mat := id_(QR^(#indR)) % grbin;
+     	  indR = select(for i from 0 to #indR-1 list if mat_{i} != 0 then indR#i else null,i->i=!= null);
      	  gensR = indR/(i->z_i);
-     	  R = QQ[gensR];
+     	  R = QQ[gensR,MonomialSize=>4];
      	  print(#indR);
 	  print(#indR == scalarProduct(internalProduct(Q_(lam0),Q_(lam1)),Q_(lam2)));
 	  );
+     
      kerf := ideal(1_R);
      
 for p in kpar do
@@ -371,9 +394,9 @@ for p in kpar do
      sT1 := StdTab#(lam1,p);
      sT2 := StdTab#(lam2,p);
      gensS := sT0/(i->A_i)|sT1/(i->B_i)|sT2/(i->C_i);
-     time S := QQ[gensS];
+     S := QQ[gensS,MonomialSize=>4];
      if #gensS == 0 then continue;--because kernel of map to QQ[] has a bug
-     time f := map(S,R,for T in indR list
+     f := map(S,R,for T in indR list
 	  (
      	       T1 := T#0;
 	       T2 := T#1;
@@ -469,7 +492,7 @@ restart
 loadPackage"SchurRings"
 load"tableaux.m2"
 
-d = 10
+d = 9
 k = 3
 
 Q = schurRing(QQ,q,d)
@@ -497,6 +520,8 @@ pd = partsd
 
 hilbFcnd = 0
 
+--secondSecant({9},{7,2},{7,2})
+
 for i0 from 0 to #pd-1 do
      for i1 from i0 to #pd-1 do
      	  for i2 from i1 to #pd-1 do
@@ -517,10 +542,10 @@ for i0 from 0 to #pd-1 do
 		    )
      	       )
 hilbFcnd
-
 --hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*s--degree 5--works
 --hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(2,s)-S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}-S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}-S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2}-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*s--degree 6--works
-hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(3,s)-(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*s-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(2,s)+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*s--degree 7--works
+--hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(3,s)-(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*s-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(2,s)+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*s--degree 7--works
+time hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(4,s)-(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*symmetricPower(2,s)-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(3,s)+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*symmetricPower(2,s)--degree 8--works
 
 
 Q = schurRing(QQ,q,6)
