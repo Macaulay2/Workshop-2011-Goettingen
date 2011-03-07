@@ -29,7 +29,8 @@ export {listComplement,
 	fCurveIneqsMatrix, 
 	cJinDDI, 
 	cJinD, 
-	m1}
+	m1,
+	minimalValue}
 
 BoundaryRing = new Type of HashTable
 
@@ -311,7 +312,7 @@ m1(List, List) := (F, c) -> (
 	  value val
 	  )
      )
-     
+
 --**************************************************************************      
 --**************************************************************************
 
@@ -541,17 +542,22 @@ tex keelAvgIndices( (1,2,3), {{2,3,4,5}}, R)
 tex keelAvgIndices( (1,2,3), {{1,2,4,5}, {1,2,4,6}, {1,2,5,6}, {1,3,4,5}, {1,3,4,6}, {1,3,5,6}, {2,3,4,5}, {2,3,4,6}, {2,3,5,6}},R)
 
 fCurveIneqsLPSOLVE(6, "fIneqs6.txt") 
-M = fCurveIneqsMatrix 5
+M = fCurveIneqsMatrix 6;
+Mmat = matrix M
 
 
 cJinDDI((1,2), {1,2,3,4,5,6,7,8})
-v = cJinD((1,2), 5)
+v = cJinD((1,2,3), 6)
+#v
 
 v - w
 
-m1(M,v)
+M123 = m1(M,v)
+M123array = entries M123;
 
- bndIndices = select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );	
+
+
+bndIndices = select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );	
      avg= apply(bndIndices, i->0)
 avg = {};
 i = {1,2}
@@ -576,3 +582,70 @@ coeff= 0;
      for j from 0 to #bndIndices - 1 do (if toList K == bndIndices_j then k = j )
 k
      coeff
+     
+     --OK, now fiddle with proof of Fulton's conjecture
+ 
+--n = 5
+F = fCurveIneqsMatrix 5
+c = cJinD((1,2), 5)
+--Code from Lars's function m1
+zeros = transpose matrix {toList (numRows (matrix F) : 0)}
+A = zeros | matrix F
+vector flatten {0,c}     
+val = minimalValue(A, vector flatten {0,c})
+     
+     
+     --n = 6
+ F = fCurveIneqsMatrix 6
+c = cJinD((1,2,3), 6)
+--Code from Lars's function m1
+     zeros = transpose matrix {toList (numRows (matrix F) : 0)}
+     A = zeros | matrix F
+     
+     val = minimalValue(A, vector flatten {0,c})
+     
+     
+Ac123 = matrix flatten {entries A,{flatten {{1},c}}, {flatten {{-1},-c}}};
+c14 = cJinD((1,4), 6)    
+coeffKinKeelAvgJ ((1,4), (1,2,3), 6)
+minimalValue(Ac123, vector flatten {0,c14})
+
+c125 = cJinD((1,2,5), 6)
+coeffKinKeelAvgJ((1,2,5), (1,2,3),6)
+minimalValue(Ac123, vector flatten {0,c125})
+
+
+-- n=7
+F = fCurveIneqsMatrix 7;
+c123 = cJinD((1,2,3), 7);
+
+zeros = transpose matrix {toList (numRows (matrix F) : 0)};
+A = zeros | matrix F;
+      
+Ac123 = matrix flatten {entries A,{flatten {{1},c}}, {flatten {{-1},-c}}};      
+          
+val = minimalValue(A, vector flatten {0,c})
+
+c124 = cJinD((1,2,4), 7)
+coeffKinKeelAvgJ ((1,2,4), (1,2,3), 7)
+minimalValue(Ac123, vector flatten {0,c124})
+--get c124 >= 3, need only c124 >= 0
+
+
+c145 = cJinD((1,4,), 7)
+coeffKinKeelAvgJ ((1,4,5), (1,2,3), 7)
+minimalValue(Ac123, vector flatten {0,c145})
+--get c145 >= 0, but need c145 >= 1/6
+
+c456 = cJinD((4,5,6), 7)
+coeffKinKeelAvgJ ((4,5,6), (1,2,3), 7)
+minimalValue(Ac123, vector flatten {0,c456})
+-- get c456 undbounded, but need c456 >= -1/2
+
+c14 = cJinD((1,4), 7)
+coeffKinKeelAvgJ ((1,4), (1,2,3), 7)
+minimalValue(Ac123, vector flatten {0,c14})
+-- get c14 >= 0, need only c14 >= 1/6
+
+--Consider then -1 <= c145 <= 1/6
+Ac123c145 = matrix flatten {entries A,{flatten {{1},c}}, {flatten {{-1},-c}}};
