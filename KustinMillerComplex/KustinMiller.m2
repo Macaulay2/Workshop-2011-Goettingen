@@ -587,7 +587,7 @@ if J+I==I+ideal (entries f1)#0 then (
 ---------------------------------------------------------------------
 -- some usefull stuff for chain complexes
 
--- not that this is not the same as isExact in the
+-- note that this is not the same as isExact in the
 -- chain complex extras
 isExactRes=method()
 isExactRes(ChainComplex):=(cc)->(
