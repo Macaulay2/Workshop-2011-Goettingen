@@ -11,7 +11,7 @@ newPackage(
 needsPackage "RationalPoints";
 
 
-export{mainNCF, interpolate, idealOfPoints, ncfIdeal, kernPhi, getSingleNcfList, getNcfLists, convertDotStringToHashTable, convertDotFileToHashTable, extractTimecourse}
+export{getWiring, mainNCF, interpolate, idealOfPoints, ncfIdeal, kernPhi, getSingleNcfList, convertDotStringToHashTable, convertDotFileToHashTable, extractTimecourse}
 
 
 -- given a matrix with time course data for the variables in L
@@ -110,41 +110,6 @@ mainNCF (List, HashTable, Matrix) := List => (L, W, D) -> (
   )
 )
 
-
--- Returns a list "Ls" of lists of CNFs for each variable,
--- "Ls"_i is a list with the CNFs of the ith variable matching the input data 
-getNcfLists = method()
-getNcfLists (Matrix , List, ZZ) := List=> (inputMatrix,Permutation,fieldChar) ->
-(
-     rows:= numgens target inputMatrix;
-     assert(rows>1);
-     fullDataHashTable := new MutableHashTable;
-     fullDataHashTable# (flatten entries  inputMatrix^{0} ) = flatten entries inputMatrix^{1};
-     currentRow:=1;
-     while (currentRow<rows -1) do
-     (
-	  if (fullDataHashTable#?(flatten entries  inputMatrix^{currentRow})===false) then
-	       fullDataHashTable#(flatten entries  inputMatrix^{currentRow} ) = flatten entries inputMatrix^{currentRow+1}
-	  else
-	       if (fullDataHashTable#(flatten entries  inputMatrix^{currentRow})!= fullDataHashTable# (flatten entries  inputMatrix^{currentRow+1})) then
-		    throw "inconsistent input data ";
-	  currentRow=currentRow+1;
-     );
-     cols := numgens source inputMatrix;
-     resultFunctionListOfLists:={};
-          apply(cols, currCol->
-	       (
-		    dataHashTableForSingleVar:=copy fullDataHashTable;
-		    apply(keys fullDataHashTable, key -> 
-			 dataHashTableForSingleVar#key=(fullDataHashTable#key)_currCol
-		    );
-	            currFunctionList:=getSingleNcfList(dataHashTableForSingleVar,Permutation,fieldChar);
-		    resultFunctionListOfLists=resultFunctionListOfLists |{currFunctionList};	       
-	 ));
-     resultFunctionListOfLists
-)
-
-
   
 -- Generate a function that interpolates a given time course
 -- T is a Hash table, with T#Input(t)=Output(t+1)
@@ -225,6 +190,10 @@ convertDotStringToHashTable String := HashTable => content -> (
   dep
 )
 
+
+-- takes variable List 'variableNames' and dependency matrix 'adjDataMatrix':
+-- If  variableNames#j depends on variableNames#i then adjDataMatrix_i_j is equals to one, otherwise to zero
+-- returns a HashTable with the variable names X_i as keys; the corresponding entry is a list of variables X_i depends on.
 getWiring = method()
 getWiring(List, Matrix) := HashTable => (variableNames, adjDataMatrix) -> (
   dependencies := new MutableHashTable;
@@ -233,17 +202,41 @@ getWiring(List, Matrix) := HashTable => (variableNames, adjDataMatrix) -> (
   apply(#variableNames, colindex -> (
     deplist := {}; 
     apply (#variableNames, rowindex -> (
-      if (adjDataMatrix_rowindex_colindex == 1) then
+      if (adjDataMatrix_rowindex_colindex == 1_ZZ) then
         deplist = deplist|{variableNames_rowindex}
-      );
-      dependencies#[variableNames_colindex]=deplist
+      ));
+      dependencies#[variableNames_colindex]=deplist;
     )
-    )
-  );
+    );
   dependencies
 )
 
 beginDocumentation()
+
+doc ///
+Key
+  getWiring
+  (getWiring, List, Matrix)
+Headline
+  computes a HashTable with variable dependencies for given variable list and a given dependency matrix
+Usage
+ dependencyTable =  getWiring( variableList, dependencyMatrix );
+Inputs
+  variableList: List
+   a list of variable names
+  dependencyMatrix: Matrix
+   If  variableNames#j depends on variableNames#i then dependencyMatrix_i_j is equals to one, otherwise to zero	
+Outputs
+  DHT: HashTable 
+   with the variable names X_i as keys; the corresponding entry is a list of variables X_i depends on.
+Description
+  Text
+   computes a HashTable with variable dependencies for given variable list and a given dependency matrix
+  Example
+   varList = { "Elephant", "cat" , "mouse" } ;
+   dependencyMatrix = matrix { {0,1,0}, {0,0,0}, {0,0,1} }; 
+   dependencyTable  = getWiring( varList, dependencyMatrix )
+///
 
 doc ///
 Key
@@ -252,71 +245,40 @@ Key
 Headline
   Inferring nested canalyzing functions for given time-course data for a single variable
 Usage
-	        P = getSingleNcfList(TimeCourseDataTable, Permutation, Characteristic, generators)
+  P = getSingleNcfList(TimeCourseDataTable, Permutation, Characteristic, ringGenerators)
 Inputs
-	TimeCourseDataTable : HashTable
-	  with the time-course data for a single variable as a function of all variables . 
-	  The keys of the TimeCourseDataTable shoult be the variable values at time t 
-	  and the assigned entries are the values of the variable of interest at time (t+1)
-	Permutation : List
-	  with the wanted variable ordering
-	Characteristic : ZZ 
+  TimeCourseDataTable : HashTable
+   with the time-course data for a single variable as a function of all variables . 
+   The keys of the TimeCourseDataTable shoult be the variable values at time t 
+   and the assigned entries are the values of the variable of interest at time (t+1)
+  Permutation : List
+    with the wanted variable ordering
+  Characteristic : ZZ 
+  ringGenerators : List
 Outputs
  P : List
-    of nested canalyzing functions fitting the data for one variable which values are given with the input parameter "TimeCourseDataTable"
+  of nested canalyzing functions fitting the data for one variable which values are given with the input parameter "TimeCourseDataTable"
 Description
   Text
-	    For one variable, the complete list of all nested canalyzing 
-	    functions interpolating the given data set on the given time course data. 
-	    A function is in the output if it is nested canalyzing 
-	    in the given variable order
+   For one variable, the complete list of all nested canalyzing 
+   functions interpolating the given data set on the given time course data. 
+   A function is in the output if it is nested canalyzing 
+   in the given variable order (permutation)
   Example
-    T=new MutableHashTable;
+    T = new MutableHashTable;
     T#{1,1}=1;
     T#{1,0}=0;
     T#{0,1}=0;
     T#{0,0}=0;
     permutation = {0,1,2,3};
     fieldChar=2;
-    solutions = getSingleNcfList(T,permutation,fieldChar)
-SeeAlso
+    mons := monoid [x_1,x_4];
+    Field:=ZZ/fieldChar;
+    Rng=Field(mons);
+    gensR=gens Rng;
+    solutions = getSingleNcfList(T,permutation,fieldChar,gensR)
 ///
 
-doc ///
-Key
-  getNcfLists
-  (getNcfLists, Matrix, List, ZZ)
-Headline
-  Inferring nested canalyzing functions for given time-course data
-Usage
-	        P = getNcfList(TimeCourseDataTable, Permutation, Characteristic)
-Inputs
-	TimeCourseDataTable : Matrix
-	  with the time-course data
-	    
-	Permutation : List
-	  with the wanted variable ordering
-	Characteristic : ZZ 
-	  characteristic of the field. Each entry of the TimeCourseDataTable is converted to an element of the field
-Outputs
- P : List
-	 of Lists of nested canalyzing functions fitting the data for each variable,
-	 "P"_i is a list with the CNFs of the ith variable matching the input data for the given ordering (Permutation)
-Description
-  Text
-	    For each variable, the complete list of all nested canalyzing 
-	    functions interpolating the given data set on the given time course data. 
-	    A function is in the output if it is nested canalyzing 
-	    in the given variable order (permutation)
-  Example
-    inputMatrix = matrix { {1,1},  {1,0},  {0,1}, {0,0} ,{0,0} };
-    permutation = {0,1,2,3};
-    fieldChar=2;
-    field=ZZ/fieldChar;
-    inputMatrix=sub(inputMatrix,field)
-    solutions = getNcfLists(inputMatrix,permutation,fieldChar)
-    
-///
 
 doc ///
 Key
