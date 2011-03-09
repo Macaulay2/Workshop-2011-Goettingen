@@ -5,7 +5,7 @@ needsPackage "SimplicialComplexes"
 newPackage(
 	"KustinMiller",
     	Version => "1.1", 
-    	Date => "March 4, 2010",
+    	Date => "March 8, 2011",
     	Authors => {{Name => "Janko Boehm", 
 		  Email => "boehm@math.uni-sb.de", 
 		  HomePage => "http://www.math.uni-sb.de/ag/schreyer/jb/"},
