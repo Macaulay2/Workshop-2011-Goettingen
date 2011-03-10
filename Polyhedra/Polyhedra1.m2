@@ -2738,13 +2738,14 @@ newMinkSum = (P,Q) -> (
      n := ambDim P;
      HPP := hyperplanes P;
      HPQ := hyperplanes Q;
+     << "HPP: " << HPP << " HPQ: " << HPQ << endl;
      HP := if HPP == (0,0) or HPQ == (0,0) then (map(ZZ^0,ZZ^n,0),map(ZZ^0,ZZ^1,0)) else (
 	  k := transpose mingens ker transpose(HPP#0|| -HPQ#0);
-	  << "k: " << k << endl;
+	  --<< "k: " << k << endl;
 	  if k == 0 then (map(ZZ^0,ZZ^n,0),map(ZZ^0,ZZ^1,0)) else (
 	       dHPP := numRows HPP#0;
 	       (k_{0..dHPP-1} * HPP#0,k*(HPP#1||HPQ#1))));
-     << "HP: " << HP << endl;
+     --<< "HP: " << HP << endl;
      d := n - numRows(HP#0);
      if d != n then (
 	  if numRows HPP#0 == numRows HP#0 then HPP = (map(ZZ^0,ZZ^n,0),map(ZZ^0,ZZ^1,0)) else (
@@ -2757,7 +2758,10 @@ newMinkSum = (P,Q) -> (
      LP = LP | toList(max(0,d-#LP):{});
      LQ := reverse apply(dim Q + 1, k -> facePairBuilder(k,Q));
      LQ = LQ | toList(max(0,d-#LQ):{});
-     << "HP done." << endl;
+     << "LP: " << LP << " LQ: " << LQ << endl;
+     --<< "HP done." << endl << "d: " << d << endl;
+     --HPP = hyperplanes P;
+     --HPQ = hyperplanes Q;
      HS := unique flatten apply(d, i -> (
 	       if i == 0 then flatten for f in LQ#(d-1) list (
 		    if f#1 == {} then (
@@ -2785,18 +2789,27 @@ newMinkSum = (P,Q) -> (
 			 {(f#1#0#0,f#1#0#1 + matrix{{mQ}})}) else continue)
 	       else flatten for Pface in LP#i list (
 		    for Qface in LQ#(d-i-1) list (
+			 --<< "HPP: " << HPP << " HPQ: " << HPQ << endl;
+			 --HPP = apply(HPP, m-> m||-m);
+			 --HPQ = apply(HPQ, m-> m||-m);
 			 PfaceHS := if Pface#1 != {} then (matrix apply(Pface#1, f -> {f#0}) || HPP#0,matrix apply(Pface#1, f -> {f#1}) || HPP#1) else HPP;
 			 QfaceHS := if Qface#1 != {} then (matrix apply(Qface#1, f -> {f#0}) || HPQ#0,matrix apply(Qface#1, f -> {f#1}) || HPQ#1) else HPQ;
 			 dP := rank PfaceHS#0;
 			 dQ := rank QfaceHS#0;
+			 --<< "dP: "<< dP << " dQ: " << dQ << endl;
 			 PfaceHS = ((PfaceHS#0)^{0..dP-1},(PfaceHS#1)^{0..dP-1});
 			 QfaceHS = ((QfaceHS#0)^{0..dQ-1},(QfaceHS#1)^{0..dQ-1});
-			 kPQ := transpose mingens ker transpose(PfaceHS#0|| -QfaceHS#0); 
+			 --<< rank PfaceHS#0 << " " << rank QfaceHS#0 << endl;
+			 --<< Pface << "  " << Qface << endl;
+			 kPQ := transpose mingens ker transpose(PfaceHS#0|| -QfaceHS#0);
+			 --<<  kPQ << endl;
 			 if numRows kPQ != 1 then continue else (
+			      --<< "KPQ: " << kPQ << endl;
 			      dPfaceHS := numRows PfaceHS#0;
 			      newHS := kPQ_{0..dPfaceHS-1} * PfaceHS#0 | kPQ*(PfaceHS#1||QfaceHS#1);
 			      --newHS = transpose makePrimitiveMatrix newHS;
 			      newHS = (submatrix'(newHS,{n}),newHS_{n});
+			      --<< newHS << endl;
 			      checkValueP := (newHS#0 *(Pface#0#0#0))_(0,0);
 			      checkValueQ := (newHS#0 *(Qface#0#0#0))_(0,0);
 			      if all(flatten entries(newHS#0 *(vertices P)), e -> e <= checkValueP) and all(flatten entries(newHS#0 *(vertices Q)), e -> e <= checkValueQ) then (
@@ -2804,7 +2817,7 @@ newMinkSum = (P,Q) -> (
 			      else if all(flatten entries(newHS#0 *(vertices P)), e -> e >= checkValueP) and all(flatten entries(newHS#0 *(vertices Q)), e -> e >= checkValueQ) then (
 				   if all(Pface#0#1, r -> (newHS#0 *r)_(0,0) >= 0) and all(Qface#0#1, r -> (newHS*r)_(0,0) >= 0) then (-(newHS#0),-(newHS#1)) else continue) 
 			      else continue)))));
-     
+     << "HS: " << HS << endl;
      HS = (matrix apply(HS, e -> {first e}),matrix apply(HS, e -> {last e}));
      V := matrix {unique flatten apply(numColumns vertices P, i -> apply(numColumns vertices Q, j -> (vertices P)_{i}+(vertices Q)_{j}))};
      if V==0 then V = map(ZZ^(ambDim P),ZZ^1,0);
@@ -2812,7 +2825,7 @@ newMinkSum = (P,Q) -> (
      V = (map(QQ^1,source promote(V,QQ),(i,j)->1) || promote(V,QQ)) | (map(QQ^1,source R,0) || R);
      HS = sort makePrimitiveMatrix transpose(-(HS#1)|HS#0);
      HS = uniqueColumns HS;
-     print HP;
+     --print HP;
      HP = sort makePrimitiveMatrix transpose(-(HP#1)|HP#0);-- else HP = map(ZZ^(numColumns HP#0 + 1),ZZ^0,0);
      
      HP = uniqueColumns HP;

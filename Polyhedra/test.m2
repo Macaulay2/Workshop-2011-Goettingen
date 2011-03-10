@@ -5,7 +5,8 @@ fixme = false
 loadPackage "FourierMotzkin"
 load "Polyhedra1.m2"
 
-A = vertices hypercube 2
+A = hyperplanes hypercube 2
+
 C = posHull A
 
 B = map(QQ^2,QQ^4,0)
@@ -28,6 +29,8 @@ nef = dualCone eff
 
 p = convexHull transpose matrix {{1,0,0,0,0}}
 
+
+apply(hyperplanes p, m-> m||-m)
 --p = p + nef -- Die Zeile kann man weglavertex condition polytope halfspaces hyperplanes rankssen, dann bekommt man eine andere Fehlermeldung.
 
 p1 = convexHull transpose matrix {{0,0,0,0,0},{0,-1,0,0,0}}
@@ -44,6 +47,10 @@ r6 = convexHull transpose matrix {{0,0,0,0,0},{1,0,0,-1,-1}}
 
 --if R == {} then R = map(ZZ^(numRows LS),ZZ^0,0) else R = sort matrix {unique apply(R, makePrimitiveMatrix)};
    
+restart
+fixme = false
+loadPackage "FourierMotzkin"
+load "Polyhedra1.m2"
 p = convexHull transpose matrix {{1,0,0,0,0}};
 p1 = convexHull transpose matrix {{0,0,0,0,0},{0,-1,0,0,0}};
 p2 = convexHull transpose matrix {{0,0,0,0,0},{0,0,-1,0,0}};
