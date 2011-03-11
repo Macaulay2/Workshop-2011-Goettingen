@@ -20,10 +20,12 @@ export {listComplement,
         keelSum, 
 	keelSumList, 
 	keelAvg, 
+	keelAvgJK,
 	keelAvgList, 
 	bndJList,
 	keelAvgIndices,
 	coeffKinKeelAvgJ, 
+	coeffLinKeelAvgJK,
 	boundaryRing, 
 	fCurveIneqsLPSOLVE, 
 	fCurveIneqsMatrix, 
@@ -215,6 +217,23 @@ keelAvgList (Sequence, ZZ) := (J, n) -> (
 	   )
 --**************************************************************************      
 --**************************************************************************
+coeffLinKeelAvgJK = method()
+coeffLinKeelAvgJK (Sequence, Sequence, Sequence, ZZ) := (J, K, L, n) -> (
+     --Inputs two sequences J, K, where J gives the index of the 
+     -- boundary divisors D_J averaged over the Keel relations,
+     -- namely in keelAvg(J,n), and 
+     -- K gives the index of the boundary divisor whose coefficient
+     -- we seek in the average of D_J;
+     --Outputs the coefficient of D_K in the average D_J = (...)
+     avgJK := keelAvgJK(J, K, n);
+     nList := toList(1..n);
+     k:= 0;
+     bndIndices := select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );	
+     avgJK_(position(bndIndices, k -> toList L == k)) 
+     ) 
+
+--**************************************************************************      
+--**************************************************************************
 coeffKinKeelAvgJ = method()
 coeffKinKeelAvgJ (Sequence, Sequence, ZZ) := (K, J, n) -> (
      --Inputs two sequences J, K, where J gives the index of the 
@@ -296,6 +315,50 @@ fCurveIneqsLPSOLVE (ZZ, String) := (n, fileName)->(
      fileName << close;
      );
 
+--**************************************************************************      
+--**************************************************************************
+
+keelAvgJK = method();
+keelAvgJK(Sequence, Sequence, ZZ) := (J,K,n) ->(
+     
+     correctSets := (i, A, B, nList) -> (
+	  jList := subsets(listComplement(nList,flatten sequence unique flatten {toList A, toList B}),2);
+	  apply(jList, j-> { i, j})
+	  );
+     nList := toList(1..n);
+     if (#J > floor(n/2) or (#J == floor(n/2) and not isSubset({1},J)) ) then J = listComplement(nList, J);
+     if (#K > floor(n/2) or (#K == floor(n/2) and not isSubset({1},K)) ) then K = listComplement(nList, K);
+     Jc := listComplement(nList, J); 
+     Kc := listComplement(nList, K); 
+     bndIndices := select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );
+     avg:= toList (#bndIndices : 0);
+     ans := unique flatten apply(subsets(nList,2), i-> (
+	       if #(set i*set J)==2 and #(set i* set K)==2 then correctSets(i, J, K, nList)
+	       else if #(set i*set Jc)==2 and #(set i* set K)==2 then correctSets(i, Jc, K, nList)
+	       else if #(set i*set J)==2 and #(set i* set Kc)==2 then correctSets(i, J, Kc, nList)
+	       else if #(set i*set Jc)==2 and #(set i* set Kc)==2 then correctSets(i, Jc, Kc, nList)
+	       else {}
+     	       )
+	  );
+     ans = unique apply(select(ans, t-> t!={}), L -> (
+	       if L#0#0 < L#1#0 then {L#0,L#1}
+	       else {L#1,L#0}
+	       )
+	  );
+     counter:= 0; --should be 0
+     apply(ans, L-> (
+     	       i := L#0;
+	       j := L#1;
+	       counter = counter + 2;
+	       avg = avg - 2*keelSumList({i,j}, n) 
+		     + keelSumList({{i_0, j_0}, {i_1, j_1}}, n)
+		     + keelSumList({{i_0, j_1}, {i_1, j_0}}, n)
+		     + 2*bndJList(J,n);
+	       )
+
+	  );
+     avg/counter
+     )
 --**************************************************************************      
 --**************************************************************************
 
