@@ -16,7 +16,7 @@ export{getWiring, mainNCF, interpolate, idealOfPoints, ncfIdeal, kernPhi, getSin
 
 -- given a matrix with time course data for the variables in L
 -- extract only those time points of variables in inputs
--- deal with inconsistenties
+-- deal with inconsistencies
 -- T has the form T#{0,1,0,} = 1
 -- make table for x, depending on W#x
 extractTimecourse = method()
@@ -45,18 +45,22 @@ extractTimecourse (Matrix, List, String, HashTable) := HashTable => ( D, L, x, W
 
 
 -- Returns a List of Nested Canalyzing Functions for the given HashTable of one variable
--- T is the table with the expermental data, 
+-- T is the table with the experimental data, 
 -- sigma is a list with the wanted permutation,
 -- p is the Characteristic
 -- gensR: a list of names of generators
 getSingleNcfList = method()
 getSingleNcfList (HashTable, List, ZZ, List) := List => (T, sigma, p, gensR) -> (
-     n := #first keys T; -- Get number of variables
-     assert(n == #gensR);
+     if (#T > 0) then (     -- we have some time course data
+       n := #first keys T; -- Get number of variables
+       assert(n == #gensR)
+     ) else 
+       n = #gensR;
+
      R := ZZ/p[gensR];
      QR := R/ideal apply(gens R, x -> x^p - x);
-     g := interpolate(T, QR);
-     h := idealOfPoints(T, QR);
+     g := (interpolate(T, QR))_QR;      -- in case it is constant it must be in QR and not ZZ
+     h := (idealOfPoints(T, QR))_QR;
 
      C := ZZ/p[ vars(0..2^n-1) ];
      QC := C / ideal apply(gens C, x -> x^p - x);
@@ -356,12 +360,20 @@ TEST ///
 ///
 
 TEST ///
+  M = matrix {{0,0,0}, {0,1,0}, {1,1,0}, {0,1,1}, {1,1,1}}
   T=new MutableHashTable	   
   T#{0,0,0} = 1
   T#{0,1,0} = 1
   T#{1,1,0} = 0
   T#{0,1,1} = 1
   T#{1,1,1} = 0
+  L = {"GeneA", "GeneB", "ProteinA"};
+  W = new MutableHashTable;
+  W#"GeneA" = {"GeneA", "GeneB", "ProteinA"};
+  W#"GeneB" = {"GeneA", "GeneB", "ProteinA"};
+  W#"ProteinA" = {"GeneA", "GeneB", "ProteinA"};
+  mainNCF( L, W, M) 
+
   n = #first keys T 
   --assert( g == x_1*x_2*x_3+x_1*x_3+x_2*x_3+x_1+x_3+1)
   --assert( h == x_1*x_2*x_3+x_1*x_2+x_1*x_3+x_2*x_3+x_1+x_3 ) 
@@ -391,6 +403,11 @@ node1 -> node2;
   --extractTimecourse( D, L, "x2", W)
   s := mainNCF( L, W, D);
   assert( toString s == "{{x1*x2, x1*x2+x1}, {x1+1}}")
+///
+
+TEST ///
+  T = new HashTable
+  assert( toString getSingleNcfList(T, {}, 2, {"oneVariable"}) == "{oneVariable, oneVariable+1}")
 ///
 
 TEST ///
@@ -461,8 +478,12 @@ check "NCF"
 restart 
 loadPackage "NCF"
 W = convertDotFileToHashTable "wiring.out1.dot"
+--W = convertDotFileToHashTable "trastuzumab.dot"
 D = matrix { {0,0}, {0,1}, {0,1} }
 L = {"x1", "x2" }
+--L = apply( 19, i -> ( "x" | toString (i+1) ) )
+--D = matrix {{}}
+--T = new HashTable
 --extractTimecourse( D, L, "x1", W)
 --extractTimecourse( D, L, "x2", W)
 mainNCF( L, W, D)
