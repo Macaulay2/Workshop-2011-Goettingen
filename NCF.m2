@@ -411,6 +411,11 @@ TEST ///
 ///
 
 TEST ///
+  T = new HashTable
+  assert( toString getSingleNcfList(T, {}, 2, {"firstVariable", "secondVariable"}) == "{firstVariable*secondVariable, firstVariable*secondVariable+1, firstVariable*secondVariable+firstVariable, firstVariable*secondVariable+firstVariable+1, firstVariable*secondVariable+secondVariable, firstVariable*secondVariable+secondVariable+1, firstVariable*secondVariable+firstVariable+secondVariable, firstVariable*secondVariable+firstVariable+secondVariable+1}")
+///
+
+TEST ///
   --W = convertDotFileToHashTable "wiring.out1.dot"
   W = convertDotStringToHashTable "digraph test {
   node1 [label=\"x1\", shape=\"box\"];
