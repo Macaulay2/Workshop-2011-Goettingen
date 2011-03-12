@@ -302,14 +302,48 @@ secondSecant(List,List,List) := (lam0,lam1,lam2) ->
      T0 := for i from 0 to #tlam0 - 1 list (l = splice{spar+1..spar+tlam0#i};spar = spar + tlam0#i;l);
      sTab1 := StdTab#(lam1,splice{d:1});
      sTab2 := StdTab#(lam2,splice{d:1});
+     
+     tsort := new MutableHashTable;
+     perm := new MutableHashTable;
+     sg := new MutableHashTable;
+     for a in sTab1 do
+     (
+     	posort := flatten for colT0 in T0 list sort (posTab#a)_colT0;
+	ts := new MutableList;
+	for po from 0 to #posort-1 do ts#(posort#po) = po;
+	ts = new List from ts;
+	newa := new MutableList from splice{#a:{}};
+	cola := flatten for i from 0 to #a-1 list splice{#(a#i):i};
+	for po from 0 to #ts-1 do newa#(cola#po) = newa#(cola#po) | {ts#po+1};
+	tsort#a = toList newa;
+	perm#a = new MutableList;
+	for ia from 0 to #a-1 do
+	    for r from 0 to #(a#ia)-1 do
+		perm#a#((a#ia)#r) = (newa#ia)#r;
+	perm#a = toList perm#a;
+	sg#a = sgn drop(toList perm#a,1);
+     	  );
+     sTab1 = select(sTab1,t->(sel := true;
+	       pT := posTab#t;
+	       for col in T0 do
+	       for i from 0 to #col-2 do
+	       if pT#(col#i)>pT#(col#(i+1)) then (sel = false;break;);
+	       sel));
      indR := flatten for i in sTab1 list for j in sTab2 list {i,j};
+     indR = select(indR,T->(sel := true;
+	       for ke in keys pairsTab#T0 do
+	       if pairsTab#(T#0)#?ke and pairsTab#(T#1)#?ke then
+	       (sel = false;break;);
+	       sel));
      print(#indR);
-     gensR := indR/(i->z_i);
-     R := QQ[gensR,MonomialSize=>4];
-     QR := QQ[];
+     ind := new MutableHashTable;
+     for i from 0 to #indR-1 do ind#(indR#i) = i;
+     ind = new HashTable from ind;
+
+     QR := kk[];
      rels := matrix{#indR:{0_QR}};
 
-     time for col in T0 do
+{*     time for col in T0 do
      	  for i from 0 to #col-2 do
 	  (
 	       j := #col-1;
@@ -337,6 +371,7 @@ secondSecant(List,List,List) := (lam0,lam1,lam2) ->
 			 );
 	       rels = rels | matrix(rel);
 	       );
+*}
       for co from 0 to #T0-2 do
       (
  	       col := T0#co;
@@ -354,21 +389,28 @@ secondSecant(List,List,List) := (lam0,lam1,lam2) ->
 					     else r)))));
 		    );
 	       print("relations");
-	       rel := mutableMatrix(QR,#sTab1*#sTab2,#sTab1*#sTab2);
+	       rel := mutableMatrix(QR,#indR,#indR);
 	       c := 0;
      	       time for i1 from 0 to #sTab1-1 do
 	       	    for i2 from 0 to #sTab2-1 do
      	       	    (
 		    T := {sTab1#i1,sTab2#i2};
+		    try (ind#T) else continue;
      		    for i from 0 to #col - 1 do
 		    (
 			 strT1 := newsTab1#i#i1;
 			 strT2 := newsTab2#i#i2;
 			 for a in keys strT1 do
 			      for b in keys strT2 do
-			      	   rel_(index(z_({a,b})),c) = rel_(index(z_({a,b})),c)+strT1#a*strT2#b;
+			      (
+				   newa := tsort#a;
+				   lisnewb := straighten apply(b,x->(x/(y->perm#a#y)));
+				   coe := sg#a * strT1#a * strT2#b;
+				   for newb in keys lisnewb do
+					try(rel_(ind#({newa,newb}),c) = rel_(ind#({newa,newb}),c) + coe*lisnewb#newb);
+				   );
 			 );
-		    rel_(index(z_T),c) = rel_(index(z_T),c) - 1;
+		    rel_(ind#T,c) = rel_(ind#T,c) - 1;
   		    c = c + 1;
 		    );
 	       rels = rels | matrix(rel);
@@ -380,23 +422,33 @@ secondSecant(List,List,List) := (lam0,lam1,lam2) ->
      	  grbin := forceGB leadTerm grb;
      	  mat := id_(QR^(#indR)) % grbin;
      	  indR = select(for i from 0 to #indR-1 list if mat_{i} != 0 then indR#i else null,i->i=!= null);
-     	  gensR = indR/(i->z_i);
-     	  R = QQ[gensR,MonomialSize=>4];
-     	  print(#indR);
-	  print(#indR == scalarProduct(internalProduct(Q_(lam0),Q_(lam1)),Q_(lam2)));
 	  );
      
+     gensR = indR/(i->z_i);
+     R = kk[gensR,MonomialSize=>4];
+     print(#indR);
+     print(#indR == scalarProduct(internalProduct(Q_(lam0),Q_(lam1)),Q_(lam2)));
      kerf := ideal(1_R);
      
 for p in kpar do
 (
+     print(p);
      sT0 := StdTab#(lam0,p);
      sT1 := StdTab#(lam1,p);
      sT2 := StdTab#(lam2,p);
-     gensS := sT0/(i->A_i)|sT1/(i->B_i)|sT2/(i->C_i);
-     S := QQ[gensS,MonomialSize=>4];
+     A := getSymbol"A";
+     B := getSymbol"B";
+     C := getSymbol"C";          
+     gensA := sT0/(i->A_i);
+     gensB := sT1/(i->B_i);
+     gensC := sT2/(i->C_i);
+     gensS := gensA | gensB | gensC;
+     S := kk[gensS,MonomialSize=>4];
      if #gensS == 0 then continue;--because kernel of map to QQ[] has a bug
-     f := map(S,R,for T in indR list
+     gensA = value \ gensA;
+     gensB = value \ gensB;
+     gensC = value \ gensC;
+     time f := map(S,R,for T in indR list
 	  (
      	       T1 := T#0;
 	       T2 := T#1;
@@ -404,15 +456,18 @@ for p in kpar do
 	       sum for pa in pars list
 	       (
 		    sTr0 := straighten(T0/(i->(i/(j->pa#(j-1)))));
-		    pA := apply(keys sTr0,i->if (sTr0#i == 0) then 0 else sTr0#i * A_i)//sum;
+		    pA := apply(keys sTr0,i->if (sTr0#i == 0) then 0 else sTr0#i * value A_i)//sum;
 		    sTr1 := straighten(T1/(i->(i/(j->pa#(j-1)))));
-		    pB := apply(keys sTr1,i->if (sTr1#i == 0) then 0 else sTr1#i * B_i)//sum;
+		    pB := apply(keys sTr1,i->if (sTr1#i == 0) then 0 else sTr1#i * value B_i)//sum;
 		    sTr2 := straighten(T2/(i->(i/(j->pa#(j-1)))));
-		    pC := apply(keys sTr2,i->if (sTr2#i == 0) then 0 else sTr2#i * C_i)//sum;
+		    pC := apply(keys sTr2,i->if (sTr2#i == 0) then 0 else sTr2#i * value C_i)//sum;
 		    pA*pB*pC
 		    )
 	       ));
-     kerf = intersect(kerf, ker f);
+     deg3 := gens(promote(ideal(gensA),S)*promote(ideal(gensB),S)*promote(ideal(gensC),S));
+     mat := lift(contract(transpose deg3,f.matrix),kk);
+     ke := gens(ker mat);
+     time kerf = intersect(kerf, ideal(matrix{gens R}*ke));
      kerf = ideal({0_R}|select(flatten entries gens kerf,i->degree i == {1}));
      );
 --(numgens R-numgens source mingens kerf,(gens R)%kerf)
@@ -430,12 +485,6 @@ recsyz (RingElement) := (el) ->
 ----end 2nd secant
 
 end
-
-restart
-load "tableaux.m2"
-loadPackage"SchurRings"
-S = schurRing(QQ,s,6)
-scalarProduct(s_{2}^3,s_{4,2}) == #standardTableaux({4,2},{2,2,2})
 
 restart
 load "tableaux.m2"
@@ -492,13 +541,15 @@ restart
 loadPackage"SchurRings"
 load"tableaux.m2"
 
-d = 9
+kk = ZZ/32003
+
+d = 10
 k = 3
 
 Q = schurRing(QQ,q,d)
-S1 = schurRing(QQ,s1,3)
-S2 = schurRing(S1,s2,3)
-S3 = schurRing(S2,s3,3)
+S1 = schurRing(QQ,s1,k)
+S2 = schurRing(S1,s2,k)
+S3 = schurRing(S2,s3,k)
 
 s = s1_{1}*s2_{1}*s3_{1}
 sP = symmetricPower(d,s);
@@ -513,16 +564,42 @@ time for lam in partsd do
      	  StdTab#(lam,par) = standardTableaux(lam,par)
 
 par = splice{d:1}
+posTab = new MutableHashTable;
+pairsTab = new MutableHashTable;
 time for lam in partsd do
+(
      StdTab#(lam,par) = standardTableaux(lam,par);
-     
+     for t in StdTab#(lam,par) do
+     (
+	  lpos = new MutableList;
+	  pos = 0;
+	  for col in t do
+     	       for i from 0 to #col-1 do
+	       ( 
+		    lpos#(col#i) = pos;
+	       	    pos = pos + 1;
+		    );
+	  posTab#t = toList lpos;
+	  pairsTab#t = new MutableHashTable;
+	  for col in t do
+	       for i from 0 to #col-2 do
+	       	    for j from i+1 to #col-1 do
+		    	 pairsTab#t#(col#i,col#j) = 0;
+	  );
+     )
+
 pd = partsd
 
 hilbFcnd = 0
 
+--secondSecant({4,3,3},{4,3,3},{4,3,3}) -- 0
+--secondSecant({3,3,3},{3,3,3},{3,3,3}) -- 0
+--secondSecant({4,3,2},{4,3,2},{3,3,3}) -- 1
+--secondSecant({3,3,3},{3,3,3},{4,4,1}) -- 1
+
 --secondSecant({9},{7,2},{7,2})
 
-for i0 from 0 to #pd-1 do
+time for i0 from 0 to #pd-1 do
      for i1 from i0 to #pd-1 do
      	  for i2 from i1 to #pd-1 do
 	  (
@@ -542,11 +619,90 @@ for i0 from 0 to #pd-1 do
 		    )
      	       )
 hilbFcnd
---hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*s--degree 5--works
---hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(2,s)-S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}-S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}-S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2}-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*s--degree 6--works
---hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(3,s)-(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*s-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(2,s)+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*s--degree 7--works
-time hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(4,s)-(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*symmetricPower(2,s)-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(3,s)+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*symmetricPower(2,s)--degree 8--works
+sP - hilbFcnd - (S1_{2,1,1,1}*S2_{2,1,1,1}*S3_{3,1,1}+S1_{2,1,1,1}*S3_{2,1,1,1}*S2_{3,1,1}+S3_{2,1,1,1}*S2_{2,1,1,1}*S1_{3,1,1})*symmetricPower(2,s)-
+(S1_{2,2,2}*S2_{2,2,2}*S3_{3,1,1,1}+S1_{2,2,2}*S3_{2,2,2}*S2_{3,1,1,1}+S3_{2,2,2}*S2_{2,2,2}*S1_{3,1,1,1})*s
+oo-recsyz(oo)
 
+--h5 = hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*s--degree 5--works
+--h6 = hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(2,s)-S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}-S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}-S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2}-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*s--degree 6--works
+--h7 = hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(3,s)-(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*s-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(2,s)+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*s--degree 7--works
+time h8 = hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(4,s)-(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*symmetricPower(2,s)-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(3,s)+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*symmetricPower(2,s)--degree 8--works
 
-Q = schurRing(QQ,q,6)
-internalProduct(q_{3,1,1},q_{3,1,1})
+h9 = symmetricPower(9,s)-S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(5,s)+
+(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*symmetricPower(3,s)+
+S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(4,s)-
+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*symmetricPower(3,s)-
+(S1_{3,3,3}*S2_{3,3,3}*S3_{3,3,3}+S1_{4,4,1}*S2_{3,3,3}*S3_{3,3,3}+S3_{4,4,1}*S2_{3,3,3}*S1_{3,3,3}+S2_{4,4,1}*S1_{3,3,3}*S3_{3,3,3}+
+S1_{3,3,3}*S2_{4,3,2}*S3_{4,3,2}+S3_{3,3,3}*S2_{4,3,2}*S1_{4,3,2}+S2_{3,3,3}*S1_{4,3,2}*S3_{4,3,2})--degree 9--seems to work
+
+--hilbFcnd-h9--works
+
+h10 = symmetricPower(10,s)-S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(6,s)+
+(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*symmetricPower(4,s)+
+S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(5,s)-
+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*symmetricPower(4,s)-
+(S1_{3,3,3}*S2_{3,3,3}*S3_{3,3,3}+S1_{4,4,1}*S2_{3,3,3}*S3_{3,3,3}+S3_{4,4,1}*S2_{3,3,3}*S1_{3,3,3}+S2_{4,4,1}*S1_{3,3,3}*S3_{3,3,3}+
+S1_{3,3,3}*S2_{4,3,2}*S3_{4,3,2}+S3_{3,3,3}*S2_{4,3,2}*S1_{4,3,2}+S2_{3,3,3}*S1_{4,3,2}*S3_{4,3,2})*s+
+--(S1_{4,3,3}*S2_{4,3,3}*S3_{4,3,3}+S1_{4,3,3}*S2_{4,3,3}*S3_{4,4,2}+S2_{4,3,3}*S1_{4,4,2}*S3_{4,3,3}+S3_{4,3,3}*S2_{4,4,2}*S1_{4,3,3})--degree 10
+(S1_{4,3,3}*S2_{4,3,3}*S3_{4,3,3}+S1_{4,3,3}*S2_{4,4,2}*S3_{4,4,2}+S2_{4,3,3}*S1_{4,4,2}*S3_{4,4,2}+S3_{4,3,3}*S2_{4,4,2}*S1_{4,4,2})--wrong
+
+recsyz(h10)
+recsyz(h10-S1_{4,3,3}*S2_{4,4,2}*S3_{4,4,2})
+
+h11 = symmetricPower(11,s)-S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(7,s)+
+(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*symmetricPower(5,s)+
+S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(6,s)-
+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*symmetricPower(5,s)-
+(S1_{3,3,3}*S2_{3,3,3}*S3_{3,3,3}+S1_{4,4,1}*S2_{3,3,3}*S3_{3,3,3}+S3_{4,4,1}*S2_{3,3,3}*S1_{3,3,3}+S2_{4,4,1}*S1_{3,3,3}*S3_{3,3,3}+
+S1_{3,3,3}*S2_{4,3,2}*S3_{4,3,2}+S3_{3,3,3}*S2_{4,3,2}*S1_{4,3,2}+S2_{3,3,3}*S1_{4,3,2}*S3_{4,3,2})*symmetricPower(2,s)+
+(S1_{4,3,3}*S2_{4,3,3}*S3_{4,3,3}+2*S1_{4,3,3}*S2_{4,3,3}*S3_{4,4,2}+2*S2_{4,3,3}*S1_{4,4,2}*S3_{4,3,3}+2*S3_{4,3,3}*S2_{4,4,2}*S1_{4,3,3})*s- --degree 11
+(S1_{4,4,3}*S2_{4,4,3}*S3_{4,4,3}+S1_{4,4,3}*S2_{4,4,3}*S3_{5,3,3}+S2_{4,4,3}*S1_{5,3,3}*S3_{4,4,3}+S3_{4,4,3}*S2_{5,3,3}*S1_{4,4,3})
+
+recsyz(h11)
+
+h12 = symmetricPower(12,s)-S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(8,s)+
+(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*symmetricPower(6,s)+
+S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(7,s)-
+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*symmetricPower(6,s)-
+(S1_{3,3,3}*S2_{3,3,3}*S3_{3,3,3}+S1_{4,4,1}*S2_{3,3,3}*S3_{3,3,3}+S3_{4,4,1}*S2_{3,3,3}*S1_{3,3,3}+S2_{4,4,1}*S1_{3,3,3}*S3_{3,3,3}+
+S1_{3,3,3}*S2_{4,3,2}*S3_{4,3,2}+S3_{3,3,3}*S2_{4,3,2}*S1_{4,3,2}+S2_{3,3,3}*S1_{4,3,2}*S3_{4,3,2})*symmetricPower(3,s)+
+(S1_{4,3,3}*S2_{4,3,3}*S3_{4,3,3}+2*S1_{4,3,3}*S2_{4,3,3}*S3_{4,4,2}+2*S2_{4,3,3}*S1_{4,4,2}*S3_{4,3,3}+2*S3_{4,3,3}*S2_{4,4,2}*S1_{4,3,3})*symmetricPower(2,s)- --degree 12
+(S1_{4,4,3}*S2_{4,4,3}*S3_{4,4,3}+S1_{4,4,3}*S2_{4,4,3}*S3_{5,3,3}+S2_{4,4,3}*S1_{5,3,3}*S3_{4,4,3}+S3_{4,4,3}*S2_{5,3,3}*S1_{4,4,3})*s
+
+recsyz(h12)
+
+h13 = symmetricPower(13,s)-S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(9,s)+
+(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*symmetricPower(7,s)+
+S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(8,s)-
+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*symmetricPower(7,s)-
+(S1_{3,3,3}*S2_{3,3,3}*S3_{3,3,3}+S1_{4,4,1}*S2_{3,3,3}*S3_{3,3,3}+S3_{4,4,1}*S2_{3,3,3}*S1_{3,3,3}+S2_{4,4,1}*S1_{3,3,3}*S3_{3,3,3}+
+S1_{3,3,3}*S2_{4,3,2}*S3_{4,3,2}+S3_{3,3,3}*S2_{4,3,2}*S1_{4,3,2}+S2_{3,3,3}*S1_{4,3,2}*S3_{4,3,2})*symmetricPower(4,s)+
+(S1_{4,3,3}*S2_{4,3,3}*S3_{4,3,3}+2*S1_{4,3,3}*S2_{4,3,3}*S3_{4,4,2}+2*S2_{4,3,3}*S1_{4,4,2}*S3_{4,3,3}+2*S3_{4,3,3}*S2_{4,4,2}*S1_{4,3,3})*symmetricPower(3,s)- --degree 12
+(S1_{4,4,3}*S2_{4,4,3}*S3_{4,4,3}+S1_{4,4,3}*S2_{4,4,3}*S3_{5,3,3}+S2_{4,4,3}*S1_{5,3,3}*S3_{4,4,3}+S3_{4,4,3}*S2_{5,3,3}*S1_{4,4,3})*symmetricPower(2,s)+
+(S1_{6,3,3}*S2_{4,4,4}*S3_{4,4,4}+S1_{4,4,4}*S2_{6,3,3}*S3_{4,4,4}+S1_{4,4,4}*S2_{4,4,4}*S3_{6,3,3})*symmetricPower(1,s)
+
+recsyz(h13)
+
+h14 = symmetricPower(14,s)-S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(10,s)+
+(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*symmetricPower(8,s)+
+S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(9,s)-
+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*symmetricPower(8,s)-
+(S1_{3,3,3}*S2_{3,3,3}*S3_{3,3,3}+S1_{4,4,1}*S2_{3,3,3}*S3_{3,3,3}+S3_{4,4,1}*S2_{3,3,3}*S1_{3,3,3}+S2_{4,4,1}*S1_{3,3,3}*S3_{3,3,3}+
+S1_{3,3,3}*S2_{4,3,2}*S3_{4,3,2}+S3_{3,3,3}*S2_{4,3,2}*S1_{4,3,2}+S2_{3,3,3}*S1_{4,3,2}*S3_{4,3,2})*symmetricPower(5,s)+
+(S1_{4,3,3}*S2_{4,3,3}*S3_{4,3,3}+2*S1_{4,3,3}*S2_{4,3,3}*S3_{4,4,2}+2*S2_{4,3,3}*S1_{4,4,2}*S3_{4,3,3}+2*S3_{4,3,3}*S2_{4,4,2}*S1_{4,3,3})*symmetricPower(4,s)- --degree 12
+(S1_{4,4,3}*S2_{4,4,3}*S3_{4,4,3}+S1_{4,4,3}*S2_{4,4,3}*S3_{5,3,3}+S2_{4,4,3}*S1_{5,3,3}*S3_{4,4,3}+S3_{4,4,3}*S2_{5,3,3}*S1_{4,4,3})*symmetricPower(3,s)+
+(S1_{6,3,3}*S2_{4,4,4}*S3_{4,4,4}+S1_{4,4,4}*S2_{6,3,3}*S3_{4,4,4}+S1_{4,4,4}*S2_{4,4,4}*S3_{6,3,3})*symmetricPower(2,s)
+
+recsyz(h14)
+
+h15 = symmetricPower(15,s)-S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(11,s)+
+(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*symmetricPower(9,s)+
+S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(10,s)-
+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*symmetricPower(9,s)-
+(S1_{3,3,3}*S2_{3,3,3}*S3_{3,3,3}+S1_{4,4,1}*S2_{3,3,3}*S3_{3,3,3}+S3_{4,4,1}*S2_{3,3,3}*S1_{3,3,3}+S2_{4,4,1}*S1_{3,3,3}*S3_{3,3,3}+
+S1_{3,3,3}*S2_{4,3,2}*S3_{4,3,2}+S3_{3,3,3}*S2_{4,3,2}*S1_{4,3,2}+S2_{3,3,3}*S1_{4,3,2}*S3_{4,3,2})*symmetricPower(6,s)+
+(S1_{4,3,3}*S2_{4,3,3}*S3_{4,3,3}+2*S1_{4,3,3}*S2_{4,3,3}*S3_{4,4,2}+2*S2_{4,3,3}*S1_{4,4,2}*S3_{4,3,3}+2*S3_{4,3,3}*S2_{4,4,2}*S1_{4,3,3})*symmetricPower(5,s)- --degree 12
+(S1_{4,4,3}*S2_{4,4,3}*S3_{4,4,3}+S1_{4,4,3}*S2_{4,4,3}*S3_{5,3,3}+S2_{4,4,3}*S1_{5,3,3}*S3_{4,4,3}+S3_{4,4,3}*S2_{5,3,3}*S1_{4,4,3})*symmetricPower(4,s)+
+(S1_{6,3,3}*S2_{4,4,4}*S3_{4,4,4}+S1_{4,4,4}*S2_{6,3,3}*S3_{4,4,4}+S1_{4,4,4}*S2_{4,4,4}*S3_{6,3,3})*symmetricPower(3,s)
+
+recsyz(h15)
