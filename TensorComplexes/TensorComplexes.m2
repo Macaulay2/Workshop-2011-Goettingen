@@ -500,7 +500,7 @@ wedgeDToWedgeSparse (Module, Module) := (F,G) -> (
      dbf1 := rank DbF1;
      F1 := (underlyingModules DbF1)#0;
      f1 := rank F1;     
-     F0F1 = (underlyingModules G)#0;
+     F0F1 := (underlyingModules G)#0;
      if F0 != (underlyingModules F0F1)#0 then error"bad modules";
      if F1 != (underlyingModules F0F1)#1 then error"bad modules";     
 
@@ -516,7 +516,7 @@ wedgeDToWedgeSparse (Module, Module) := (F,G) -> (
      -- (p0 wedge p1..) \otimes product q 
      -- in F and 
      --(p0\otimes q0) \wedge (p1\otimes q1)... 
-     --
+     -- in G.
      entryList := apply(P0,p -> apply(P1, q-> (
 		    i := (toOrdinal G) apply(#p, i->{p_i,q_i});
 		    j := (toOrdinal F) {p,sort q};
@@ -541,11 +541,11 @@ DbF1 = makeSymmetricPower(F1, b);
 F = makeTensorProduct{WbF0, DbF1};
 G = makeExteriorPower(makeTensorProduct{F0,F1},b);
 wedgeDToWedgeSparse(F,G);
-map(F,G,entryList#0)
+A = map(F,G,entryList#0)
+rank A
 rank F
 rank G
-break
-basisList F1
+
 
 test = (b, r0,r1) ->(
 F0 = S^r0;
