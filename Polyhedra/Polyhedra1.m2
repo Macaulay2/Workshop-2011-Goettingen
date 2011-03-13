@@ -2759,7 +2759,7 @@ newMinkSum = (P,Q) -> (
      LQ := reverse apply(dim Q + 1, k -> facePairBuilder(k,Q));
      LQ = LQ | toList(max(0,d-#LQ):{});
      << "LP: " << LP << " LQ: " << LQ << endl;
-     --<< "HP done." << endl << "d: " << d << endl;
+     << "HP done." << endl << "d: " << d << endl;
      --HPP = hyperplanes P;
      --HPQ = hyperplanes Q;
      HS := unique flatten apply(d, i -> (
