@@ -395,8 +395,6 @@ F = makeSymmetricPower(F2, 3)
 DtoTensor F
 ///
 
-
---still not quite right
 wedgeDToWedge = method()
 wedgeDToWedge (Module, Module) := (F,G) -> (
      --requires 
@@ -406,6 +404,8 @@ wedgeDToWedge (Module, Module) := (F,G) -> (
      --creates the equivariant embedding F->G.
      
      --sort out the underlying modules and ranks
+     S := ring F;
+     rankF := rank F;
      WbF0 := (underlyingModules F)#0;
      wbf0 := rank WbF0;
      F0 := (underlyingModules WbF0)#0;
@@ -436,63 +436,134 @@ wedgeDToWedge (Module, Module) := (F,G) -> (
      I := id_(S^(binomial(f1,b)));
 	  
      map(G,F,(i,j)->(
-     BF := (fromOrdinal F) j; -- a pair consisting of 
-     BF0 := BF#0; -- b-tuple of elts of F0 (distinct and in order)
-     BF1 := BF#1; -- b-tuple of elts of F1 (with repetitions and in order)
-
-     BG := (fromOrdinal G) i; -- a b-tuple of elts of F0F1
-     BG0 := BG/first; -- corresponds to an element of wedge^b F0 (in order, not nec distinct)
-     BG1 := BG/last; -- corresponds to an element of wedge^b F1 (maybe not in ord or distinct)
-
-     if BG0 != BF0 then return 0_S; -- this uses that both BG0 and BF0 are in order. 
-     SG1 := set BG1; 
-     if  #SG1 != binomial(f1,b) or SG1 != set BF1 then return 0_S;
-     det(I_BG1^BF1)
-     )
-	  )
+     BG = (fromOrdinal G) i;
+     BF = (fromOrdinal F) j;
+     BG0 = BG/first; -- corresponds to an element of wedge^b F0
+     BG1 = BG/last; -- corresponds to an element of wedge^b F1
+     BF0 =  first BF; -- element of wedge^b F0
+     BF1 = last BF;-- corresponds to an element of D^b F1
+     if BG0 == BF0 and BF1 == sort BG1 then 1_S else 0_S))
 )
+
+
+
 
 ///
 --map of wedge^d A \otimes Sym^d B to wedge^d(A\otimes B).
 restart
 load "~/src/Goettingen-2011/TensorComplexes/TensorComplexes.m2"
 kk = ZZ/101
-S = kk[x,y]
-b = 2
-F0 = S^2
-WbF0 = makeExteriorPower(F0,b)
-F1 = S^1
-DbF1 = makeSymmetricPower(F1, b)
+S = kk[x,y,z]
+b = 2 
+r0=3
+r1 = 4
 
-F = makeTensorProduct{WbF0, DbF1}
-uM F
-makeExplictFreeModule F
+test = (b, r0,r1) ->(
+F0 = S^r0;
+F1 = S^r1;
+WbF0 = makeExteriorPower(F0,b);
+DbF1 = makeSymmetricPower(F1, b);
+F = makeTensorProduct{WbF0, DbF1};
+G = makeExteriorPower(makeTensorProduct{F0,F1},b);
+print(rank F, rank G);
+time A = wedgeDToWedge(F,G);
+rank A == rank source A)
 
-uM F
+test(3,5,3)
 
-H = makeTensorProduct{F0,F1}
-uM F
+///
 
-G = makeExteriorPower(H,b)
-uM F
 
-wedgeDToWedge(F,G)
+--this could presumably be done faster by creating a sparse matrix and filling in where the 1's are.
+--the number of 1's is 
+-- binomial(f0, b) * (f1)^b (these correspond to a subset of the basis of G)
+--while the number of elements of the matrix is 
+--binomial(f0*f1,b)*binomial(f0,b)*binomial(f1+b-1, b).
 
-T = makeTensorProduct(FF2,FF3)
 
-BF0
-BF1
-BG0
-BG1
-for i from 0 to rank G -1 do for j from 0 to rank F -1 do(
-     BG = (fromOrdinal G) i;
-     BF = (fromOrdinal F) j;
-     BG0 = BG/first; -- corresponds to an element of wedge^b F0
-     BG1 = BG/last; -- corresponds to an element of wedge^b F1
-     BF0 =  BF_{0..b -1};
-     BF1 = BF_{b..2*b-1};-- corresponds to an element of D^b F1
-     print (BG1, BF1))
+wedgeDToWedgeSparse = method()
+wedgeDToWedgeSparse (Module, Module) := (F,G) -> (
+     --requires 
+     -- F =  wedge^b F0 \otimes D^b(F1)
+     --and 
+     -- G = wedge^b(F0\otimes F1).
+     --creates the equivariant injection F -> G.
+     
+     --sort out the underlying modules and ranks
+     S := ring F;
+     rankF := rank F;
+     WbF0 := (underlyingModules F)#0;
+     F0 := (underlyingModules WbF0)#0;
+     f0 := rank F0;
+     wbf0 := rank WbF0;
+     DbF1 := (underlyingModules F)#1;
+     dbf1 := rank DbF1;
+     F1 := (underlyingModules DbF1)#0;
+     f1 := rank F1;     
+     F0F1 = (underlyingModules G)#0;
+     if F0 != (underlyingModules F0F1)#0 then error"bad modules";
+     if F1 != (underlyingModules F0F1)#1 then error"bad modules";     
+
+     --find b
+     b:=0;     
+     while binomial(f1+b-1,b)<dbf1 do b = b+1;
+     
+
+     P0 := basisList WbF0; -- list of strictly ordered b-tuples of basis elements of F0
+     P1 := productList toList(b:basisList F1); -- list of unordered b-tuples of basis elements of F1
+     --make the map as a sparse matrix, with a 1 for each element (p,q) \in P0 x P1, in position corresponding
+     --to the position of the basis element 
+     -- (p0 wedge p1..) \otimes product q 
+     -- in F and 
+     --(p0\otimes q0) \wedge (p1\otimes q1)... 
+     --
+     entryList := apply(P0,p -> apply(P1, q-> (
+		    i := (toOrdinal G) apply(#p, i->{p_i,q_i});
+		    j := (toOrdinal F) {p,sort q};
+		    (i,j) => 1_S)));
+     map(G,F, entryList#0)
 )
 ///
+
+--map of wedge^d A \otimes Sym^d B to wedge^d(A\otimes B).
+restart
+load "~/src/Goettingen-2011/TensorComplexes/TensorComplexes.m2"
+kk = ZZ/101
+S = kk[x,y,z]
+b = 2 
+r0 = 2
+r1 = 3
+
+F0 = S^r0;
+F1 = S^r1;
+WbF0 = makeExteriorPower(F0,b);
+DbF1 = makeSymmetricPower(F1, b);
+F = makeTensorProduct{WbF0, DbF1};
+G = makeExteriorPower(makeTensorProduct{F0,F1},b);
+wedgeDToWedgeSparse(F,G);
+map(F,G,entryList#0)
+rank F
+rank G
+break
+basisList F1
+
+test = (b, r0,r1) ->(
+F0 = S^r0;
+F1 = S^r1;
+WbF0 = makeExteriorPower(F0,b);
+DbF1 = makeSymmetricPower(F1, b);
+F = makeTensorProduct{WbF0, DbF1};
+G = makeExteriorPower(makeTensorProduct{F0,F1},b);
+print(rank F, rank G);
+time A = wedgeDToWedgeSparse(F,G);
+rank A == rank source A)
+
+test(3,5,3)
+
+
+
+productList 
+///
+
 end
 
