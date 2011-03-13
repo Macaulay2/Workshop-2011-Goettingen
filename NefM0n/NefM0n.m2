@@ -687,9 +687,9 @@ c123 = cJinD((1,2,3), 7);
 zeros = transpose matrix {toList (numRows (matrix F) : 0)};
 A = zeros | matrix F;
       
-Ac123 = matrix flatten {entries A,{flatten {{1},c}}, {flatten {{-1},-c}}};      
+Ac123 = matrix flatten {entries A,{flatten {{1},c123}}, {flatten {{-1},-c123}}};      
           
-val = minimalValue(A, vector flatten {0,c})
+val = minimalValue(Ac123, vector flatten {0,c123})
 
 c124 = cJinD((1,2,4), 7)
 coeffKinKeelAvgJ ((1,2,4), (1,2,3), 7)
@@ -700,8 +700,28 @@ minimalValue(Ac123, vector flatten {0,c124})
 c145 = cJinD((1,4,), 7)
 coeffKinKeelAvgJ ((1,4,5), (1,2,3), 7)
 minimalValue(Ac123, vector flatten {0,c145})
---get c145 >= 0, but need c145 >= 1/6
+--get c145 >= 0, but need c145 >= 1/6, so assume -1 <= c145 <= 1/6, 
+-- and try new representative
+Ac123c145 = matrix flatten {entries Ac123,{flatten {{1/6},-c145}}, {flatten {{1}, c145} }}; 
+minimalValue(Ac123c145, vector flatten {0, c145})
+coeffLinKeelAvgJK ((1,2,3), (1,4,5), (2,4), 7)
+c24 = cJinD((2,4), 7)
+coeffLinKeelAvgJK((1,2,3),(1,4,5), (2,4), 7)
+minimalValue(Ac123c145, vector flatten {0, c24})
 
+c146 = cJinD((1,4,6), 7)
+coeffLinKeelAvgJK((1,2,3),(1,4,5), (1,4,6), 7)
+minimalValue(Ac123c145, vector flatten {0, c146})
+
+c167 = cJinD((1,6,7), 7);
+coeffLinKeelAvgJK((1,2,3),(1,4,5), (1,6,7), 7)
+minimalValue(Ac123c145, vector flatten {0, c167})
+
+c245 = cJinD((2,4,5), 7);
+coeffLinKeelAvgJK((1,2,3),(1,4,5), (2,4,5), 7)
+minimalValue(Ac123c145, vector flatten {0, c245})
+
+-----
 c456 = cJinD((4,5,6), 7)
 coeffKinKeelAvgJ ((4,5,6), (1,2,3), 7)
 minimalValue(Ac123, vector flatten {0,c456})
@@ -714,3 +734,6 @@ minimalValue(Ac123, vector flatten {0,c14})
 
 --Consider then -1 <= c145 <= 1/6
 Ac123c145 = matrix flatten {entries A,{flatten {{1},c}}, {flatten {{-1},-c}}};>>>>>>> .r13079
+
+
+-- n = 8
