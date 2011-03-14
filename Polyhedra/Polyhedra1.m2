@@ -2738,7 +2738,7 @@ newMinkSum = (P,Q) -> (
      n := ambDim P;
      HPP := hyperplanes P;
      HPQ := hyperplanes Q;
-     << "HPP: " << HPP << " HPQ: " << HPQ << endl;
+     --<< "HPP: " << HPP << " HPQ: " << HPQ << endl;
      HP := if HPP == (0,0) or HPQ == (0,0) then (map(ZZ^0,ZZ^n,0),map(ZZ^0,ZZ^1,0)) else (
 	  k := transpose mingens ker transpose(HPP#0|| -HPQ#0);
 	  --<< "k: " << k << endl;
@@ -2758,8 +2758,8 @@ newMinkSum = (P,Q) -> (
      LP = LP | toList(max(0,d-#LP):{});
      LQ := reverse apply(dim Q + 1, k -> facePairBuilder(k,Q));
      LQ = LQ | toList(max(0,d-#LQ):{});
-     << "LP: " << LP << " LQ: " << LQ << endl;
-     << "HP done." << endl << "d: " << d << endl;
+     --<< "LP: " << LP << " LQ: " << LQ << endl;
+     --<< "HP done." << endl << "d: " << d << endl;
      --HPP = hyperplanes P;
      --HPQ = hyperplanes Q;
      HS := unique flatten apply(d, i -> (
@@ -2788,11 +2788,13 @@ newMinkSum = (P,Q) -> (
 			 --mQ = transpose makePrimitiveMatrix transpose(f#1#0#0|(f#1#0#1 + matrix{{mQ}}));
 			 {(f#1#0#0,f#1#0#1 + matrix{{mQ}})}) else continue)
 	       else flatten for Pface in LP#i list (
+		    --<< "i: " << i << " d-i-1: " << d-i-1 << endl;
 		    for Qface in LQ#(d-i-1) list (
 			 --<< "HPP: " << HPP << " HPQ: " << HPQ << endl;
-			 --HPP = apply(HPP, m-> m||-m);
+			 -- This fixes the descending vertex number bug. We forgot to add the common hyperplanes.
+			 HPPp = hyperplanes P;
 			 --HPQ = apply(HPQ, m-> m||-m);
-			 PfaceHS := if Pface#1 != {} then (matrix apply(Pface#1, f -> {f#0}) || HPP#0,matrix apply(Pface#1, f -> {f#1}) || HPP#1) else HPP;
+			 PfaceHS := if Pface#1 != {} then (matrix apply(Pface#1, f -> {f#0}) || HPPp#0,matrix apply(Pface#1, f -> {f#1}) || HPPp#1) else HPPp;
 			 QfaceHS := if Qface#1 != {} then (matrix apply(Qface#1, f -> {f#0}) || HPQ#0,matrix apply(Qface#1, f -> {f#1}) || HPQ#1) else HPQ;
 			 dP := rank PfaceHS#0;
 			 dQ := rank QfaceHS#0;
@@ -2817,7 +2819,7 @@ newMinkSum = (P,Q) -> (
 			      else if all(flatten entries(newHS#0 *(vertices P)), e -> e >= checkValueP) and all(flatten entries(newHS#0 *(vertices Q)), e -> e >= checkValueQ) then (
 				   if all(Pface#0#1, r -> (newHS#0 *r)_(0,0) >= 0) and all(Qface#0#1, r -> (newHS*r)_(0,0) >= 0) then (-(newHS#0),-(newHS#1)) else continue) 
 			      else continue)))));
-     << "HS: " << HS << endl;
+     --<< "HS: " << HS << endl;
      HS = (matrix apply(HS, e -> {first e}),matrix apply(HS, e -> {last e}));
      V := matrix {unique flatten apply(numColumns vertices P, i -> apply(numColumns vertices Q, j -> (vertices P)_{i}+(vertices Q)_{j}))};
      if V==0 then V = map(ZZ^(ambDim P),ZZ^1,0);
@@ -2836,9 +2838,9 @@ newMinkSum = (P,Q) -> (
      if promote(ch#0,QQ) != ch1#0 then error "What?"; 
          
      --print sort matrix {unique apply(apply(numColumns V,i->V_{i}), makePrimitiveMatrix)};
-     << "V:" << V << endl;
+     --<< "V:" << V << endl;
      W := fMReplacement(V,HS,HP);
-     << "FM done." << endl;
+     --<< "FM done." << endl;
      --print W;
      polyhedronBuilder reverse W
      )
@@ -3439,11 +3441,7 @@ fMReplacement = (R,HS,HP) -> (
                     pos := positions(flatten entries((transpose HS) * r), e -> e == 0);
                     #pos >= n-alpha-beta-1 and (n <= 3 or rank HS_pos >= n-alpha-beta-1))));
      
-     -- Alternative Version according to Weyls facet Lemma.
-     -- R = select(R, r-> (r!=0 and (
-	--	    pos := positions(flatten entries((transpose (HS|HP))*r), e-> e==0);
-	--	    rank (HS|HP)_pos == n-1)));
-     
+   
      if R == {} then R = map(ZZ^(numRows LS),ZZ^0,0) else R = sort matrix {unique apply(R, makePrimitiveMatrix)};
      LS = if LS == 0 then map(ZZ^(numRows LS),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix LS;
      HP = if HP == 0 then map(ZZ^(numRows HP),ZZ^0,0) else sort uniqueColumns makePrimitiveMatrix HP;
@@ -3451,9 +3449,9 @@ fMReplacement = (R,HS,HP) -> (
      
      
      -- Throw error for debugging.
-     m1 := fourierMotzkin fourierMotzkin ans#0;
-     m2 := fourierMotzkin fourierMotzkin fourierMotzkin ans#1;
-     if m1#0 != m2#0 or m1#1 != m2#1 then error("Failed") else print "ok";
+     --m1 := fourierMotzkin fourierMotzkin ans#0;
+     --m2 := fourierMotzkin fourierMotzkin fourierMotzkin ans#1;
+     --if m1#0 != m2#0 or m1#1 != m2#1 then error("Failed") else print "ok";
      
      ans
      )
