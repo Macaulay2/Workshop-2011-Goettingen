@@ -1,11 +1,33 @@
-{*Make the first map of a generic tensor complex
+{*Make the first map of a generic tensor complex:
+Given (over a ring R)
+free modules Bi of rank bi,
+a free module A,
+a map A <--- \otimes_j Bj,
+and integers bi >= 1, 
+set d = (d0=0, d1=b1, d2 = b1+b2...). 
+The desired map is the composite
+
+wedge^b1 A ** wedge^b1 B1* ** \otimes_{i\geq 2} S^{d_{j-1}-b1} Bj
+by "trace" to 
+
+wedge^b1 A ** wedge^b1 B1* ** [ (\otimes_{j\geq 2} S^b1 Bj)* ** (\otimes_{j\geq 2} S^b1 Bj)]  \otimes_{i\geq 2} S^{d_{j-1}-b1} Bj
+to (by reassociating)
+
+wedge^b1 A ** [wedge^b1 B1* **  (\otimes_{j\geq 2} S^b1 Bj)*] ** [(\otimes_{j\geq 2} S^b1 Bj)]  \otimes_{i\geq 2} S^{d_{j-1}-b1} Bj]
+to (by the wedge ** sym to wedge map and multiplication in Sym
+
+wedge^b1 A ** [wedge^b1 \wedge_b1(\otimes_{j\geq 1} Bj*] ** \otimes_{i\geq 2} S^{d_{j-1}} Bj]
+to (by the minors)
+
+R ** \otimes_{i\geq 2} S^{d_{j-1}} Bj]
+
+
+
+
 not yet done:
 
-Needed for the tensor complex:
-**map of wedge^d A \otimes wedge^d B to Sym(A\otimes B).
-**map of wedge^d A \otimes Sym^d B to wedge^d(A\otimes B).
-
-
+**map of wedge^d A ** wedge^d (B1 \otimes B2 ...) to R
+**map of wedge^d A ** \otimes_j Sym^d Bj to wedge^d(A** \otimes_j Bj). (done for just one j)
 
 Not needed now, but would be nice:
 exterior multiplication and contraction and trace
