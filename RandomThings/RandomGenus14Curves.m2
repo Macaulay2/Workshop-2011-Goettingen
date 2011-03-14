@@ -31,7 +31,7 @@ randomCanonicalCurveGenus8with8Points = method()
 
 randomCanonicalCurveGenus8with8Points PolynomialRing := R ->(
      --Input: R a polynomial ring in 8 variables, 
-     --Output: a pir of an ideal of a canonical curve C
+     --Output: a pair of an ideal of a canonical curve C
      --        together with a list of ideals of 8 points
      --Method: Mukai's structure theorem on genus 8 curves.
      --  Note that the curves are have general Clifford index. 
@@ -113,10 +113,10 @@ certifyCurveGenus14Degree18inP6 (Ideal,PolynomialRing) := (IC,S) -> (
      someMinors :=minors(5, jacobian CI);
      singCI:=CI+someMinors;
      if not (degree singCI==28 and codim singCI==6) 
-        then return null;
+        then return false;
      someMoreMinors:=minors(5, jacobian (gens IC)_{0..3,5});
      singC:=singCI+someMoreMinors;
-     if codim singC == 7 then return IC else return null
+     return (codim singC == 7)
      )
 
 
@@ -257,6 +257,31 @@ doc ///
       betti res I      
 /// 
 
+TEST ///
+  -- check that there are not to many non-detected problems in the construction. 
+  -- This code finds errors in codimension 4 with high probability
+  -- since 3^4 \approx 100
+  Fq= ZZ/3
+  T = Fq[t_0..t_6] 
+  time L=apply(100,i->(print i;(random curveGenus14Degree18inP6)(T,Attempts=>1)));#L
+  print tally(apply(L,l->l=!=null))
+  -- uses ca. 150 seconds
+///
+
+TEST ///
+  -- check that the certification sometimes works
+  -- (only errors in codim 1 are detected)
+  Fq= ZZ/11
+  T = Fq[t_0..t_6] 
+  time L=apply(10,i->(print i;(random curveGenus14Degree18inP6)(T,Attempts=>1,Certify=>true)));#L
+  print tally(apply(L,l->l=!=null))
+  -- uses ca. 130 seconds
+  -- usually about half the checks fail and half the checks work
+  -- a more thorough check is not possible, since there is 
+  -- a 160 second time limit for test.
+///
+
+
 end
 
 restart
@@ -264,5 +289,17 @@ uninstallPackage("RandomGenus14Curves")
 time installPackage("RandomGenus14Curves",RerunExamples=>true,RemakeAllDocumentation=>true);
 viewHelp"RandomGenus14Curves"
 
+check("RandomGenus14Curves")
+-- takes about 6 minutes
+
 restart
 needsPackage("RandomGenus14Curves")
+
+-- a more thourough check of certification (almost codim 3)
+Fq= ZZ/5
+T = Fq[t_0..t_6] 
+time L=apply(100,i->(print i;(random curveGenus14Degree18inP6)(T,Attempts=>1,Certify=>true)));#L
+-- used 460.28 seconds
+print tally(apply(L,l->l=!=null))
+-- Tally{false => 97}
+--       true => 3
