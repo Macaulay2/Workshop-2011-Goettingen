@@ -22,7 +22,7 @@ to (by the minors)
 R ** \otimes_{i\geq 2} S^{d_{j-1}} Bj]
 
 
-
+----------Implementation:
 
 not yet done:
 
