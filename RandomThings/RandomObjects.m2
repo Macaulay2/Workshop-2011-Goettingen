@@ -27,7 +27,9 @@ export {
      "Attempts", 
      "Certification", 
      "Construction", 
-     "ParameterTypes"}
+     "ParameterTypes",
+     "randomObjectTemplate"}
+
 
 RandomObject = new Type of MutableHashTable
 globalAssignment RandomObject
@@ -62,8 +64,39 @@ random RandomObject := randomopts -> Object -> args -> (
 	  if Object.Certification prepend(object, argsCert) then return object;
 	  ))
 
+randomObjectTemplate=method()
+randomObjectTemplate(String):=(Object)->(
+     lowerObject:=toLower(Object_0)|Object_(1,#Object-1);
+     upperObject:=toUpper(Object_0)|Object_(1,#Object-1);
+     match("Outputs",docTemplate);
+     docuString=(docTemplate)_(lastMatch_0_0,#docTemplate-1);
+     ("construct"|upperObject|"=method(Options=>{Certify=>false})\n"|
+      "construct"|upperObject|"(Thing):=opt->(args)->(\n   )\n\n"| 
+      "certify"|upperObject|"=method()\n"|
+      "certify"|upperObject|"(Thing,Thing)->(object,args)->(\n   )\n\n"|
+       lowerObject|" = new RandomObject from {\n    Construction  => construct"|upperObject|",\n    Certification => certify"|upperObject|"}\n\n"|
+      "doc /// \n   Key\n    "|lowerObject|"\n   Headline\n   Usage\n    (random "|lowerObject|")(args)\n   Inputs\n    args : Thing\n   "|docuString))
+randomObjectTemplate("blabla")
+
 beginDocumentation()
 
+doc ///
+Key 
+ randomObjectTemplate
+Headline
+ a template for the implementation of a random object
+Usage
+ t=randomObjectTemplate(name)
+Inputs
+ name: String
+          name of the object
+Outputs
+ t: String
+      template for the implementation of "(random name)"
+Description 
+  Example
+    randomObjectTemplate("foo")
+///
 doc ///
 Key 
  RandomObjects 
@@ -182,7 +215,7 @@ end
 restart
 uninstallPackage"RandomObjects";
 installPackage"RandomObjects";
-viewHelp RandomObjects
+viewHelp RandomObject
 kk=ZZ/3;
 R=kk[x_0..x_2];
 tally apply(3^4, i-> null===(random Foo)(2,R,Certify=>true,Attempts=>1))

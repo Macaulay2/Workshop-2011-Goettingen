@@ -4,12 +4,16 @@ newPackage(
 	"RandomSpaceCurves",
     	Version => "0.6", 
     	Date => "March 1, 2011",
-    	Authors => {{Name => "Frank-Olaf Schreyer", 
-		  Email => "schreyer@math.uni-sb.de", 
-		  HomePage => "http://www.math.uni-sb.de/ag/schreyer/"},
-	            {Name => "Hans-Christian Graf v. Bothmer",
-	             Email => "bothmer@uni-math.gwdg.de",
-		     HomePage => "http://www.crcg.de/wiki/User:Bothmer"}		 
+    	Authors => {
+	        {Name => "Hans-Christian Graf v. Bothmer",
+	         Email => "bothmer@uni-math.gwdg.de",
+		 HomePage => "http://www.crcg.de/wiki/User:Bothmer"},
+		{Name=> "Florian Geiss",
+		 Email=> "fg@math.uni-sb.de",
+		 HomePage=>"http://www.math.uni-sb.de/ag/schreyer/"},	
+	        {Name => "Frank-Olaf Schreyer", 
+		 Email => "schreyer@math.uni-sb.de", 
+		 HomePage => "http://www.math.uni-sb.de/ag/schreyer/"}
                    },
     	Headline => "Construction of random smooth space curves",
     	DebuggingMode => true
