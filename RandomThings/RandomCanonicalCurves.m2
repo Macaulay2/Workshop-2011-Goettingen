@@ -41,6 +41,7 @@ randomCanonicalModelOfPlaneCurve (ZZ,ZZ,Ring) := opt -> (d,g,R) -> (
 	  S := (coefficientRing R)[x_0..x_2];
 	  delta:=binomial(d-1,2)-g;
 	  J:=(random nodalPlaneCurve)(d,delta,S,Certify=>opt.Certify,Attempts=>1);
+	  -- the canonical linear system (assuming that all singularities are nodes)
 	  KC:=(gens intersect(saturate(ideal jacobian J +J),(ideal vars S)^(d-3)))_{0..(g-1)};
 	  SJ:=S/J;
 	  phi:=map(SJ,R,substitute(KC,SJ));
@@ -60,6 +61,7 @@ randomCanonicalModelOfSpaceCurve (ZZ,ZZ,Ring) := opt -> (d,g,R) -> (
      S := (coefficientRing R)[y_0..y_3];
      RS := R**S;
      I := (random spaceCurve)(d,g,S,Certify=>opt.Certify,Attempts=>1);
+     -- the canoncial linear system
      omegaC := presentation prune truncate(0,Ext^1(I,S^{ -4}));
      graph := substitute(vars R,RS)*substitute(omegaC,RS);	  	    
      J := saturate(ideal graph,substitute(y_0,RS));	  
@@ -79,6 +81,9 @@ randomCanonicalCurve(ZZ,PolynomialRing):= opt -> (g,R)->(
 	  s:=floor(g/3); -- the speciality of a plane model of minimal degree
 	  d=g+2-s; -- the degree of the plane model
 	  return randomCanonicalModelOfPlaneCurve(d,g,R,Certify=>opt.Certify));
+     -- the following space curve models are choosen such that the
+     -- brill noether number is positive and the construction via
+     -- Hartshorne-Rao-Modules works
      if g==11 then return randomCanonicalModelOfSpaceCurve(12,11,R,Certify=>opt.Certify);
      if g==12 then return randomCanonicalModelOfSpaceCurve(12,12,R,Certify=>opt.Certify);
      if g==13 then return randomCanonicalModelOfSpaceCurve(13,13,R,Certify=>opt.Certify);
@@ -141,7 +146,8 @@ end
 
 restart
 uninstallPackage("RandomCanonicalCurves")
-installPackage("RandomCanonicalCurves",RerunExamples=>true,RemakeAllDocumentation=>true);
+time installPackage("RandomCanonicalCurves",RerunExamples=>true,RemakeAllDocumentation=>true);
 --viewHelp"RandomCanonicalCurves"
 
 time check ("RandomCanonicalCurves")
+-- timing does not work
