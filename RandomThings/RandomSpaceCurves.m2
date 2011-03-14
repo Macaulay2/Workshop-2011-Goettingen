@@ -94,10 +94,10 @@ termToBettiKey = (mon) -> (
      (c,({d},d))
      )
 
-TEST ///
-  T = QQ[t];
-  assert (termToBettiKey(-4*t^3,T)==(-4,({3},3)))
-///
+--TEST ///
+--  T = QQ[t];
+--  assert (termToBettiKey(-4*t^3,T)==(-4,({3},3)))
+--///
 
 
 -- construct a minimal free resolution with expected betti tableau
@@ -143,7 +143,8 @@ expectedBetti(RingElement):= (hilbNum) ->(
      )
 
 TEST ///
-    e = expectedBetti2(t^5-5*t^4+5*t^3-1)
+    T = QQ[t];  
+    e = expectedBetti(t^5-5*t^4+5*t^3-1)
     b = new BettiTally from {
 	 (0,{0},0) => 1, 
 	 (1,{3},3) => 5,
@@ -245,13 +246,13 @@ expectedLinearSyzygies = (a,b,R) -> (
      b*n-a*binomial(n+1,2)
      )
 
-TEST ///
-    setRandomSeed("I am feeling lucky");
-    R = ZZ/101[x_0..x_3];
-    assert(expectedLinearSyzygies(2,6,R) == 
-	 (betti res coker random(R^{2:0},R^{6:-1}))#(2,{2},2)
-	 )
-///
+--TEST ///
+--    setRandomSeed("I am feeling lucky");
+--    R = ZZ/101[x_0..x_3];
+--    assert(expectedLinearSyzygies(2,6,R) == 
+--	 (betti res coker random(R^{2:0},R^{6:-1}))#(2,{2},2)
+--	 )
+--///
 
 -- Try to construct a random HartshorneRau module of
 -- length 3 starting at the beginning of the
@@ -319,15 +320,6 @@ randomHartshorneRaoModuleDiameter3oneDirection = (HRao,R) -> (
       return null     	       
       );
 
--- these will become examples
-R = ZZ/101[x_0..x_3];
-betti res randomHartshorneRaoModuleDiameter3oneDirection({1,4,1},R)
-betti res randomHartshorneRaoModuleDiameter3oneDirection({1,4,2},R)
-betti res randomHartshorneRaoModuleDiameter3oneDirection({1,3,2},R)
-betti res randomHartshorneRaoModuleDiameter3oneDirection({2,3,1},R)
--- this is a pathological case since 2<-5 has 2 syzygies in 4 variables
--- while the expected number is 0
-
 
 
 -- Try to construct a random Hartshorne-Rau module of
@@ -350,15 +342,6 @@ randomHartshorneRaoModuleDiameter3 = (HRao,R)->(
      return M
      )
 
--- these will become examples
-betti res randomHartshorneRaoModuleDiameter3({1,4,1},R)
-betti res randomHartshorneRaoModuleDiameter3({1,4,2},R)
--- the two following are strictly not to specification,
--- sind the resolution is not expected
-betti res randomHartshorneRaoModuleDiameter3({1,3,2},R)
-betti res randomHartshorneRaoModuleDiameter3({2,3,1},R)
--- this should not work
---betti res randomHartshorneRaoModuleDiameter3({1,2,3,4},R)
 
 -- Try to construct a random Hartshorne-Rau module of
 -- length 2. Here the only problem is, that the
@@ -484,6 +467,8 @@ undocumented certifyRandomSpaceCurve
 
 knownUnirationalComponentOfSpaceCurves=method()
 knownUnirationalComponentOfSpaceCurves(ZZ,ZZ) := (d,g)->(
+     x := local x;
+     R := QQ[x_0..x_3];
      n:=4;
      while 
      d*n+1-g>binomial(n+3,3)  
@@ -708,7 +693,7 @@ doc ///
     expectedBetti
     (expectedBetti,RingElement)
   Headline
-    compute the "expected" shape from the Hilbert numerator
+    compute the expected betti table from the Hilbert numerator
   Usage
     B=expectedBetti q
   Inputs
@@ -720,7 +705,7 @@ doc ///
        assuming that each sign change in the coefficients of q corresponds to a step
   Description
     Text
-      calculates a minimal free resolution with expected betti tableau from a given hilbert Numerator.
+      calculates the expected betti table  from a given hilbert Numerator.
     
     Example
       T=ZZ[t]
@@ -828,46 +813,35 @@ doc ///
 
 
 TEST ///
-     assert(nextprime(100)==101);
+     assert(nextPrime(100)==101);
 ///
-
-
-
-
 
 TEST ///
      R=ZZ/101[x_0..x_3];
      d=12,g=11;
-     betti(J=randomSpaceCurve(d,g,R))
+     betti(J=(random spaceCurve)(d,g,R,Certify=>true))
      assert (degree J==d and genus J == g)	  
 ///
 
 TEST ///
-     kk=ZZ/101
-     R=kk[x_0..x_3]
-     d=10,g=7
-     HRao1=select(apply(toList(1..7),n->(n,max(d*n+1-g-binomial(3+n,3),0))), i-> i_1 !=0)
-     HRao=apply(HRao1,i->i_1)
-     e=HRao1_0_0
-     M=(random hartshorneRaoModule)(e,HRao,R)
+     R=(ZZ/101)[x_0..x_3]
+     HRao = {1,4,2};
+     e = 1;
+     betti res (M=(random hartshorneRaoModule)(1,HRao,R))
      assert(apply(toList(e..e+#HRao-1),i->hilbertFunction(i,M))==HRao)
-     betti res M
-///
+///          
 
-TEST ///
-FF=ZZ/10007; S=FF[x_0..x_6];    
-time betti(J=randomCurveOfGenus14 S)
--- used 2.19 seconds
-betti res J
-///
+
 end
 
 restart
 uninstallPackage("RandomSpaceCurves")
 installPackage("RandomSpaceCurves",RerunExamples=>true,RemakeAllDocumentation=>true);
+
+check("RandomSpaceCurves")
+
 viewHelp"RandomSpaceCurves"
-(random hartshorneRaoModule)(0,{1,3,2},R,Certify=>true,Attempts=>1)
-print randomObjectTemplate("HartshorneRaoModule")
+
 
 matrix apply(toList(2..18),d-> apply(toList(0..26),g-> 
 	  if knownUnirationalComponentOfSpaceCurves(d,g) then 1 else 0))
