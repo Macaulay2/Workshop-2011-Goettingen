@@ -23,7 +23,9 @@ if not version#"VERSION" >= "1.4" then error "this package requires Macaulay2 ve
 
 export{"nextPrime",
      "randomSpaceCurve",
-     "randomHartshorneRaoModule",
+     "hartshorneRaoModule",
+     "constructHartshorneRaoModule",
+     "certifyHartshorneRaoModule",
      "knownUnirationalComponentOfSpaceCurves",
      "hilbertNumerator",
      "expectedBetti",
@@ -394,9 +396,10 @@ randomHartshorneRaoModuleDiameter1 = (HRao,R)->(
      return coker (vars R**R^{HRao#0:0})
      )
 
-randomHartshorneRaoModule=method()
+--randomHartshorneRaoModule=method()
+constructHartshorneRaoModule=method(Options=>{Certify=>false})
 
-randomHartshorneRaoModule(ZZ,List,PolynomialRing):=(e,HRao,R)->(
+constructHartshorneRaoModule(ZZ,List,PolynomialRing):=opt->(e,HRao,R)->(
      if dim R != 4 then error "expected a polynomial ring in 4 variables";
      if degrees R !={{1}, {1}, {1}, {1}} then error "polynomial ring is not standard graded";
      if #HRao > 3 then error "no method implemented for Hartshorne Rao modue of diameter >3";
@@ -407,7 +410,18 @@ randomHartshorneRaoModule(ZZ,List,PolynomialRing):=(e,HRao,R)->(
      if M === null then return null else return M**R^{ -e};
      )
 
+undocumented constructHartshorneRaoModule
+ 
+certifyHartshorneRaoModule=method()
+certifyHartshorneRaoModule(Module,ZZ,List,PolynomialRing):=(M,e,HRao,R)->(
+       (betti res (M**R^{e})) == expectedBetti(HRao|{0,0,0,0},3)
+       )     
      
+undocumented certifyHartshorneRaoModule
+     
+hartshorneRaoModule = new RandomObject from {
+    Construction  => constructHartshorneRaoModule,
+    Certification => certifyHartshorneRaoModule}     
 
 ------------------
 -- Space Curves --
@@ -443,7 +457,7 @@ randomSpaceCurve(ZZ,ZZ,PolynomialRing) := opt->(d,g,R)->(
 	  then error "cannot be ACM" 
 	  else return minors(rank G_2,random(G_1,G_2))
 	  );
-     M:=randomHartshorneRaoModule(e,HRao,R);
+     M:=(random hartshorneRaoModule)(e,HRao,R);
      if M === null then return null;     	       
      F :=res M;
      -- detect syzygies in the second step, that do not 
@@ -587,7 +601,7 @@ doc ///
 	       (d,g) => g-4*(g+3-d) => betti res J))
   SeeAlso
     knownUnirationalComponentOfSpaceCurves
-    randomHartshorneRaoModule
+    hartshorneRaoModule
 ///
    
 
@@ -634,19 +648,19 @@ doc ///
 	  if knownUnirationalComponentOfSpaceCurves(d,g) then 1 else 0))
   SeeAlso
     spaceCurve
-    randomHartshorneRaoModule
+    hartshorneRaoModule
 ///
 
 doc ///
   Key 
-    randomHartshorneRaoModule
+    hartshorneRaoModule
 --    (randomHartshorneRaoModule,ZZ,ZZ,PolynomialRing)
-    (randomHartshorneRaoModule,ZZ,List,PolynomialRing)
+--    (randomHartshorneRaoModule,ZZ,List,PolynomialRing)
   Headline
     Compute a random Hartshorne-Rao module
   Usage 
 --    randomHartshorneRaoModule(d,g,R)
-    randomHartshorneRaoModule(e,HRao,R)
+    (random hartshorneRaoModule)(e,HRao,R)
   Inputs
     e: ZZ 
        smallest degree of the Hartshorne-Rao module
@@ -658,15 +672,30 @@ doc ///
      : Module
   Description
     Text
-      Returns the Hartshorne-Rao Module over {\tt R} with Hilbert function {\tt HRao}. The constructions works only for modules with diameter {\le} 3.
+      Returns the Hartshorne-Rao Module over {\tt R} with Hilbert function {\tt HRao} and 
+      expected betti table. The constructions works only for many modules with 
+      diameter {\le} 3. 
     Example
       R = ZZ/101[x_0..x_3];
-      betti res randomHartshorneRaoModule(0,{1},R)
-      betti res randomHartshorneRaoModule(0,{1,4},R)
-      betti res randomHartshorneRaoModule(0,{1,4,1},R)
-      betti res randomHartshorneRaoModule(0,{1,4,2},R)
-      betti res randomHartshorneRaoModule(0,{1,3,2},R)
-      betti res randomHartshorneRaoModule(0,{2,3,1},R)
+      betti res (random hartshorneRaoModule)(0,{1},R)
+      betti res (random hartshorneRaoModule)(0,{1,4},R)
+      betti res (random hartshorneRaoModule)(0,{1,4,1},R)
+      betti res (random hartshorneRaoModule)(0,{1,4,2},R)
+    Text  
+      There are the following options:
+     
+      * {\tt Attempts => ... } a nonnegative integer or {\tt infinity} (default) that limits the maximal number of attempts for the construction of the module 
+      
+      * {\tt Certify => ... } {\tt true} or {\tt false} (default) checks whether the constructed module has the expected betti Table
+      
+    Example         
+      betti res (random hartshorneRaoModule)(0,{1,3,2},R)
+      expectedBetti({1,3,2,0,0,0,0},3)
+      null =!= (random hartshorneRaoModule)(0,{1,3,2},R)
+      null =!= (random hartshorneRaoModule)(0,{1,3,2},R,Certify=>true,Attempts=>1)
+    Text
+    
+      if Certify => true and Attempts=>infinity (the default!) are given in this example, the construction never stops. 
   Caveat
     The list {\tt HRao} needs only to contain the non-zero values of the Hilbert function.
   SeeAlso
@@ -820,7 +849,7 @@ TEST ///
      HRao1=select(apply(toList(1..7),n->(n,max(d*n+1-g-binomial(3+n,3),0))), i-> i_1 !=0)
      HRao=apply(HRao1,i->i_1)
      e=HRao1_0_0
-     M=randomHartshorneRaoModule(e,HRao,R)
+     M=(random hartshorneRaoModule)(e,HRao,R)
      assert(apply(toList(e..e+#HRao-1),i->hilbertFunction(i,M))==HRao)
      betti res M
 ///
@@ -837,6 +866,8 @@ restart
 uninstallPackage("RandomSpaceCurves")
 installPackage("RandomSpaceCurves",RerunExamples=>true,RemakeAllDocumentation=>true);
 viewHelp"RandomSpaceCurves"
+(random hartshorneRaoModule)(0,{1,3,2},R,Certify=>true,Attempts=>1)
+print randomObjectTemplate("HartshorneRaoModule")
 
 matrix apply(toList(2..18),d-> apply(toList(0..26),g-> 
 	  if knownUnirationalComponentOfSpaceCurves(d,g) then 1 else 0))
