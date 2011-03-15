@@ -21,11 +21,13 @@ export {listComplement,
 	keelSumList, 
 	keelAvg, 
 	keelAvgJK,
+	keelAvgJnotK,
 	keelAvgList, 
 	bndJList,
 	keelAvgIndices,
 	coeffKinKeelAvgJ, 
 	coeffLinKeelAvgJK,
+	coeffLinKeelAvgJnotK,
 	boundaryRing, 
 	fCurveIneqsLPSOLVE, 
 	fCurveIneqsMatrix, 
@@ -226,7 +228,14 @@ coeffLinKeelAvgJK (Sequence, Sequence, Sequence, ZZ) := (J, K, L, n) -> (
      -- we seek in the average of D_J;
      --Outputs the coefficient of D_K in the average D_J = (...)
      avgJK := keelAvgJK(J, K, n);
+     
      nList := toList(1..n);
+ 
+ 
+     J/(j -> if not isSubset({j}, nList) then error "Expected sequence to contain entries between 1 and n");
+     K/(j -> if not isSubset({j}, nList) then error "Expected sequence to contain entries between 1 and n");
+     L/(j -> if not isSubset({j}, nList) then error "Expected sequence to contain entries between 1 and n");
+ 
      k:= 0;
      bndIndices := select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );	
      avgJK_(position(bndIndices, k -> toList L == k)) 
@@ -234,6 +243,32 @@ coeffLinKeelAvgJK (Sequence, Sequence, Sequence, ZZ) := (J, K, L, n) -> (
 
 --**************************************************************************      
 --**************************************************************************
+coeffLinKeelAvgJnotK = method()
+coeffLinKeelAvgJnotK (Sequence, Sequence, Sequence, ZZ) := (J, K, L, n) -> (
+     --Inputs two sequences J, K, where J gives the index of the 
+     -- boundary divisors D_J averaged over the Keel relations,
+     -- namely in keelAvg(J,n), and 
+     -- K gives the index of the boundary divisor whose coefficient
+     -- we seek in the average of D_J;
+     --Outputs the coefficient of D_K in the average D_J = (...)
+     avgJK := keelAvgJnotK(J, K, n);
+     
+     nList := toList(1..n);
+ 
+ 
+     J/(j -> if not isSubset({j}, nList) then error "Expected sequence to contain entries between 1 and n");
+     K/(j -> if not isSubset({j}, nList) then error "Expected sequence to contain entries between 1 and n");
+     L/(j -> if not isSubset({j}, nList) then error "Expected sequence to contain entries between 1 and n");
+ 
+     k:= 0;
+     bndIndices := select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );	
+     avgJK_(position(bndIndices, k -> toList L == k)) 
+     ) 
+
+--**************************************************************************      
+--**************************************************************************
+
+
 coeffKinKeelAvgJ = method()
 coeffKinKeelAvgJ (Sequence, Sequence, ZZ) := (K, J, n) -> (
      --Inputs two sequences J, K, where J gives the index of the 
@@ -244,6 +279,10 @@ coeffKinKeelAvgJ (Sequence, Sequence, ZZ) := (K, J, n) -> (
      --Outputs the coefficient of D_K in the average D_J = (...)
      avgJ := keelAvgList(J,n);
      nList := toList(1..n);
+     
+     J/(j -> if not isSubset({j}, nList) then error "Expected sequence to contain entries between 1 and n");
+     K/(j -> if not isSubset({j}, nList) then error "Expected sequence to contain entries between 1 and n");
+     
      k:= 0;
      
      
@@ -326,6 +365,12 @@ keelAvgJK(Sequence, Sequence, ZZ) := (J,K,n) ->(
 	  apply(jList, j-> { i, j})
 	  );
      nList := toList(1..n);
+     
+     --Check that sequences J and K have entries between 1 and n
+      --Check if the sequence J has correct entries
+     J/(j -> if not isSubset({j}, nList) then error "Expected sequence to contain entries between 1 and n");
+     K/(j -> if not isSubset({j}, nList) then error "Expected sequence to contain entries between 1 and n");
+     
      if (#J > floor(n/2) or (#J == floor(n/2) and not isSubset({1},J)) ) then J = listComplement(nList, J);
      if (#K > floor(n/2) or (#K == floor(n/2) and not isSubset({1},K)) ) then K = listComplement(nList, K);
      Jc := listComplement(nList, J); 
@@ -337,6 +382,57 @@ keelAvgJK(Sequence, Sequence, ZZ) := (J,K,n) ->(
 	       else if #(set i*set Jc)==2 and #(set i* set K)==2 then correctSets(i, Jc, K, nList)
 	       else if #(set i*set J)==2 and #(set i* set Kc)==2 then correctSets(i, J, Kc, nList)
 	       else if #(set i*set Jc)==2 and #(set i* set Kc)==2 then correctSets(i, Jc, Kc, nList)
+	       else {}
+     	       )
+	  );
+     ans = unique apply(select(ans, t-> t!={}), L -> (
+	       if L#0#0 < L#1#0 then {L#0,L#1}
+	       else {L#1,L#0}
+	       )
+	  );
+     counter:= 0; --should be 0
+     apply(ans, L-> (
+     	       i := L#0;
+	       j := L#1;
+	       counter = counter + 2;
+	       avg = avg - 2*keelSumList({i,j}, n) 
+		     + keelSumList({{i_0, j_0}, {i_1, j_1}}, n)
+		     + keelSumList({{i_0, j_1}, {i_1, j_0}}, n)
+		     + 2*bndJList(J,n);
+	       )
+
+	  );
+     avg/counter
+     )
+
+--**************************************************************************      
+--**************************************************************************
+
+keelAvgJnotK = method();
+keelAvgJnotK(Sequence, Sequence, ZZ) := (J,K,n) ->(
+     
+     correctSets := (i, A, B, nList) -> (
+	  jList := subsets(listComplement(nList,flatten sequence unique flatten {toList A, toList B}),2);
+	  apply(jList, j-> { i, j})
+	  );
+     nList := toList(1..n);
+     
+     --Check that sequences J and K have entries between 1 and n
+      --Check if the sequence J has correct entries
+     J/(j -> if not isSubset({j}, nList) then error "Expected sequence to contain entries between 1 and n");
+     K/(j -> if not isSubset({j}, nList) then error "Expected sequence to contain entries between 1 and n");
+     
+     if (#J > floor(n/2) or (#J == floor(n/2) and not isSubset({1},J)) ) then J = listComplement(nList, J);
+     if (#K > floor(n/2) or (#K == floor(n/2) and not isSubset({1},K)) ) then K = listComplement(nList, K);
+     Jc := listComplement(nList, J); 
+     Kc := listComplement(nList, K); 
+     bndIndices := select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );
+     avg:= toList (#bndIndices : 0);
+     ans := unique flatten apply(subsets(nList,2), i-> (
+	       if #(set i*set J)==2 and #(set i* set K)!=2 then correctSets(i, J, K, nList)
+	       else if #(set i*set Jc)==2 and #(set i* set K)!=2 then correctSets(i, Jc, K, nList)
+	       else if #(set i*set J)==2 and #(set i* set Kc)!=2 then correctSets(i, J, Kc, nList)
+	       else if #(set i*set Jc)==2 and #(set i* set Kc)!=2 then correctSets(i, Jc, Kc, nList)
 	       else {}
      	       )
 	  );
@@ -528,7 +624,12 @@ cJinD = method()
 cJinD (Sequence, ZZ) := (J, n) -> (
      --Inputs a boundary index and integer
      -- outputs coefficient c_J of \D_J as a vector
+     
      nList := toList(1..n);
+     --Check if the sequence J has correct entries
+     J/(j -> if not isSubset({j}, nList) then error "Expected sequence to contain entries between 1 and n");
+     
+    
      apply(select (subsets(nList), I-> (#(set I) >= 4 and even (#(set I ))) ), 
 	                           I -> (
 	        			cJinDDI(J,I)
@@ -691,13 +792,14 @@ Ac123 = matrix flatten {entries A,{flatten {{1},c123}}, {flatten {{-1},-c123}}};
           
 val = minimalValue(Ac123, vector flatten {0,c123})
 
+--Case i in thesis
 c124 = cJinD((1,2,4), 7)
 coeffKinKeelAvgJ ((1,2,4), (1,2,3), 7)
 minimalValue(Ac123, vector flatten {0,c124})
 --get c124 >= 3, need only c124 >= 0
 
-
-c145 = cJinD((1,4,), 7)
+--Case ii in thesis
+c145 = cJinD((1,4,5), 7)
 coeffKinKeelAvgJ ((1,4,5), (1,2,3), 7)
 minimalValue(Ac123, vector flatten {0,c145})
 --get c145 >= 0, but need c145 >= 1/6, so assume -1 <= c145 <= 1/6, 
@@ -721,19 +823,46 @@ c245 = cJinD((2,4,5), 7);
 coeffLinKeelAvgJK((1,2,3),(1,4,5), (2,4,5), 7)
 minimalValue(Ac123c145, vector flatten {0, c245})
 
------
+
+--Case iii in thesis
 c456 = cJinD((4,5,6), 7)
 coeffKinKeelAvgJ ((4,5,6), (1,2,3), 7)
 minimalValue(Ac123, vector flatten {0,c456})
 -- get c456 undbounded, but need c456 >= -1/2
+--So assume -1 <= c456 <= -1/2
+Ac123c456 = matrix flatten {entries Ac123,{flatten {{-1/2},-c456}}, {flatten {{1}, c456} }}; 
+	       
+c14 = cJinD((1,4), 7)
+coeffLinKeelAvgJK((1,2,3),(4,5,6), (1,4), 7)
+minimalValue(Ac123c456, vector flatten {0, c14})
+--Require c14 >= 2/9, get c14 >= 7/6
 
+c145 = cJinD((1,4,5), 7)
+coeffLinKeelAvgJK((1,2,3),(4,5,6), (1,4,5), 7)
+minimalValue(Ac123c456, vector flatten {0, c145})
+--Require c145 >= 1/9, get c14 >= 5
+
+c147 = cJinD((1,4,7), 7)
+coeffLinKeelAvgJK((1,2,3),(4,5,6), (1,4,7), 7)
+minimalValue(Ac123c456, vector flatten {0, c147})
+--Require c147 >= 2/9, get c147 >= 113/90
+
+c457 = cJinD((4,5,7), 7)
+coeffLinKeelAvgJK((1,2,3),(4,5,6), (4,5,7), 7)
+minimalValue(Ac123c456, vector flatten {0, c457})
+--Require c457 >= -1/3, get c457 >= 5/2
+
+
+--Case iv in thesis
 c14 = cJinD((1,4), 7)
 coeffKinKeelAvgJ ((1,4), (1,2,3), 7)
 minimalValue(Ac123, vector flatten {0,c14})
 -- get c14 >= 0, need only c14 >= 1/6
 
---Consider then -1 <= c145 <= 1/6
-Ac123c145 = matrix flatten {entries A,{flatten {{1},c}}, {flatten {{-1},-c}}};>>>>>>> .r13079
+--Consider then 0 <= c14 <= 1/6
+Ac123c14 = matrix flatten {entries A, {flatten {{1/6},-c14}}};
 
-
+keelAvgJnotK((1,2,3), (1,4), 7)
+coeffLinKeelAvgJnotK((1,2,3), (1,4), (1,2,3), 7)
+coeffLinKeelAvgJnotK((1,2,3), (1,4), (1,4), 7)
 -- n = 8
