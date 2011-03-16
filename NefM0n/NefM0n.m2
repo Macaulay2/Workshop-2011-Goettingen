@@ -859,10 +859,20 @@ coeffKinKeelAvgJ ((1,4), (1,2,3), 7)
 minimalValue(Ac123, vector flatten {0,c14})
 -- get c14 >= 0, need only c14 >= 1/6
 
---Consider then 0 <= c14 <= 1/6
+--Consider then 0 <= c14 <= 1/6, cxyz >= -1/2, caxy >= 1/6 for all a \in {1,2,3}
+--  and x,y,z \in {4,5,6,7}
 Ac123c14 = matrix flatten {entries A, {flatten {{1/6},-c14}}};
+minimalValue(Ac123c14, vector flatten {0, c14})
 
 keelAvgJnotK((1,2,3), (1,4), 7)
 coeffLinKeelAvgJnotK((1,2,3), (1,4), (1,2,3), 7)
 coeffLinKeelAvgJnotK((1,2,3), (1,4), (1,4), 7)
+
+c567 = cJinD((5,6,7), 7)
+coeffLinKeelAvgJnotK((1,2,3), (1,4), (5,6,7), 7)
+minimalValue(Ac123c14, vector flatten {0, c567})
+
+c15 = cJinD((1,5), 7)
+coeffLinKeelAvgJnotK((1,2,3), (1,4), (1,5), 7)
+minimalValue(Ac123c14, vector flatten {0, c15})
 -- n = 8
