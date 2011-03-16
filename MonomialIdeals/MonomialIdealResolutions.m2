@@ -75,18 +75,28 @@ EK(ZZ,MonomialIdeal):= (n,I)->(
       R := ring I;
       symbolsList:=admissibleSymbols(I);
       sourceList:=symbolsList_(positions (symbolsList,i->first degree(promote(i_0,R))==n));
-      targetList:=symbolsList_(positions (symbolsList,i->first degree(promote(i_0,R))==n-1));
-      getCoeff := (i,j) -> if (liftable(sourceList_j_0//targetList_i_0,R) and (targetList_i_1==sourceList_j_1)) then
-                             (-1)^(position(positions(flatten exponents(sourceList_j_0),r->r!=0),s->s==position(first entries vars R,t->t==sourceList_j_0//targetList_i_0)))
-			   else if  (liftable(sourceList_j_0//targetList_i_0,R) and (canonicalDecomp(lift(sourceList_j_0//targetList_i_0,R)*sourceList_j_1,first entries gens I)==targetList_i_1)) then
-                             (-1)^(1+position(positions(flatten exponents(sourceList_j_0),r->r!=0),s->s==position(first entries vars R,t->t==sourceList_j_0//targetList_i_0)))
-			   else 0_R;
-       myFn := (i,j) -> (tempElt := sourceList_j_0 / targetList_i_0;
-	    	      	 if (liftable (tempElt,R)) then tempElt2:=(lift(tempElt,R)*sourceList_j_1)//canonicalDecomp(lift(tempElt,R)*sourceList_j_1,first entries gens I);
-	                if (liftable(tempElt,R) and (targetList_i_1==sourceList_j_1) ) then  getCoeff(i,j)*lift(tempElt,R)
-			  else if (liftable(tempElt,R) and (targetList_i_1==canonicalDecomp(lift(tempElt,R)*sourceList_j_1,first entries gens I))) then 
-			       getCoeff(i,j)*(tempElt2)
-			 else 0_R);      
+      targetList:=symbolsList_(positions (symbolsList,i->first degree(promote(i_0,R))==n-1));	 
+       myFn := (i,j) -> (
+			 tempElt := sourceList_j_0 // targetList_i_0;
+	    	      	 if (tempElt!=0_R) then
+			 ( 
+	                   if (targetList_i_1==sourceList_j_1 ) then 
+			    (
+			     coe:= (-1)^(position(positions(flatten exponents(sourceList_j_0),r->r!=0),s->s==position(R_*,t->t==tempElt)));
+			     coe*(tempElt)
+			    )
+			    else (
+				  deco:=canonicalDecomp(tempElt*sourceList_j_1,I_*);
+				  if (targetList_i_1==deco) then 
+			          (
+				   coe2:= (-1)^(1+position(positions(flatten exponents(sourceList_j_0),r->r!=0),s->s==position(R_*,t->t==tempElt)));
+				   tempElt2:=(tempElt*sourceList_j_1)//deco;
+				   coe2*(tempElt2)
+			          )
+			         else 0_R
+				 )
+			 )
+		         else 0_R );      
       retVal = map(R^(-apply(targetList, i -> (degree(promote(i_1,R)*promote(i_0,R))))), R^(-apply(sourceList, i -> (degree(promote(i_1,R)*promote(i_0,R))))), myFn);
    };
    retVal
@@ -148,18 +158,28 @@ AHH(ZZ,MonomialIdeal):= (n,I)->(
       R := ring I;
       symbolsList:=admissibleSQSymbols(I);
       sourceList:=symbolsList_(positions (symbolsList,i->first degree(promote(i_0,R))==n));
-      targetList:=symbolsList_(positions (symbolsList,i->first degree(promote(i_0,R))==n-1));
-      getCoeff := (i,j) -> if (liftable(sourceList_j_0//targetList_i_0,R) and (targetList_i_1==sourceList_j_1)) then
-                             (-1)^(position(positions(flatten exponents(sourceList_j_0),r->r!=0),s->s==position(first entries vars R,t->t==sourceList_j_0//targetList_i_0)))
-			   else if  (liftable(sourceList_j_0//targetList_i_0,R) and (canonicalDecomp(lift(sourceList_j_0//targetList_i_0,R)*sourceList_j_1,first entries gens I)==targetList_i_1)) then
-                             (-1)^(1+position(positions(flatten exponents(sourceList_j_0),r->r!=0),s->s==position(first entries vars R,t->t==sourceList_j_0//targetList_i_0)))
-			   else 0_R;
-       myFn := (i,j) -> (tempElt := sourceList_j_0 / targetList_i_0;
-	    	      	 if (liftable (tempElt,R)) then tempElt2:=(lift(tempElt,R)*sourceList_j_1)//canonicalDecomp(lift(tempElt,R)*sourceList_j_1,first entries gens I);
-	                if (liftable(tempElt,R) and (targetList_i_1==sourceList_j_1) ) then  getCoeff(i,j)*lift(tempElt,R)
-			  else if (liftable(tempElt,R) and (targetList_i_1==canonicalDecomp(lift(tempElt,R)*sourceList_j_1,first entries gens I))) then 
-			       getCoeff(i,j)*(tempElt2)
-			 else 0_R);      
+      targetList:=symbolsList_(positions (symbolsList,i->first degree(promote(i_0,R))==n-1));	 
+       myFn := (i,j) -> (
+			 tempElt := sourceList_j_0 // targetList_i_0;
+	    	      	 if (tempElt!=0_R) then
+			 ( 
+	                   if (targetList_i_1==sourceList_j_1 ) then 
+			    (
+			     coe:= (-1)^(position(positions(flatten exponents(sourceList_j_0),r->r!=0),s->s==position(R_*,t->t==tempElt)));
+			     coe*(tempElt)
+			    )
+			    else (
+				  deco:=canonicalDecomp(tempElt*sourceList_j_1,I_*);
+				  if (targetList_i_1==deco) then 
+			          (
+				   coe2:= (-1)^(1+position(positions(flatten exponents(sourceList_j_0),r->r!=0),s->s==position(R_*,t->t==tempElt)));
+				   tempElt2:=(tempElt*sourceList_j_1)//deco;
+				   coe2*(tempElt2)
+			          )
+			         else 0_R
+				 )
+			 )
+		         else 0_R );      
       retVal = map(R^(-apply(targetList, i -> (degree(promote(i_1,R)*promote(i_0,R))))), R^(-apply(sourceList, i -> (degree(promote(i_1,R)*promote(i_0,R))))), myFn);
    };
    retVal
@@ -245,7 +265,7 @@ admissibleSymbolsMonomial(RingElement):=(m)->(
 
 admissibleSymbols=method();
 admissibleSymbols(MonomialIdeal):=(M)->(
-     flatten apply(first entries gens M,i->admissibleSymbolsMonomial(i))
+     flatten apply(M_*,i->admissibleSymbolsMonomial(i))
      )
 
 -- Given a monomial 'm' in the ideal I, returns the unique monomial 'u' in the minimal generating system of the monomial ideal, G(I),
@@ -285,7 +305,7 @@ admissibleSQSymbolsMonomial(RingElement):=(m)->(
 
 admissibleSQSymbols=method();
 admissibleSQSymbols(MonomialIdeal):=(M)->(
-     flatten apply(first entries gens M,i->admissibleSQSymbolsMonomial(i))
+     flatten apply(M_*,i->admissibleSQSymbolsMonomial(i))
      )
 
 subcomplex=method();
