@@ -260,12 +260,14 @@ locL = local locL;
 locLengthL = local locLengthL;
 locParts = local locParts;
 locPartitions = local locPartitions;
+locind = local locind;
 genPartitions = local genPartitions;
 
 genPartitions = method()
 genPartitions(ZZ) := (k)->
 (
-     if k==length locS then (locLPos = locLPos | {toList locPos}) else
+--     if k==length locS then (locLPos = locLPos | {toList locPos}) else
+     if k==length locS then (locind = locind + 1;locLPos#locind = toList locPos) else
      (
      for i from 0 to locLengthL-1 do
      	  if (#locParts#i<locL#i) then
@@ -286,9 +288,10 @@ partitions(List,BasicList) := (S,L)->
      locParts = new MutableList;
      locPos = new MutableList;
      for i from 0 to locLengthL-1 do locParts#i = {};
-     locLPos = {};
+     locLPos = new MutableList;--{};
+     locind = -1;
      genPartitions(0);
-     locLPos
+     toList locLPos
      )
 
 --------end generate partitions
@@ -339,6 +342,12 @@ secondSecant(List,List,List) := (lam0,lam1,lam2) ->
      ind := new MutableHashTable;
      for i from 0 to #indR-1 do ind#(indR#i) = i;
      ind = new HashTable from ind;
+     indTab1 := new MutableHashTable;
+     for i from 0 to #sTab1-1 do indTab1#(sTab1#i) = i;
+     indTab1 = new HashTable from indTab1;
+     indTab2 := new MutableHashTable;
+     for i from 0 to #sTab2-1 do indTab2#(sTab2#i) = i;
+     indTab2 = new HashTable from indTab2;
 
      QR := kk[];
      rels := matrix{#indR:{0_QR}};
@@ -355,18 +364,29 @@ secondSecant(List,List,List) := (lam0,lam1,lam2) ->
 					else if r == col#j then col#i
 					else r)))));
 	       print("relations");
-     	       rel := mutableMatrix(QR,#sTab1*#sTab2,#sTab1*#sTab2);
+--     	       rel := mutableMatrix(QR,#sTab1*#sTab2,#sTab1*#sTab2);
+     	       rel := mutableMatrix(QR,#indR,#indR);
 	       c := 0;
-	       time for i1 from 0 to #sTab1-1 do
-	       	    for i2 from 0 to #sTab2-1 do
+--	       time for i1 from 0 to #sTab1-1 do
+--	       	    for i2 from 0 to #sTab2-1 do
+     	       for T in indR do
 		    (
-			 T := {sTab1#i1,sTab2#i2};
+     	       	    	 i1 := indTab1#(T#0);
+		    	 i2 := indTab2#(T#1);
+--			 T := {sTab1#i1,sTab2#i2};
 			 strT1 := newsTab1#i1;
 			 strT2 := newsTab2#i2;
 			 for a in keys strT1 do
 			      for b in keys strT2 do
-			      	   rel_(index(z_({a,b})),c) = strT1#a*strT2#b;
-			 rel_(index(z_T),c) = rel_(index(z_T),c) + 1;
+--			      	   rel_(ind#({a,b}),c) = strT1#a*strT2#b;
+			      (
+				   newa := tsort#a;
+				   lisnewb := straighten apply(b,x->(x/(y->perm#a#y)));
+				   coe := sg#a * strT1#a * strT2#b;
+				   for newb in keys lisnewb do
+					try(rel_(ind#({newa,newb}),c) = rel_(ind#({newa,newb}),c) + coe*lisnewb#newb);
+				   );
+			 rel_(ind#T,c) = rel_(ind#T,c) + 1;
 			 c = c + 1;
 			 );
 	       rels = rels | matrix(rel);
@@ -391,11 +411,14 @@ secondSecant(List,List,List) := (lam0,lam1,lam2) ->
 	       print("relations");
 	       rel := mutableMatrix(QR,#indR,#indR);
 	       c := 0;
-     	       time for i1 from 0 to #sTab1-1 do
-	       	    for i2 from 0 to #sTab2-1 do
+{*     	       time for i1 from 0 to #sTab1-1 do
+	       	    for i2 from 0 to #sTab2-1 do*}
+	       time for T in indR do
      	       	    (
-		    T := {sTab1#i1,sTab2#i2};
-		    try (ind#T) else continue;
+--		    T := {sTab1#i1,sTab2#i2};
+     	       	    i1 := indTab1#(T#0);
+		    i2 := indTab2#(T#1);
+--		    try (ind#T) else continue;
      		    for i from 0 to #col - 1 do
 		    (
 			 strT1 := newsTab1#i#i1;
@@ -427,10 +450,12 @@ secondSecant(List,List,List) := (lam0,lam1,lam2) ->
      gensR = indR/(i->z_i);
      R = kk[gensR,MonomialSize=>4];
      print(#indR);
-     print(#indR == scalarProduct(internalProduct(Q_(lam0),Q_(lam1)),Q_(lam2)));
-     kerf := ideal(1_R);
+     mult := scalarProduct(internalProduct(Q_(lam0),Q_(lam1)),Q_(lam2));
+     print(#indR == mult);
+--     return indR;
      
-for p in kpar do
+kerf := intersect({ideal(1_R)} |
+for p in kpar list
 (
      print(p);
      sT0 := StdTab#(lam0,p);
@@ -443,12 +468,12 @@ for p in kpar do
      gensB := sT1/(i->B_i);
      gensC := sT2/(i->C_i);
      gensS := gensA | gensB | gensC;
-     S := kk[gensS,MonomialSize=>4];
      if #gensS == 0 then continue;--because kernel of map to QQ[] has a bug
+     S := kk[gensS,MonomialSize=>4];
      gensA = value \ gensA;
      gensB = value \ gensB;
      gensC = value \ gensC;
-     time f := map(S,R,for T in indR list
+     f := map(S,R,for T in indR list
 	  (
      	       T1 := T#0;
 	       T2 := T#1;
@@ -467,9 +492,10 @@ for p in kpar do
      deg3 := gens(promote(ideal(gensA),S)*promote(ideal(gensB),S)*promote(ideal(gensC),S));
      mat := lift(contract(transpose deg3,f.matrix),kk);
      ke := gens(ker mat);
-     time kerf = intersect(kerf, ideal(matrix{gens R}*ke));
-     kerf = ideal({0_R}|select(flatten entries gens kerf,i->degree i == {1}));
-     );
+     if numgens R - numgens source ke == mult then return mult;
+     ideal(matrix{gens R}*ke)
+     ));
+kerf = ideal({0_R}|select(flatten entries gens kerf,i->degree i == {1}));
 --(numgens R-numgens source mingens kerf,(gens R)%kerf)
 numgens R-numgens source mingens kerf
 --mingens kerf
@@ -543,7 +569,7 @@ load"tableaux.m2"
 
 kk = ZZ/32003
 
-d = 10
+d = 7
 k = 3
 
 Q = schurRing(QQ,q,d)
@@ -554,9 +580,10 @@ S3 = schurRing(S2,s3,k)
 s = s1_{1}*s2_{1}*s3_{1}
 sP = symmetricPower(d,s);
 
-
+partsd = select(partitions d,i->#i==4)/(i->toList i);
 partsd = select(partitions d,i->#i<=k)/(i->toList i);
 kpar = select(partsd,i->#i==k);
+kpar = select(partitions d,i->#i==6)/(i->toList i)
 
 StdTab = new MutableHashTable;
 time for lam in partsd do
@@ -591,6 +618,8 @@ time for lam in partsd do
 pd = partsd
 
 hilbFcnd = 0
+
+secondSecant({3,3,3,3},{3,3,3,3},{3,3,3,3})
 
 --secondSecant({4,3,3},{4,3,3},{4,3,3}) -- 0
 --secondSecant({3,3,3},{3,3,3},{3,3,3}) -- 0

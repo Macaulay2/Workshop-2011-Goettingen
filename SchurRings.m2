@@ -878,12 +878,13 @@ locL = local locL;
 locLengthL = local locLengthL;
 locParts = local locParts;
 locPartitions = local locPartitions;
+locind = local locind;
 genPartitions = local genPartitions;
 
 genPartitions = method()
 genPartitions(ZZ) := (k)->
 (
-     if k==length locS then (locPartitions = locPartitions | {set toList locParts}) else
+     if k==length locS then (locind = locind + 1;locPartitions#locind = set toList locParts) else
      (
      for i from 0 to locLengthL-1 do
      	  if (i==0 and #locParts#0 < locL#0) or (((locL#(i-1)>locL#i) or (#locParts#(i-1)>0)) and (#locParts#i<locL#i)) then
@@ -902,9 +903,10 @@ partitions(Set,BasicList) := (S,L)->
      locLengthL = #L;
      locParts = new MutableList;
      for i from 0 to locLengthL-1 do locParts#i = set{};
-     locPartitions = {};
+     locPartitions = new MutableList;
+     locind = -1;
      genPartitions(0);
-     locPartitions
+     toList locPartitions
      )
 
 --------end generate partitions
