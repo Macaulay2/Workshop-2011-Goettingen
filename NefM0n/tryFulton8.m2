@@ -105,7 +105,7 @@ coeffLinKeelAvgJK((1,2,3),(1,4,5), (4,5), 8)
 
 c14 = cJinD((1,4), 8)
 coeffLinKeelAvgJK((1,2,3),(1,4,5), (1,4), 8)
-minimalValue(Ac123c145, vector flatten {0, c24})
+minimalValue(Ac123c145, vector flatten {0, c14})
 --coeff od \D_14 = 0, done
 
 c24 = cJinD((2,4), 8)
@@ -135,3 +135,36 @@ coeffLinKeelAvgJK((1,2,3),(1,4,5), (2,3,4), 8)
 c234 = cJinD((2,3,4), 8);
 minimalValue(Ac123c145, vector flatten {0, c234})
 -- obtain c234 >= -1
+
+createMat123 = method()
+createMat123(ZZ) := n -> (
+     F := fCurveIneqsMatrix n;
+     zeros := transpose matrix {toList (numRows (matrix F) : 0)};
+     A := zeros | matrix F;
+     c123 := cJinD((1,2,3), n);
+     A = matrix flatten {entries A,{flatten {{1},c123}}, {flatten{{-1}, -c123}} };
+     nList := toList(1..n);
+     bndIndices := select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );
+     bndIndices1 = apply(bndIndices, J -> cJinD(flatten sequence J, n));
+     bndIndices1 = apply(bndIndices1, cJ -> {flatten {{1},cJ}});
+     B := matrix flatten bndIndices1;
+     M := A || B;
+     
+     apply(bndIndices, J -> {J,minimalValue(M, vector flatten{0, cJinD(flatten sequence J, n)})})
+     )
+
+
+
+M = createMat123(8)
+minimalValue(M, vector flatten {0, c14})
+
+J = (1,2,3)
+isSubset(J,nList)
+bndIndices(8)
+nList := toList(1..8);
+n = 8
+bndIndices = select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );
+bndIndices
+isSubset(bndIndices#0,nList)
+flatten sequence {1,2,3}
+matrix flatten bndIndices

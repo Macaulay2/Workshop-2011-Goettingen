@@ -627,7 +627,8 @@ cJinD (Sequence, ZZ) := (J, n) -> (
      
      nList := toList(1..n);
      --Check if the sequence J has correct entries
-     J/(j -> if not isSubset({j}, nList) then error "Expected sequence to contain entries between 1 and n");
+     --<< "J: " << J << " nList: " << nList << endl;
+     if not isSubset(J, nList) then error "Expected sequence to contain entries between 1 and n";
      
     
      apply(select (subsets(nList), I-> (#(set I) >= 4 and even (#(set I ))) ), 
