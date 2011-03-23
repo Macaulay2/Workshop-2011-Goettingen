@@ -121,6 +121,7 @@ def getNodeListString(dependencyDict):
 	res = res + " } ; \n" ;
 	return res;
 
+
 def createAdjacencyMatrixString(graph):
 
 	assert(graph.get_type()=='digraph');
