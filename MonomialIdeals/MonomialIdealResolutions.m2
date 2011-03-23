@@ -6,7 +6,7 @@ newPackage (
   Version=>"0.1",
   Date => "march 2011",
   Authors => {{Name => "Eduardo Saenz De Cabezon Irigara", Email => "eduardo.saenz-de-cabezon@unirioja.es"},
-              {Name => "Oscar Fernandez-Ramos", Email => "caribefresno@gmail.com"},
+              {Name => "Oscar Fernandez-Ramos", Email => "oscarf@agt.uva.es"},
               {Name => "Christof Söger", Email => "csoeger@uos.de"}},
   Headline => "various methods for working with resolutions for monomial ideals",
   DebuggingMode => false
@@ -57,9 +57,10 @@ scarf(MonomialIdeal):= I -> (
    S:=drop(subsets(numgens I),1);
    faces:={};
    P:=partition(s->lcmMon(apply (s,i->flatten exponents I_i)),S);
+   --print P;
    apply(keys P,k->if #(P#k)==1 then faces=faces|P#k); 
    v:=getSymbol "v";
-   R:=QQ[v_1..v_(length faces-1)];
+   R:=QQ(monoid[v_1..v_(length faces)]);
    simplicialComplex apply(faces,f->product(apply(f,i->R_i)))           
 )
 
