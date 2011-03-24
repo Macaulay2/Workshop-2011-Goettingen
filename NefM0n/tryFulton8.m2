@@ -227,7 +227,6 @@ avgLists(List, List, ZZ) := (L, J, n) -> (
 	       );
 	  );
      avg/counter
-           
      )
 
 L = {{1,2,3},{1,3,5}}
