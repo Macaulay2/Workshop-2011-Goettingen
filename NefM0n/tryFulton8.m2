@@ -14,7 +14,7 @@ val = minimalValue(A, vector flatten {0, c12})
 --cijk
 c123 = cJinD((1,2,3), 8);
 --val = minimalValue(A, vector flatten {0, c123})
-Ac123 = matrix flatten {entries A,{flatten {{1},c123}}};      
+--Ac123 = matrix flatten {entries A,{flatten {{1},c123}}};      
           
 val = minimalValue(Ac123, vector flatten {0,c123})
 --obtain c123 unbounded below
@@ -136,6 +136,32 @@ c234 = cJinD((2,3,4), 8);
 minimalValue(Ac123c145, vector flatten {0, c234})
 -- obtain c234 >= -1
 
+
+--Subcase of -1 <= c145 <= 1/6: assume additionally that 0 <= c24 <= 1/2
+Ac123c145c24 = matrix flatten {entries Ac123c145, {flatten {{1/2},-c24}}}; 
+
+c25 = cJinD((2,5), 8);
+minimalValue(Ac123c145c24, vector flatten {0, c25})
+--need c25 >= 1, get c25 >= 0
+
+c125 = cJinD((1,2,5), 8);
+minimalValue(Ac123c145c24, vector flatten {0, c125})
+--need c125 >= 1, get c125 >= 3, as before
+
+c256 = cJinD((2,5,6), 8);
+minimalValue(Ac123c145c24, vector flatten {0, c256})
+--need c256 >= 1, get c256 >= 91/180
+
+c1256 = cJinD((1,2,5,6), 8);
+minimalValue(Ac123c145c24, vector flatten {0, c1256})
+--need c1256 >= 1, get >= 2381/765
+
+c34 = cJinD((3,4), 8);
+minimalValue(Ac123c145c24, vector flatten {0, c34})
+--need c34 >= 1, get >= 0 
+
+keelAvgJK((1,2,3), (1,4,5), 8)
+
 createMat123 = method()
 createMat123(ZZ) := n -> (
      F := fCurveIneqsMatrix n;
@@ -168,3 +194,6 @@ bndIndices
 isSubset(bndIndices#0,nList)
 flatten sequence {1,2,3}
 matrix flatten bndIndices
+
+
+
