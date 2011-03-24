@@ -44,7 +44,7 @@ minimalValue(Ac123, vector flatten {0,c124})
 coeffKinKeelAvgJ ((1,4,5), (1,2,3), 8)
 --get coeff \D_{145} = 1/6
 c145 = cJinD((1,4,5), 8);
-Ac123c145 = matrix flatten {entries Ac123,{flatten {{1},c145}} }; 
+Ac123c145 = matrix flatten {entries M,{flatten {{1},c145}} }; 
 minimalValue(Ac123c145, vector flatten {0,c145})
 --get c145 unbounded below
 
@@ -89,7 +89,7 @@ minimalValue(Ac123c4567, vector flatten {0, c4567})
 --######################
 --Assume -1 <= c145 <= 1/6
 c145 = cJinD((1,4,5), 8);
-Ac123c145 = matrix flatten {entries Ac123,{flatten {{1/6},-c145}}, {flatten {{1}, c145} }}; 
+Ac123c145 = matrix flatten {entries M,{flatten {{1/6},-c145}}, {flatten {{1}, c145} }}; 
 minimalValue(Ac123c145, vector flatten {0, c145})
 
 c12 = cJinD((1,2), 8)
@@ -174,9 +174,9 @@ createMat123(ZZ) := n -> (
      bndIndices1 = apply(bndIndices, J -> cJinD(flatten sequence J, n));
      bndIndices1 = apply(bndIndices1, cJ -> {flatten {{1},cJ}});
      B := matrix flatten bndIndices1;
-     M := A || B;
+     M := A || B
      
-     apply(bndIndices, J -> {J,minimalValue(M, vector flatten{0, cJinD(flatten sequence J, n)})})
+     --apply(bndIndices, J -> {J,minimalValue(M, vector flatten{0, cJinD(flatten sequence J, n)})})
      )
 
 
@@ -195,5 +195,41 @@ isSubset(bndIndices#0,nList)
 flatten sequence {1,2,3}
 matrix flatten bndIndices
 
+avgLists = method()
+avgLists(List, List, ZZ) := (L, J, n) -> (
+     correctSets := (i, A, B, nList) -> (
+	  jList := subsets(listComplement(nList,flatten sequence unique flatten {toList A, toList B}),2);
+	  apply(jList, j-> { i, j})
+	  );
+     nList := toList(1..n);
+     bndIndices := select (subsets(nList), j -> ( (#j >= 2 and #j < floor n/2) or (#j == floor n/2 and isSubset({1},j) ) ) );
+     avg:= toList (#bndIndices : 0);
+     twotuples := flatten apply(subsets(nList,2), i-> apply(subsets(listComplement(nList, i),2), j-> (i,j)));
+     --<< twotuples << endl;
+     ans := select(twotuples, t -> (
+	  all(L, l -> (#(set t#0 * set l) == 2 and #(set t#1 * set l)==0) or  (#(set t#0 * set l) == 0 and #(set t#1 * set l)==2))
+	  
+	  ));
+     bjl:= sum(apply(J, j->bndJList(sequence j,n)));
+     counter :=0;
+     for t in ans do (
+	  i := t#0;
+	  j := t#1;
+	  tw1 := ({i#0,j#0},{i#1,j#1});
+	  tw2 := ({i#0,j#1},{i#1,j#0});
+	  if all(J, l -> not ((#(set tw1#0 * set l) == 2 and #(set tw1#1 * set l)==0) or  (#(set tw1#0 * set l) == 0 and #(set tw1#1 * set l)==2))) then (
+	       avg = avg - keelSumList(toList t, n) + keelSumList(toList tw1, n) + bjl;
+	       counter = counter+1;
+	       );
+	  if all(J, l -> not ((#(set tw2#0 * set l) == 2 and #(set tw2#1 * set l)==0) or  (#(set tw2#0 * set l) == 0 and #(set tw2#1 * set l)==2))) then (
+	       avg = avg - keelSumList(toList t, n) + keelSumList(toList tw2, n) + bjl;
+	       counter = counter+1;
+	       );
+	  );
+     avg/counter
+           
+     )
 
+L = {{1,2,3},{1,3,5}}
+avgLists(L,{{6,8}},8)
 
