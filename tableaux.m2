@@ -537,7 +537,7 @@ for p in kpar list
 kerf = ideal({0_R}|select(flatten entries gens kerf,i->degree i == {1}));
 --(numgens R-numgens source mingens kerf,(gens R)%kerf)
 dimim := numgens R-numgens source mingens kerf;
-if dimim < mult then error"found equation";--g<<"found equation "<<toString(indR)<<"\n";
+--if dimim < mult then error"found equation";--g<<"found equation "<<toString(indR)<<"\n";
 dimim
 --mingens kerf
 )
@@ -610,22 +610,22 @@ load"tableaux.m2"
 
 kk = ZZ/32003
 
-d = 10
-k = 6
+d = 8
+k = 3
 
 Q = schurRing(QQ,q,d)
-S1 = schurRing(QQ,s1,k-2)
-S2 = schurRing(S1,s2,k-2)
-S3 = schurRing(S2,s3,k-2)
+S1 = schurRing(QQ,s1,k)
+S2 = schurRing(S1,s2,k)
+S3 = schurRing(S2,s3,k)
 
 s = s1_{1}*s2_{1}*s3_{1}
 --sP = symmetricPower(d,s);
 
 partsd = select(partitions d,i->#i<=k)/(i->toList i);
 kpar = select(partsd,i->#i==k);
-partsd = reverse select(partitions d,i->#i==4)/(i->toList i)
-partsd = drop(partsd,1)
-kpar = select(partitions d,i->#i==6)/(i->toList i)
+--partsd = reverse select(partitions d,i->#i==4)/(i->toList i)
+--partsd = drop(partsd,1)
+--kpar = select(partitions d,i->#i==6)/(i->toList i)
 
 StdTab = new MutableHashTable;
 time for lam in partsd do
@@ -701,8 +701,8 @@ oo-recsyz(oo)
 
 --h5 = hilbFcnd-symmetricPower(5,s)+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*s--degree 5--works
 --h6 = hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(2,s)-S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}-S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}-S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2}-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*s--degree 6--works
---h7 = hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(3,s)-(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*s-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(2,s)+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*s--degree 7--works
-time h8 = hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(4,s)-(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*symmetricPower(2,s)-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(3,s)+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*symmetricPower(2,s)--degree 8--works
+--h7 = hilbFcnd-symmetricPower(7,s)+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(3,s)-(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*s-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(2,s)+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*s--degree 7--works
+time h8 = hilbFcnd-symmetricPower(8,s)+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(4,s)-(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*symmetricPower(2,s)-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(3,s)+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*symmetricPower(2,s)--degree 8--works
 
 h9 = symmetricPower(9,s)-S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(5,s)+
 (S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*symmetricPower(3,s)+
