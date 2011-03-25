@@ -262,16 +262,24 @@ locParts = local locParts;
 locPartitions = local locPartitions;
 locind = local locind;
 genPartitions = local genPartitions;
+loccolT0 = local loccolT0;
+loccolT1 = local loccolT1;
+loccolT2 = local loccolT2;
 
 genPartitions = method()
 genPartitions(ZZ) := (k)->
 (
---     if k==length locS then (locLPos = locLPos | {toList locPos}) else
      if k==length locS then (locind = locind + 1;locLPos#locind = toList locPos) else
      (
      for i from 0 to locLengthL-1 do
      	  if (#locParts#i<locL#i) then
 	  (
+     	       cont := false;
+     	       for j in locParts#i do
+	       	    if loccolT0#j == loccolT0#(locS#k) or
+		       loccolT1#j == loccolT1#(locS#k) or
+		       loccolT2#j == loccolT2#(locS#k) then (cont = true;break;);
+	       if cont then continue;
 	       locParts#i = locParts#i | {locS#k};
 	       locPos#k = i+1;
 	       genPartitions(k+1);
@@ -352,7 +360,7 @@ secondSecant(List,List,List) := (lam0,lam1,lam2) ->
      QR := kk[];
      rels := matrix{#indR:{0_QR}};
 
-{*     time for col in T0 do
+     time for col in T0 do
      	  for i from 0 to #col-2 do
 	  (
 	       j := #col-1;
@@ -391,7 +399,7 @@ secondSecant(List,List,List) := (lam0,lam1,lam2) ->
 			 );
 	       rels = rels | matrix(rel);
 	       );
-*}
+
       for co from 0 to #T0-2 do
       (
  	       col := T0#co;
@@ -453,6 +461,11 @@ secondSecant(List,List,List) := (lam0,lam1,lam2) ->
      mult := scalarProduct(internalProduct(Q_(lam0),Q_(lam1)),Q_(lam2));
      print(#indR == mult);
 --     return indR;
+
+loccolT0 = new MutableList;
+for c from 0 to #T0-1 do
+     for r in T0#c do
+     	  loccolT0#r = c;
      
 kerf := intersect({ideal(1_R)} |
 for p in kpar list
@@ -477,6 +490,16 @@ for p in kpar list
 	  (
      	       T1 := T#0;
 	       T2 := T#1;
+
+	       loccolT1 = new MutableList;
+	       for c from 0 to #T1-1 do
+     	           for r in T1#c do
+       	       	       loccolT1#r = c;
+	       loccolT2 = new MutableList;
+	       for c from 0 to #T2-1 do
+     	           for r in T2#c do
+       	       	       loccolT2#r = c;
+
 	       pars := partitions(splice{1..d},p);
 	       sum for pa in pars list
 	       (
@@ -489,6 +512,22 @@ for p in kpar list
 		    pA*pB*pC
 		    )
 	       ));
+{*     f := map(S,R,for T in indR list
+	  (
+     	       T1 := T#0;
+	       T2 := T#1;
+	       pars := partitions(splice{1..d},p);
+	       sum for pa in pars list
+	       (
+		    sTr0 := straighten(T0/(i->(i/(j->pa#(j-1)))));
+		    pA := apply(keys sTr0,i->if (sTr0#i == 0) then 0 else sTr0#i * value A_i)//sum;
+		    sTr1 := straighten(T1/(i->(i/(j->pa#(j-1)))));
+		    pB := apply(keys sTr1,i->if (sTr1#i == 0) then 0 else sTr1#i * value B_i)//sum;
+		    sTr2 := straighten(T2/(i->(i/(j->pa#(j-1)))));
+		    pC := apply(keys sTr2,i->if (sTr2#i == 0) then 0 else sTr2#i * value C_i)//sum;
+		    pA*pB*pC
+		    )
+	       ));*}
      deg3 := gens(promote(ideal(gensA),S)*promote(ideal(gensB),S)*promote(ideal(gensC),S));
      mat := lift(contract(transpose deg3,f.matrix),kk);
      ke := gens(ker mat);
@@ -497,7 +536,9 @@ for p in kpar list
      ));
 kerf = ideal({0_R}|select(flatten entries gens kerf,i->degree i == {1}));
 --(numgens R-numgens source mingens kerf,(gens R)%kerf)
-numgens R-numgens source mingens kerf
+dimim := numgens R-numgens source mingens kerf;
+if dimim < mult then error"found equation";--g<<"found equation "<<toString(indR)<<"\n";
+dimim
 --mingens kerf
 )
 
@@ -569,20 +610,21 @@ load"tableaux.m2"
 
 kk = ZZ/32003
 
-d = 7
-k = 3
+d = 10
+k = 6
 
 Q = schurRing(QQ,q,d)
-S1 = schurRing(QQ,s1,k)
-S2 = schurRing(S1,s2,k)
-S3 = schurRing(S2,s3,k)
+S1 = schurRing(QQ,s1,k-2)
+S2 = schurRing(S1,s2,k-2)
+S3 = schurRing(S2,s3,k-2)
 
 s = s1_{1}*s2_{1}*s3_{1}
-sP = symmetricPower(d,s);
+--sP = symmetricPower(d,s);
 
-partsd = select(partitions d,i->#i==4)/(i->toList i);
 partsd = select(partitions d,i->#i<=k)/(i->toList i);
 kpar = select(partsd,i->#i==k);
+partsd = reverse select(partitions d,i->#i==4)/(i->toList i)
+partsd = drop(partsd,1)
 kpar = select(partitions d,i->#i==6)/(i->toList i)
 
 StdTab = new MutableHashTable;
@@ -619,15 +661,20 @@ pd = partsd
 
 hilbFcnd = 0
 
-secondSecant({3,3,3,3},{3,3,3,3},{3,3,3,3})
+{*T0 = {{1,2,3,4},{5,6,7,8},{9,10,11,12}}
+T1 = {{1,2,5,9},{3,6,7,10},{4,8,11,12}}
+T2 = {{1,4,7,10},{2,5,8,11},{3,6,9,12}}
+lam0=lam1=lam2={3,3,3,3}*}
+
+--secondSecant({3,3,3,3},{3,3,3,3},{3,3,3,3})
 
 --secondSecant({4,3,3},{4,3,3},{4,3,3}) -- 0
 --secondSecant({3,3,3},{3,3,3},{3,3,3}) -- 0
 --secondSecant({4,3,2},{4,3,2},{3,3,3}) -- 1
 --secondSecant({3,3,3},{3,3,3},{4,4,1}) -- 1
 
---secondSecant({9},{7,2},{7,2})
 
+--g = openOut("results")
 time for i0 from 0 to #pd-1 do
      for i1 from i0 to #pd-1 do
      	  for i2 from i1 to #pd-1 do
@@ -635,24 +682,24 @@ time for i0 from 0 to #pd-1 do
      	       lam0 := pd#i0;
 	       lam1 := pd#i1;
 	       lam2 := pd#i2;
-	       if recsyz(sP - S1_lam0*S2_lam1*S3_lam2) == 0 then
+     	       if scalarProduct(internalProduct(Q_lam0,Q_lam1),Q_lam2)>0 then
 	       (
-		    print(lam0,lam1,lam2);
+--		    g << toString(lam0,lam1,lam2) << "\n";
+     	       	    print(lam0,lam1,lam2);
 		    coeff := secondSecant(lam2,lam1,lam0);
-     	       	    plam = permutations({lam2,lam1,lam0});
-		    for pe in plam do
-		    (
-			 mon = S1_(pe#0)*S2_(pe#1)*S3_(pe#2);
-			 if recsyz(hilbFcnd-mon) != 0 then hilbFcnd = hilbFcnd + coeff*mon;
-			 )
+     	       	    plam = toList set permutations({lam0,lam1,lam2});
+     	       	    for pe in plam do
+		    	 hilbFcnd = hilbFcnd + coeff * S1_(pe#0)*S2_(pe#1)*S3_(pe#2);
 		    )
      	       )
+--g<<close
+
 hilbFcnd
 sP - hilbFcnd - (S1_{2,1,1,1}*S2_{2,1,1,1}*S3_{3,1,1}+S1_{2,1,1,1}*S3_{2,1,1,1}*S2_{3,1,1}+S3_{2,1,1,1}*S2_{2,1,1,1}*S1_{3,1,1})*symmetricPower(2,s)-
 (S1_{2,2,2}*S2_{2,2,2}*S3_{3,1,1,1}+S1_{2,2,2}*S3_{2,2,2}*S2_{3,1,1,1}+S3_{2,2,2}*S2_{2,2,2}*S1_{3,1,1,1})*s
 oo-recsyz(oo)
 
---h5 = hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*s--degree 5--works
+--h5 = hilbFcnd-symmetricPower(5,s)+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*s--degree 5--works
 --h6 = hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(2,s)-S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}-S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}-S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2}-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*s--degree 6--works
 --h7 = hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(3,s)-(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*s-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(2,s)+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*s--degree 7--works
 time h8 = hilbFcnd-sP+S1_{2,1,1}*S2_{2,1,1}*S3_{2,1,1}*symmetricPower(4,s)-(S1_{4,1,1}*S2_{2,2,2}*S3_{2,2,2}+S2_{4,1,1}*S1_{2,2,2}*S3_{2,2,2}+S3_{4,1,1}*S2_{2,2,2}*S1_{2,2,2})*symmetricPower(2,s)-S1_{2,2,1}*S2_{2,2,1}*S3_{2,2,1}*symmetricPower(3,s)+S1_{2,2,2}*S2_{2,2,2}*S3_{2,2,2}*symmetricPower(2,s)--degree 8--works
@@ -735,3 +782,4 @@ S1_{3,3,3}*S2_{4,3,2}*S3_{4,3,2}+S3_{3,3,3}*S2_{4,3,2}*S1_{4,3,2}+S2_{3,3,3}*S1_
 (S1_{6,3,3}*S2_{4,4,4}*S3_{4,4,4}+S1_{4,4,4}*S2_{6,3,3}*S3_{4,4,4}+S1_{4,4,4}*S2_{4,4,4}*S3_{6,3,3})*symmetricPower(3,s)
 
 recsyz(h15)
+
