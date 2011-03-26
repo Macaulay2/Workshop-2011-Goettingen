@@ -227,11 +227,13 @@ if opt.verbose>1 then (
 );
 I:=ideal(cI0.dd_1);
 J:=ideal(cJ0.dd_1);
+phi:=unprojectionHomomorphism(I,J);
 R:=ring I;
 if R =!= ring J then error("expected complexes over the same ring");
 v:= gens R;
 K:=coefficientRing R;
-S:=K[toSequence(join({T0_0},v))];
+degT:=degree phi;
+S:=K[toSequence(prepend(T0_0,v)),Degrees=>prepend(degT,degrees R)];
 cI:=substitute(cI0,S);
 cJ:=substitute(cJ0,S);
 g:=length(cJ);
@@ -239,9 +241,8 @@ Is:=substitute(I,S);
 Js:=substitute(J,S);
 dualcI:= shiftComplex ( dualComplex cI, -codim I);
 dualcJ:= shiftComplex ( dualComplex cJ, -codim I);
-phi:=unprojectionHomomorphism(I,J);
 gJ:=gens source phi;
-degshift:=(degree phi)#0;
+degshift:=degree phi;
 if opt.verbose>1 then (
    print("phi: "|toString((entries gJ)#0)|" -> "|toString((entries phi)#0));
    print "";
@@ -405,7 +406,7 @@ true)
 
 
 differentials=method()
-differentials(List,ZZ,ZZ,ZZ):=(L,i,g,degshift)->(
+differentials(List,ZZ,ZZ,List):=(L,i,g,degshift)->(
 if i<0 or i>g then error("wrong index");
 if checkSameRing(L)==false then error("expected input over the same ring");
 if g==2 then (
@@ -504,7 +505,7 @@ if i>=3 and i==g then (
 error("wrong index"))
 
 makeGrading=method()
-makeGrading(Matrix,List,List,ZZ):=(M,L,ig,degshift)->(
+makeGrading(Matrix,List,List,List):=(M,L,ig,degshift)->(
 i:=ig#0;
 g:=ig#1;
 R:=ring M;
@@ -720,6 +721,17 @@ Dsigma=stellarSubdivision(D,face {x_1,x_2,x_3},QQ[t])
 
 *}
 
+-------------------------------------------------------------------------------
+
+{*
+Copyright (C) [2011] [Janko Boehm, Stavros Papadakis]
+
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program; if not, see <http://www.gnu.org/licenses/>
+*}
 
 
 ------------------------------------------------------------------------------------------------------------------
@@ -753,9 +765,11 @@ doc ///
 
       For the Kustin-Miller complex see:
 
-      [1] {\it A. Kustin and M. Miller, Constructing big Gorenstein ideals from small ones, J. Algebra 85 (1983)}, 303-322.
+      [1] {\it A. Kustin and M. Miller, Constructing big Gorenstein ideals from small ones, J. Algebra 85 (1983), 303-322}.
 
-      [2] {\it Papadakis, Kustin-Miller unprojection with complexes,  J. Algebraic Geometry 13 (2004) 249-268}, @HREF"http://arxiv.org/abs/math/0111195"@
+      [2] {\it S. Papadakis, Kustin-Miller unprojection with complexes,  J. Algebraic Geometry 13 (2004) 249-268}, @HREF"http://arxiv.org/abs/math/0111195"@
+
+      [3] {\it J. Boehm, S. Papadakis: Implementing the Kustin-Miller complex construction}, @HREF"http://arxiv.org/abs/1103.2314"@
 
       For constructing new varieties see for example:
 
@@ -807,6 +821,9 @@ doc ///
       path in M2 to see the path) and do inside M2
 
       @TO installPackage@ "KustinMiller"
+      
+      This package requires {\it SimplicialComplexes.m2} Version 1.2 or higher,
+      so install this first.
 
 ///
 
@@ -820,10 +837,11 @@ doc ///
   Headline
     Compute Kustin-Miller resolution of the unprojection of I in J
   Usage
-    kustinMillerComplex(I,J,S)
-    kustinMillerComplex(cI,cJ,S)
+    kustinMillerComplex(I,J,W)
+    kustinMillerComplex(cI,cJ,W)
   Inputs
     J:Ideal
+        in a positively graded polynomial ring R
     I:Ideal
         contained in J
     cI:ChainComplex
@@ -831,11 +849,10 @@ doc ///
     cJ:ChainComplex
         resolution of J
     W:PolynomialRing
-        over the the same @TO coefficientRing@ as the @TO ring@ R of J and I
-        with one new variable T.
+        over the the same @TO coefficientRing@ as R
+        with one variable T.
   Outputs
     :ChainComplex
-        over R**W
   Description
    Text
     Compute Kustin-Miller resolution of the unprojection of I in J (or
@@ -847,15 +864,18 @@ doc ///
     variables positive and I inside J inside R two homogeneous ideals of R
     such that R/I and R/J are Gorenstein and dim(R/J)=dim(R/I)-1.
 
-    For a description of this resolution and how it is computed see for example Section 2.3 of
-
-    J. Boehm, S. Papadakis: On the structure of Stanley-Reisner rings associated to cyclic polytopes, @HREF"http://arxiv.org/abs/0912.2152"@
+    For a description of this resolution and how it is computed see
+    
+    J. Boehm, S. Papadakis: Implementing the Kustin-Miller complex construction, @HREF"http://arxiv.org/abs/1103.2314"@
 
 
     It is also possible to specify minimal resolutions of I and J.
 
-    Note that @TO kustinMillerComplex@ returns a chain complex over a new ring R**W
-    (with the @TO Join@ grading). So to avoid printing the variables of this ring when printing the chain complex
+    The function @TO kustinMillerComplex@ returns a chain complex over a new polynomial ring S
+    with the same @TO coefficientRing@ as R and the variables of R and W, where
+    degree(T) = @TO degree@ @TO unprojectionHomomorphism@(I,J). 
+    
+    To avoid printing the variables of this ring when printing the chain complex
     just give a name to the ring (e.g., do S = @TO ring@ cc  to call it S).
 
     We illustrate the Kustin-Miller complex construction at the example described in Section 5.5 of 
@@ -970,7 +990,7 @@ doc ///
 doc ///
   Key
     differentials
-    (differentials,List,ZZ,ZZ,ZZ)
+    (differentials,List,ZZ,ZZ,List)
   Headline
     Generate the differentials of the Kustin-Miller resolution
   Usage
