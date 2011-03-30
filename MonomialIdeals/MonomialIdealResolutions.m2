@@ -43,11 +43,9 @@ isGenericMonIdeal(MonomialIdeal) := I->(
      local l; 
      flag:=true;
      ex:=apply(I_*,g->(flatten exponents g));
-   --  print VerticalList ex;
      apply(support I,v->(
-	                l=select(apply(ex,e->e_(index v)),a->a!=0);
-			if length (unique l) !=length l then flag=false;
-			)      
+	        l=select(apply(ex,e->e_(index v)),a->a!=0);
+		if length (unique l) !=length l then flag=false;)      
 	  );
      flag     
 ) 
@@ -254,6 +252,7 @@ hasScalars(ChainComplex):=(C)->(
      d:=flatten flatten apply(1..max C,i->apply(flatten entries C.dd_i,j->degree j));
      member(0,d)
      )
+
 -------------------
 -- Local-Only Code
 -------------------
@@ -357,7 +356,6 @@ scarfBF(MonomialIdeal):= I -> (
    R:=QQ(monoid[v_1..v_(length faces)]);
    simplicialComplex apply(faces,f->product(apply(f,i->R_i)))           
 )
-
 
 
 -------------------
@@ -708,7 +706,7 @@ doc ///
       SC = scarf(I)
   SeeAlso
       MonomialIdeal
-      isGeneric
+      isGenericMonIdeal
       simplicialResolution
 ///
 
