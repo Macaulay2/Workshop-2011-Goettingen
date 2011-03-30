@@ -52,19 +52,6 @@ isGenericMonIdeal(MonomialIdeal) := I->(
      flag     
 ) 
 
-scarf=method();
-scarf(MonomialIdeal):= I -> (
-   S:=drop(subsets(numgens I),1);
-   faces:={};
-   P:=partition(s->lcmMon(apply (s,i->flatten exponents I_i)),S);
-   --print P;
-   apply(keys P,k->if #(P#k)==1 then faces=faces|P#k); 
-   v:=getSymbol "v";
-   R:=QQ(monoid[v_1..v_(length faces)]);
-   simplicialComplex apply(faces,f->product(apply(f,i->R_i)))           
-)
-
-
 EK = method()
 EK(ZZ,MonomialIdeal):= (n,I)->(
    --- create the nth differential in Eliahou-Kervaire's resolution
@@ -194,9 +181,40 @@ AHHResolution(MonomialIdeal):=(I)->(
 )
 
 
+--This function construct the scarf complex of a monomial ideal 'I' according to definition given in [BPS,]
+scarf=method();
+scarf(MonomialIdeal):= I -> (
+ n:=numgens I;
+ labels:=apply(I_*, m->flatten exponents m);--list with the exponent vector of each generator of I 
+ faceSet:={{}};
+ degreeSet:={apply(length labels_0,k->0)};
+ for i from 0 to n-1 do( --for the index of each generator
+   for j from 0 to length faceSet-1 do( --for every element in faceSet already added
+     if faceSet_j=!=null then(
+       deg:=lcm2Mon(degreeSet_j,labels_i);  --we compute the label of faceSet_j after adding  a new vertex to it
+       if member(deg,degreeSet) then (   --if the label has appeared before,
+         p:=position(degreeSet,s->s==deg);  --we look for when it had appeared 
+    	 if faceSet_p=!=null then(                --if that face has not been deleted yet, 
+           apply(positions(toList(p..(length faceSet-1)),  --we delete it and all faces containing that one that could be appended later
+		     f->( faceSet_f=!=null and isSubset(faceSet_p,faceSet_f))),
+	          	k-> faceSet=replace(p+k,null,faceSet));      	     
+    	 );
+       )
+       else(     --the label deg is not yet in degreeSet
+	 faceSet=faceSet|{faceSet_j|{i}};	       
+	 degreeSet=degreeSet|{deg};
+       ); 
+     );    	  
+   );	      
+ );
+ faceSet=select(faceSet,f->(f=!=null));	  
+ v:=getSymbol "v";
+ R:=QQ(monoid[v_0..v_(n-1)]);
+ simplicialComplex apply (drop(faceSet,1),f->product(apply(f,i->R_(v_i)))) 
+)
+
 
 simplicialResolutionDifferential=method();
-
 simplicialResolutionDifferential(ZZ,MonomialIdeal,SimplicialComplex):=(n,I,C) -> (
     retVal := Nothing;
     if (n == 0) then 
@@ -246,7 +264,11 @@ lcmMon(List):= (L) -> (
       apply(len,i->max(apply(L,l->l_i)))  
 )
 
-
+--lcm of 2 monomials given in form of 2 lists of exponents
+lcm2Mon=method();
+lcm2Mon(List, List):= (L1,L2) -> (
+      apply(L1,L2, (a,b)->max({a,b}))   
+) 
 
 --lcm function taken from package "ChainComplexExtras.m2"
 myLcm = method()
@@ -287,12 +309,10 @@ canonicalDecomp(RingElement,List):=(m,G)->(
      return("Error: this monomial does not belong to the ideal")  
 )
 
---
---
-
+--Give the greatest index of a variable dividing a monomial m
 maxVar=method();
 maxVar(RingElement):=(m)->(
-     max positions(first(exponents(m)),i->i!=0)
+     max positions(first(exponents(m)),i->i!=0) --maybe it is better to use flatten instead of first
 );
 
 --The squarefree (SQ) versions of admissible symbols
@@ -324,6 +344,22 @@ labelledSubcomplex(RingElement,SimplicialComplex,MonomialIdeal):=(M,C,I)->(
      N:=positions(apply(lista,k->myLcm(apply(positions(k,i->i!=0),j->I_j))),i->M//i!=0_R);
      simplicialComplex(L_N)
      )
+
+--function for constructing the scarf complex of a monomial ideal I using Brute Force
+--Maybe usefull for tests. 
+scarfBF=method();
+scarfBF(MonomialIdeal):= I -> (
+   S:=drop(subsets(numgens I),1);
+   faces:={};
+   P:=partition(s->lcmMon(apply (s,i->flatten exponents I_i)),S);
+   apply(keys P,k->if #(P#k)==1 then faces=faces|P#k); 
+   v:=getSymbol "v";
+   R:=QQ(monoid[v_1..v_(length faces)]);
+   simplicialComplex apply(faces,f->product(apply(f,i->R_i)))           
+)
+
+
+
 -------------------
 -- Documentation
 -------------------
@@ -434,6 +470,34 @@ doc ///
       isElement(g,I)
   SeeAlso
     isSubset
+///
+
+doc ///
+  Key
+    isGenericMonIdeal
+    (isGenericMonIdeal, MonomialIdeal)
+  Headline
+    checks whether a monomial ideal is generic (see [BPS])
+  Usage
+    isGenericMonIdeal I
+  Inputs
+    I: MonomialIdeal
+  Outputs
+    B: Boolean
+      returns true if and only if I is generic
+  Description
+    Text
+      Determines wether the monomial ideal I is generic. 
+    Example
+      R = QQ[x,y,z];
+      I = monomialIdeal(x^2*y,x*z^2,y^3*z);
+      isGenericMonIdeal I
+      J = monomialIdeal(x^2*y,x*z^3,y*z^2);
+      isGenericMonIdeal J
+  SeeAlso
+    isStable
+    MonomialIdeal
+    scarf
 ///
 
 doc ///
@@ -629,19 +693,22 @@ doc ///
   Headline
     Constructs the scarf complex, a simplical complex supported on the generators of the monomial ideal.
   Usage
-    simplicialResolution(I)
+    scarf I
   Inputs
     I: MonomialIdeal
   Outputs
     SC: SimplicialComplex
   Description
     Text
-      --TODO--
+      Construct the scarf complex of a monomial ideal I=(m_1,...,m_r),
+       which is defined as $\Delta_I:={J \subset [r] s.t. lcm({m_i: i \in J })\not=lcm({m_i: i \in K }) \forall K\subset [r] with K\not= J }$  
     Example
       R=QQ[x,y,z];
       I=monomialIdeal(x*y,x*z,y*z);
       SC = scarf(I)
   SeeAlso
+      MonomialIdeal
+      isGeneric
       simplicialResolution
 ///
 
@@ -735,3 +802,16 @@ assert (isResolution(AHHR,I));
 assert (betti AHHR == betti res I);
 ///
 
+-- Tests scarf and isGenericMonIdeal
+--we will built a generic monomial ideal with m generators. the power of each variable is taken between 0 and 2*m.
+--(0 can be the power of some variable in several generators of a generic monomial ideal, but not in this examples) 
+TEST ///
+n=4;
+m=6;
+R=QQ[x_0..x_(n-1)];
+L=toList(0..2*m);   
+expos={};apply(n,i->(expos=expos|{take(random L,m)}));
+I=monomialIdeal apply(m,j->product apply(n,k->(x_k)^((expos_k)_j)));
+assert(isGenericMonIdeal I);
+assert(betti res I==betti simplicialResolution(I,scarf I));
+///
