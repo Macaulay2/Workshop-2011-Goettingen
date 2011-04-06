@@ -40,14 +40,14 @@ export {
    
 isGenericMonIdeal=method();
 isGenericMonIdeal(MonomialIdeal) := I->(
-     local l; 
-     flag:=true;
-     ex:=apply(I_*,g->(flatten exponents g));
-     apply(support I,v->(
-	        l=select(apply(ex,e->e_(index v)),a->a!=0);
-		if length (unique l) !=length l then flag=false;)      
-	  );
-     flag     
+    local l; 
+    flag:=true;
+    ex:=apply(I_*,g->(flatten exponents g));
+    apply(support I,v->(
+        l=select(apply(ex,e->e_(index v)),a->a!=0);
+        if length (unique l) !=length l then flag=false;)      
+    );
+    flag     
 ) 
 
 EK = method()
@@ -232,7 +232,7 @@ simplicialResolutionDifferential(ZZ,MonomialIdeal,SimplicialComplex):=(n,I,C) ->
       retVal = map(R^(-apply(targetMonos, i -> degree i)), R^(-apply(sourceMonos, i -> degree i)), myFn);
     };
     retVal
-     )
+)
 
 
 simplicialResolution=method();
@@ -240,18 +240,18 @@ simplicialResolution(MonomialIdeal, SimplicialComplex):=(I,C)-> (
      R:=ring(I);
      if (length(first entries faces(0,C))!=numgens I) then error "the number of vertices of the simplicial complex has to be the same as the number of generators of the ideal";
      chainComplex(apply((0..dim C),i->simplicialResolutionDifferential(i,I,C)))
-     )
+)
 
 isResolution=method()
 isResolution(ChainComplex,MonomialIdeal):=(C,I)->(
      return ((cokernel gens I==prune HH_0(C)) and ( all((min C+1,max C), i -> (prune HH_i(C) == 0))))
-     )
+)
 
 hasScalars=method()
 hasScalars(ChainComplex):=(C)->(
      d:=flatten flatten apply(1..max C,i->apply(flatten entries C.dd_i,j->degree j));
      member(0,d)
-     )
+)
 
 -------------------
 -- Local-Only Code
@@ -699,7 +699,7 @@ doc ///
   Description
     Text
       Construct the scarf complex of a monomial ideal I=(m_1,...,m_r),
-       which is defined as $\Delta_I:={J \subset [r] s.t. lcm({m_i: i \in J })\not=lcm({m_i: i \in K }) \forall K\subset [r] with K\not= J }$  
+       which is defined as $\Delta_I:={J \subset [r] s.t. lcm({m_i: i \in J })\neq lcm({m_i: i \in K }) \forall K\subset [r] with K\neq J }$  
     Example
       R=QQ[x,y,z];
       I=monomialIdeal(x*y,x*z,y*z);
@@ -743,11 +743,40 @@ doc ///
     isSQStable
 ///
 
+doc ///
+   Key
+     hasScalars
+     (hasScalars, ChainComplex)
+   Headline
+     TODO!!
+   Usage
+     hasScalars(C)
+   Inputs
+     C: ChainComplex
+   Outputs
+     B: Boolean
+       returns true if and only if C .... TODO!!
+  Description
+    Text
+      Determines if the ChainComplex TODO!! 
+    Example
+      R = QQ[x,y,z];
+      I = monomialIdeal(x^3,x^2*y,x*y^2,y^3);
+      isStable(I)
+      E = EKResolution(I);
+      isResolution(E,I)
+      hasScalars(E)
+  SeeAlso
+    isResolution 
+///
+
+
+
 -------------------
 -- Tests
 -------------------
 
--- Tests isElement
+-- 1 Tests isElement
 TEST ///
 R = QQ[x,y,z];
 I = monomialIdeal(x^3,x^2*y,x*y^2,y^3);
@@ -762,7 +791,7 @@ assert(not isElement(x*y^2+x^3*y*z+z^2, J));
 assert(  isElement(x^2*y+x*y*z+x^3*z^3, J));
 ///
 
--- Tests isStable
+-- 2 Tests isStable
 TEST ///
 R = QQ[x,y,z];
 I = monomialIdeal(x^3,x^2*y,x*y^2,y^3);
@@ -772,7 +801,7 @@ assert(not isStable J);
 assert(not isStable monomialIdeal z);
 ///
 
--- Tests isSQStable
+-- 3 Tests isSQStable
 TEST ///
 R = QQ[x,y,z];
 I = monomialIdeal(x*z,y*z);
@@ -782,7 +811,7 @@ J = monomialIdeal(x,y*z);
 assert (isSQStable J);
 ///
 
--- Tests EK, EKResolution
+-- 4 Tests EK, EKResolution
 TEST ///
 R = QQ[x,y,z];
 I=monomialIdeal(x^2,x*y,y^2,y*z);
@@ -791,7 +820,7 @@ assert (isResolution(EKR,I));
 assert (betti EKR == betti res I);
 ///
 
--- Tests AHH, AHHResolution
+-- 5 Tests AHH, AHHResolution
 TEST ///
 R = QQ[x,y,z];
 I=monomialIdeal(x*y,x*z,y*z);
@@ -800,7 +829,7 @@ assert (isResolution(AHHR,I));
 assert (betti AHHR == betti res I);
 ///
 
--- Tests scarf and isGenericMonIdeal
+-- 6 Tests scarf and isGenericMonIdeal
 --we will built a generic monomial ideal with m generators. the power of each variable is taken between 0 and 2*m.
 --(0 can be the power of some variable in several generators of a generic monomial ideal, but not in this examples) 
 TEST ///
@@ -812,4 +841,35 @@ expos={};apply(n,i->(expos=expos|{take(random L,m)}));
 I=monomialIdeal apply(m,j->product apply(n,k->(x_k)^((expos_k)_j)));
 assert(isGenericMonIdeal I);
 assert(betti res I==betti simplicialResolution(I,scarf I));
+///
+
+-- 7 Tests EKResolution, isResolution, hasScalar
+-- taken from the paper
+TEST ///
+R = QQ[x,y,z];
+I = monomialIdeal(x^3,x^2*y,x*y^2,y^3);
+assert(isStable(I));
+E = EKResolution(I);
+assert(isResolution(E,I));
+assert(not hasScalars(E));
+assert(betti res I == betti E);
+///
+
+-- 8 Tests simplicialResolution, isResolution, hasScalar
+-- taken from the paper
+TEST ///
+R=QQ[x,y];
+S=QQ[a,b,c];
+I=monomialIdeal(x^2,y^2,x*y);
+C1=simplicialComplex({a*b*c});
+C2=simplicialComplex({a*b,b*c});
+C3=simplicialComplex({a*c,b*c});
+SC1=simplicialResolution(I,C1);
+SC2=simplicialResolution(I,C2);
+SC3=simplicialResolution(I,C3);
+assert(isResolution(SC1,I));
+assert(isResolution(SC2,I));
+assert(not isResolution(SC3,I));
+assert(hasScalars(SC1));
+assert(not hasScalars(SC2));
 ///
