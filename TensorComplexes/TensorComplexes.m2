@@ -84,26 +84,12 @@ makeExteriorPower(Module, ZZ) := (F,d) ->(
      --generators are given in revlex order. NOTE: that the basisList is 
      --a list of  subsets of basisList F, NOT a list of 0-1 lists.
      --Can convert back and forth with multisetToMonomial and monomialToMultiset
---     makeExplicitFreeModule F;
-     print uM F;
+     makeExplicitFreeModule F;
      E := (ring F)^(binomial(rank F,d));
-     print uM F;
           E.cache.underlyingModules = {F};     
-     error"";
           E.cache.basisList = subsets(basisList F, d);
-
-     print uM F;
-
-          {*The following would give them as 0-1 vectors, but ONLY when basisList F
-     is a list of integers:
-     ((subsets(basisList F, d))/(s->
-	               apply(rank F, i-> #select(1,s,j->j==i))
-		       ));
-     *}
-     E.cache.fromOrdinal = j -> (basisList E)#j;
-     print uM F;
+     	  E.cache.fromOrdinal = j -> (basisList E)#j;
           E.cache.toOrdinal = I -> position(basisList E, J->J==I);
-     print uM F;
           E)
 
 ///
@@ -119,24 +105,14 @@ basisList E2
 
 F = makeTensorProduct{S^1,S^1}
 uM F
-makeExteriorPower(F,1)
-
-
-F.cache.underlyingModules
-E= S^3
-E.cache.underlyingModules = {F}
+F1 = makeExteriorPower(F,1)
 uM F
-F.cache.underlyingModules
-
-
-E = makeExteriorPower(F,1)
-uM((uM E)_0)
-uM F
+uM F1
 ///
 
 multiSubsets = method()
 multiSubsets (List,ZZ) := (L,d) -> (
-     --(ordered) d element subsets allowing repetition
+     --(ordered) d element subsets allowing repetition, given in revlex order
      ss := subsets(#L+d-1,d);
      ss1 := ss/(I -> apply(#I, i-> I_i-i));
      apply(ss1, I-> apply(I, i-> L#i))
@@ -146,6 +122,7 @@ restart
 load "~/src/Goettingen-2011/TensorComplexes/TensorComplexes.m2"
 L = {A, {1,2}}
 multiSubsets(L,2)
+multiSubsets({0,1,2},2)
 ///
 
 makeSymmetricPower = method()
@@ -161,7 +138,7 @@ makeSymmetricPower(Module, ZZ) := (F,d) ->(
 
 multisetToMonomial=method();
 multisetToMonomial(List, List) := (L, mL) -> 
-     --changes a list of elements of L with repetitions to a list of
+     --changes a list mL of elements of L, with repetitions, to a list of
      --integers, of length #L whose i-th entry is the number of times L_i
      --occurs in mL
       apply(L, i-> #positions(mL, j-> j==i))
@@ -194,7 +171,7 @@ basisList E
 productList = method()
 productList(List):= L->(
      --takes a list of lists, and forms  list of  tuples of elements, in order
-     --{0,0}, {0,1}, ...
+     --{0,0}, {0,1}, ... (that is, lexicographically).
      Pp := if #L == 0 then {}
      else if #L == 1 then L#0
      else if #L == 2 then flatten (apply(L_0,i->apply(L_1, j->{i,j})))
@@ -216,7 +193,7 @@ productList L1
 L2 = {toList(0..1),toList(0..2)}
 productList L2
 
-L3 = {toList(0..1),toList(0..2),toList(0..1)}
+L3 = {toList(0..1),toList(0..2),toList(0..2)}
 P = productList L3
 
 L4 = {toList(0..1),toList(0..2),toList(0..1),toList(0,1)}
@@ -236,6 +213,7 @@ productList L
 
 makeTensorProduct = method()
 makeTensorProduct List := L ->(
+     --L is a list of free modules (possibly explicit) over the same ring.
      L/makeExplicitFreeModule;
      E := (ring L_0)^(product (L/rank));
      E.cache.underlyingModules = L;
@@ -266,35 +244,6 @@ basisList E
 (fromOrdinal E) 5
 ///
 
-makeTensorProductMap = method()
-makeTensorProductMap (List,Module,Module) := (f,Tsource, Ttarget) ->(
-     --given a list of maps f_i: F_i \to G_i, make the tensor product.
-     --assume that Tsource = makeTensorProduct (L/source), and similarly for Ttarget.
-	       F := f/source;
-	       if F != underlyingModules Tsource then error "bad source";
-	       G := f/target;
-	       if G != underlyingModules Ttarget then error "bad target";	       	       
-     map(Ttarget, Tsource, (i,j) -> (
-	       I := (fromOrdinal Tsource) j;
-	       J := (fromOrdinal Ttarget) i;
-	       product apply(#I, u->(f_u)_(((toOrdinal G_u) (J_u)), (toOrdinal F_u) (I_u))))
-	  )
-     )
-makeTensorProductMap (List) := f ->(
-     --given a list of maps f_i: F_i \to G_i, make the tensor product.
-     --creates Tsource = makeTensorProduct (f/source), and similarly for Ttarget.
-	       F := f/source;
-	       G := f/target;
-     	       Tsource := makeTensorProduct F;
-     	       Ttarget := makeTensorProduct G;	       
-     map(Ttarget, Tsource, (i,j) -> (
-	       I := (fromOrdinal Tsource) j;
-	       J := (fromOrdinal Ttarget) i;
-	       product apply(#I, u->(f_u)_(((toOrdinal G_u) (J_u)), (toOrdinal F_u) (I_u))))
-	  )
-     )
-
-
 makeTrace = method()
 makeTrace Module := F ->(
      --make the map S^1 \to F \otimes F
@@ -318,30 +267,10 @@ makeTrace(S^3)
 T = makeTensorProduct{S^3, S^3}
 ///
 
-///
-restart
-load "~/src/Goettingen-2011/TensorComplexes/TensorComplexes.m2"
-kk = ZZ/101
-S = kk[a,b,c,d,e,f]
-F1 = makeExplicitFreeModule(S,2)
-F2 = makeExplicitFreeModule(S,2)
-G1= makeExplicitFreeModule(S,2)
-G2= makeExplicitFreeModule(S,1)
-Ts = makeTensorProduct {F1,F2}
-Tt = makeTensorProduct {G1,G2}
-f1 = map(G1,F1, {{a,b},{c,d}})
-f2 = map(G2,F2, {{e,f}})
-
-makeTensorProductMap ({f1,f2},Ts,Tt)
-makeTensorProductMap ({f2,f1})
-f1
-f2
-///
-
 makeSymmetricMultiplication = method()
 makeSymmetricMultiplication(Module,ZZ, ZZ) := (F, d,e) ->(
      --make the map Sym^d(F)\otimes Sym^e F \to Sym^(d+e) F
-     --Assume SdF = Sym_d F etc.
+     --Caveat: for large examples it would probably be better to make this as a sparse matrix!
      Sd := makeSymmetricPower(F,d);
      Se := makeSymmetricPower(F,e);
      Sde := makeSymmetricPower(F,d+e);
@@ -431,7 +360,6 @@ wedgeDToWedge (Module, Module) := (F,G) -> (
      WbF0 := (underlyingModules F)#0;
      wbf0 := rank WbF0;
      F0 := (underlyingModules WbF0)#0;
-     S := ring F0;
      f0 := rank F0;
 
      DbF1 := (underlyingModules F)#1;
@@ -455,7 +383,7 @@ wedgeDToWedge (Module, Module) := (F,G) -> (
      if rank F != binomial(f0,b) *binomial(f1+b-1,b) then error "bad module F";    
 
      --make the map
-     I := id_(S^(binomial(f1,b)));
+--     I := id_(S^(binomial(f1,b)));
 	  
      map(G,F,(i,j)->(
      BG = (fromOrdinal G) i;
@@ -466,8 +394,6 @@ wedgeDToWedge (Module, Module) := (F,G) -> (
      BF1 = last BF;-- corresponds to an element of D^b F1
      if BG0 == BF0 and BF1 == sort BG1 then 1_S else 0_S))
 )
-
-
 
 
 ///
@@ -530,20 +456,28 @@ wedgeDToWedgeSparse (Module, Module) := (F,G) -> (
      b:=0;     
      while binomial(f1+b-1,b)<dbf1 do b = b+1;
      
-
+{*     map(G,F,(i,j)->(
+     BG = (fromOrdinal G) i;
+     BF = (fromOrdinal F) j;
+     BG0 = BG/first; -- corresponds to an element of wedge^b F0
+     BG1 = BG/last; -- corresponds to an element of wedge^b F1
+     BF0 =  first BF; -- element of wedge^b F0
+     BF1 = last BF;-- corresponds to an element of D^b F1
+     if BG0 == BF0 and BF1 == sort BG1 then 1_S else 0_S))
+*}
      P0 := basisList WbF0; -- list of strictly ordered b-tuples of basis elements of F0
      P1 := productList toList(b:basisList F1); -- list of unordered b-tuples of basis elements of F1
      --make the map as a sparse matrix, with a 1 for each element (p,q) \in P0 x P1, in position corresponding
      --to the position of the basis element 
-     -- (p0 wedge p1..) \otimes product q 
-     -- in F and 
-     --(p0\otimes q0) \wedge (p1\otimes q1)... 
-     -- in G.
-     entryList := apply(P0,p -> apply(P1, q-> (
+     -- (p0 wedge p1..) \otimes product q  in F and 
+     --(p0\otimes q0) \wedge (p1\otimes q1)...  in G.
+     entryList := flatten apply(P0,p -> apply(P1, q-> (
 		    i := (toOrdinal G) apply(#p, i->{p_i,q_i});
 		    j := (toOrdinal F) {p,sort q};
 		    (i,j) => 1_S)));
-     map(G,F, entryList#0)
+     print entryList;
+--     error();
+     map(G,F, entryList)
 )
 ///
 
@@ -553,17 +487,20 @@ load "~/src/Goettingen-2011/TensorComplexes/TensorComplexes.m2"
 kk = ZZ/101
 S = kk[x,y,z]
 b = 2 
-r0 = 2
+r0 = 3
 r1 = 3
 
 F0 = S^r0;
 F1 = S^r1;
+makeExplicitFreeModule F0
+makeExplicitFreeModule F1
+productList toList (2:basisList F1)
 WbF0 = makeExteriorPower(F0,b);
 DbF1 = makeSymmetricPower(F1, b);
 F = makeTensorProduct{WbF0, DbF1};
 G = makeExteriorPower(makeTensorProduct{F0,F1},b);
-wedgeDToWedgeSparse(F,G);
-A = map(F,G,entryList#0)
+A = wedgeDToWedgeSparse(F,G);
+
 rank A
 rank F
 rank G
@@ -578,14 +515,120 @@ F = makeTensorProduct{WbF0, DbF1};
 G = makeExteriorPower(makeTensorProduct{F0,F1},b);
 print(rank F, rank G);
 time A = wedgeDToWedgeSparse(F,G);
-rank A == rank source A)
-
+print (rank A == rank source A);
+time A = wedgeDToWedge(F,G);
+rank A == rank source A
+)
 test(3,5,3)
-
-
-
-productList 
 ///
 
+twist = method()
+twist(Module,ZZ) := (M,d) -> (
+     makeExplicitFreeModule M;
+     E := M**S^{d};
+     E.cache.underlyingModules = M.cache.underlyingModules;
+     E.cache.basisList = M.cache.basisList;
+     E.cache.fromOrdinal = M.cache.fromOrdinal;
+     E.cache.toOrdinal = M.cache.toOrdinal;
+     E)
+
+prep = (S,intlist) ->apply(intlist , i->S^i)
+
+--the following has a problem at the end (4/17/2011)
+TC1 = method()
+TC1(Ring, Matrix) := (R,f) ->(
+     --makes a composite     F0 <- G3 <- G2 <- G1 <- F1 as below
+     B  = {S^0} | (underlyingModules source f);
+     A = target f;
+     n = #B-1;
+     b = B/rank; -- (0, b1, b2,..,bn)
+     d = accumulate(plus,{0}|b); --(0, b1, b1+b2...)
+     wedgeb1A = makeExteriorPower(A,b_1);
+     L11 = {makeExteriorPower(A,b_1),makeExteriorPower(B_1,b_1)};
+     L12 = for j from 2 to n list 
+              makeSymmetricPower(B_j,d_(j-1)-b#1);
+     F1 = makeTensorProduct(L11 | L12);
+     
+
+     F0 = makeTensorProduct(
+	  for i from 2 to n list 
+	     makeSymmetricPower(B_i,d_(i-1)));
+     minorsf = gens minors(b#1, f);
+     wedgeb1Sourcef := makeExteriorPower(source f, b#1);
+     G3 = makeTensorProduct {wedgeb1A,wedgeb1Sourcef,F0};
+     F0G3 = map(F0,G3, (i,j) -> (
+	       i1 := (fromOrdinal F0)i;
+	       j1 := (fromOrdinal G3)j;
+	       detrownumbers := (toOrdinal A)(j1_0);
+	       detcolnumbers = (j1_1)/(toOrdinal source f);
+--problem in the following lines:       
+               if (fromOrdinal F0)i == j1/(k->k_2) then
+	       det(f_detcols^detrows)*F0_i 
+	       else 0_F0)
+	  );
+     error""
+     )
 end
 
+restart
+load "~/src/Goettingen-2011/TensorComplexes/TensorComplexes.m2"
+kk = ZZ/101
+S = kk[w,x,y,z]
+ab = {3,2,1,1}
+mods = prep(S, ab)
+twist(mods_0,1)
+tensormods = twist(makeTensorProduct(drop(mods,1)), -1)
+f = random(mods#0,tensormods)
+source f
+TC1(S,f)
+F0G3
+
+
+
+
+kk = ZZ/101
+S = kk[x,y,z]
+ab = {3,2,1,3}
+mods = prep(S, ab)
+twist(mods_0,1)
+tensormods = twist(makeTensorProduct(drop(mods,1)), -1)
+f = random(mods#0,tensormods)
+source f
+TC1(S,f)
+F0G1;
+minorsf
+f
+n
+b
+d
+F0
+F1
+uM F1
+
+{*Make the first map of a generic tensor complex:
+Given (over a ring R)
+a map A <--- \otimes_j Bj,
+and integers bi >= 1, 
+set d = (d0=0, d1=b1, d2 = b1+b2...). 
+The desired map is the composite
+
+F0= wedge^b1 A ** wedge^b1 B1* ** \otimes_{i\geq 2} S^{d_{j-1}-b1} Bj
+by "trace" to 
+
+G1 = wedge^b1 A ** wedge^b1 B1* ** 
+     [ (\otimes_{j\geq 2} S^b1 Bj)*
+     **(\otimes_{j\geq 2} S^b1 Bj)] 
+     **\otimes_{i\geq 2} S^{d_{j-1}-b1} Bj
+to (by reassociating)
+
+G2 = wedge^b1 A ** [wedge^b1 B1* ** (\otimes_{j\geq 2} S^b1 Bj)*] 
+       ** [(\otimes_{j\geq 2} S^b1 Bj)]  
+       ** \otimes_{i\geq 2} S^{d_{j-1}-b1} Bj]
+to (by the wedge ** sym to wedge map and multiplication in Sym
+
+G3 = wedge^b1 A ** \wedge_b1(\otimes_{j\geq 1} Bj*] 
+     ** \otimes_{i\geq 2} S^{d_{j-1}} Bj]
+to (by the minors)
+
+F0 = R ** \otimes_{i\geq 2} S^{d_{j-1}} Bj]
+*}
