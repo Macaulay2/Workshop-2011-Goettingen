@@ -67,7 +67,7 @@ protect symbol sFunction
 
 
 SchurRing = new Type of EngineRing
-SchurRing.synonym = "Schur2 ring"
+SchurRing.synonym = "Schur ring"
 
 expression SchurRing := S -> new FunctionApplication from { schurRing, (expression last S.baseRings, S.Symbol, S.numgens ) }
 undocumented (expression, SchurRing)
@@ -842,7 +842,7 @@ internalProduct(RingElement,RingElement) := (f1,f2)->
      toS rez
      )
 
-
+{*
 chi(BasicList,BasicList) := (lambda, rho) ->
 (
      la := toList lambda;
@@ -855,7 +855,7 @@ chi(BasicList,BasicList) := (lambda, rho) ->
      for i from 0 to #rh-1 do pr = pr * R_(ll-1+rh#i);
      scalarProduct(sl,pr)
      )
-
+*}
 ---------------------------------------------------------------
 --------------End characters-----------------------------------
 ---------------------------------------------------------------
@@ -1207,7 +1207,7 @@ document {
      SeeAlso => {"SchurRing", "symmRing"}}
 
 document {
-     Key => {SchurRing, (coefficientRing, SchurRing)},
+     Key => {SchurRing, (symbol _,SchurRing,List), (symbol _,SchurRing,Sequence), (symbol _,SchurRing,ZZ)},
      Headline => "the class of all Schur rings",
      "A Schur ring is the representation ring for the general linear group of 
      n by n matrices, and one can be constructed with ", TO schurRing, ".",
@@ -1215,12 +1215,40 @@ document {
      "The element corresponding to the Young diagram ", TT "{3,2,1}", " is
      obtained as follows.",
      EXAMPLE "s_{3,2,1}",
+     "Alternatively, we can use a ", TO Sequence, " instead of a ", TO List, " as the index of a Schur function",
+     EXAMPLE "s_(3,2,1)",
+     "For Young diagrams with only one row one can use positive integers as subscripts",
+     EXAMPLE "s_4",
+     "The name of the Schur ring can be used with a subscript to describe a symmetric function",
+     EXAMPLE "R_{2,2}",
+     EXAMPLE "R_5",
      "The dimension of the underlying virtual representation can be obtained
      with ", TO "dim", ".",
      EXAMPLE "dim s_{3,2,1}",
      "Multiplication in the ring comes from tensor product of representations.",
      EXAMPLE "s_{3,2,1} * s_{1,1}",
      SeeAlso => {schurRing}}
+
+doc ///
+Key
+  (coefficientRing, SchurRing)
+Headline
+  Coefficient ring of a Schur ring
+Usage
+  coefficientRing S
+Inputs
+  S:SchurRing
+Description
+  Text
+    Given a Schur ring {\tt S}, the function returns its coefficient ring.
+  
+  Example
+    S = schurRing(ZZ[x],s,4);
+    coefficientRing S
+    A = schurRing(QQ,a,3);
+    B = schurRing(A,b,2);
+    coefficientRing B
+///
 
 document {
      Key => {SchurRingIndexedVariableTable,(symbol _,SchurRingIndexedVariableTable,Thing)},
@@ -1248,6 +1276,87 @@ Description
 SeeAlso
   SchurRing
 ///
+
+doc ///
+   Key
+     (numgens,SchurRing)
+   Headline 
+     Number of generators of Schur ring.
+   Description
+      Text
+      
+     	  Given a Schur ring {\tt S}, the function {\tt numgens} outputs the number
+	  of generators of {\tt S}. This is equal to the relative dimension of {\tt S} 
+	  over its base ring, and also to the maximal number of parts of a partition
+	  allowed as an index for the elements of {\tt S}.
+      
+      Example
+      	  R = schurRing(QQ,r,6);
+	  numgens R
+///
+
+doc ///
+   Key
+     schurRingOf
+     (schurRingOf,Ring)
+   Headline 
+     The Schur ring corresponding to a given Symmetric ring.
+   Usage
+     S = schurRingOf R
+   Inputs
+     R:Ring
+   Outputs
+     S:SchurRing
+   Description
+      Text
+      
+     	  Given a ring {\tt R}, the function {\tt schurRingOf} attempts to return a
+	  Schur ring {\tt S} that is associated to {\tt R} in a natural way. Namely, if
+	  the attribute {\tt R.Schur} points to a Schur ring, then the function returns
+	  that ring. If {\tt R} is already a Schur ring, then the ring {\tt R} is returned. 
+	  Otherwise, if the Schur level of {\tt R} is at least one, then the function 
+	  constructs a Schur ring over the base ring {\tt A} of {\tt R}, having the same
+	  relative dimension over {\tt A} as {\tt R}. If the Schur level of {\tt R} is zero, then
+	  an error is returned.
+      
+      Example
+      	  R = schurRing(QQ,r,6);
+	  schurRingOf R
+	  Q = symmRing(QQ,3);
+	  A = schurRingOf Q;	
+	  schurRingOf Q
+///
+
+doc ///
+   Key
+     symmetricRingOf
+     (symmetricRingOf,Ring)
+   Headline 
+     The Symmetric ring corresponding to a given (Schur) ring.
+   Usage
+     R = symmetricRingOf S
+   Inputs
+     S:Ring
+   Outputs
+     R:Ring
+   Description
+      Text
+      
+     	  Given a (Schur) ring {\tt S}, the function {\tt symmetricRingOf} returns a
+	  (Symmetric) ring {\tt R} that is associated to {\tt S} in a natural way. Namely, if
+	  the attribute {\tt S.symmRing} points to a ring, then the function returns
+	  that ring. If {\tt S} is not a Schur ring, then the function returns {\tt S}.
+	  Otherwise, if {\tt S} is a Schur ring, then the function 
+	  constructs a polynomial ring over the Symmetric ring {\tt R_A} of the base ring {\tt A} of 
+	  {\tt R}, having the same relative dimension over {\tt R_A} as {\tt S} over {\tt A}.
+      
+      Example
+      	  A = schurRing(QQ,a,6);
+	  B = schurRing(A,b,3);
+	  symmetricRingOf B
+	  symmetricRingOf ZZ
+///
+
 
 doc ///
    Key
@@ -1612,8 +1721,8 @@ Description
     
   Example
     R = symmRing(QQ,5);
-    p = plethysm(h_2,h_5)
-    toS p
+    pl = plethysm(h_2,h_5)
+    toS pl
     S = schurRing(QQ,q,3);
     plethysm(h_2,q_{2,1})
     plethysm(q_{2,1},q_{2,1})
@@ -1822,7 +1931,7 @@ doc ///
       partitions(set{a,b,c,d,e},new Partition from {3,2})
 ///  
 
-
+{*
 doc ///
  Key
   (chi,BasicList,BasicList)
@@ -1862,6 +1971,62 @@ SeeAlso
    symmetricFunction
    classFunction
 ///
+*}
+
+doc ///
+Key
+  ClassFunction
+  (symbol +,ClassFunction,ClassFunction)
+  (symbol -,ClassFunction,ClassFunction)
+  (symbol *,ClassFunction,ClassFunction)
+  (symbol *,ClassFunction,ZZ)
+  (symbol *,ZZ,ClassFunction)
+  (symbol ==,ClassFunction,ClassFunction)
+Headline
+  The class of all Class functions
+Description
+  Text
+    A class function (or virtual character of a symmetric group {\tt S_n}) is a function that is constant
+    on the conjugacy classes of {\tt S_n}. Class functions for {\tt S_n} are in one to one
+    correspondence with symmetric functions of degree {\tt n}. The class functions corresponding
+    to actual representations of {\tt S_n} are called {\tt characters}.
+  
+    The character of the standard representation of {\tt S_3} is
+
+  Example
+    S = schurRing(QQ,s,3);
+    classFunction(s_{2,1})
+  
+  Text
+    We can go back and forth between class functions and symmetric functions.
+  
+  Example
+    R = symmRing(QQ,3);
+    cF = new ClassFunction from {{1,1,1} => 2, {3} => -1};
+    sF = symmetricFunction(cF,R)
+    toS sF
+    classFunction sF
+  
+  Text
+    The character of the sign representation of {\tt S_5} is
+
+  Example
+    S = schurRing(QQ,s,5);
+    classFunction(s_{1,1,1,1,1})
+  
+  Text
+    We can add, subtract, multiply, scale class functions:
+    
+  Example
+    S = schurRing(QQ,s,4);
+    c1 = classFunction(S_{2,1,1}-S_{4});
+    c2 = classFunction(S_{3,1});
+    c1 + c2
+    c1 * c2
+    3*c1 - c2*2
+    
+///
+
 
 doc ///
 Key
@@ -1890,7 +2055,7 @@ Description
     symmetricFunction(new ClassFunction from {{1,1,1,1}=>2},R)
 SeeAlso
   classFunction
-  chi
+--  chi
 ///
 
 doc ///
@@ -1924,9 +2089,36 @@ Description
   Example
     R = symmRing(QQ,5);
     classFunction(jacobiTrudi({3,1,1},R))
+
 SeeAlso
   symmetricFunction
-  chi
+--  chi
+///
+
+doc ///
+Key
+  (classFunction,BasicList)
+Headline
+  Character of irreducible representation of symmetric group
+Usage
+  ch = classFunction(l)
+Inputs
+  l:BasicList
+    partition
+Outputs
+  ch:ClassFunction
+Description
+  Text
+    Given a partition {\tt l} of {\tt N}, the method computes the character of the irreducible
+    {\tt S_N}-representation corresponding to the partition {\tt l}.
+    
+  Example
+    R = symmRing(QQ,7);
+    cF = classFunction({3,2,1})
+    toS(symmetricFunction(cF,R))
+SeeAlso
+  symmetricFunction
+
 ///
 
 doc ///
@@ -2264,14 +2456,14 @@ assert(dim(5,sch) == 14280)
 --------------------------------------------------------------
 ----- test characters of symmetric groups, scalarProd, intProd
 --------------------------------------------------------------
-TEST ///
+{*TEST ///
 assert(chi({2,1,1,1},{2,1,1,1}) == -2)
 assert(chi({3,1,1},{1,1,1,1,1}) == 6)
 assert(chi({3,2},{3,1,1}) == -1)
 assert(chi({2,2,1},{3,1,1}) == -1)
 assert(chi({3,1,1},{2,2,1}) == -2)
 ///
-
+*}
 TEST ///
 R = symmRing(QQ,20)
 S = schurRing(QQ,o,20)
@@ -2351,9 +2543,9 @@ restart
 uninstallPackage "SchurRings"
 installPackage "SchurRings"
 check SchurRings
-help SchurRings
-help (toS,RingElement,SchurRing)
 viewHelp SchurRings
+--help SchurRings
+--help (toS,RingElement,SchurRing)
 --print docTemplate
 end
 

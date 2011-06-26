@@ -610,7 +610,7 @@ load"tableaux.m2"
 
 kk = ZZ/32003
 
-d = 8
+d = 9
 k = 3
 
 Q = schurRing(QQ,q,d)
