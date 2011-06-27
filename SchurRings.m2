@@ -1,5 +1,20 @@
 -- -*- coding: utf-8 -*-
---		Copyright 1996-2002,2004 by Daniel R. Grayson
+--------------------------------------------------------------------------------
+-- Copyright 2007, 2011 Michael Stillman
+--
+-- This program is free software: you can redistribute it and/or modify it under
+-- the terms of the GNU General Public License as published by the Free Software
+-- Foundation, either version 3 of the License, or (at your option) any later
+-- version.
+--
+-- This program is distributed in the hope that it will be useful, but WITHOUT
+-- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+-- FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+-- details.
+--
+-- You should have received a copy of the GNU General Public License along with
+-- this program.  If not, see <http://www.gnu.org/licenses/>.
+--------------------------------------------------------------------------------
 
 newPackage(
 	"SchurRings",
@@ -180,7 +195,8 @@ schurRing(Ring,Thing) := SchurRing => opts -> (A,p) -> (
 schurRing(Ring,Symbol) := opts -> (R,p) -> schurRing(R,p,infinity,opts)
 schurRing(Ring,Symbol,InfiniteNumber) := 
 schurRing(Ring,Symbol,ZZ) := SchurRing => opts -> (R,p,n) -> (
-     S := newSchur2(R,p,n);
+     S := local S;
+     if n == infinity then S = newSchur2(R,p,-1) else S = newSchur2(R,p,n);
      dim S := s -> dimSchur(s);
      dim(Thing,S) := (n,s) -> dimSchur(n, s);
      t := new SchurRingIndexedVariableTable from p;
@@ -189,7 +205,11 @@ schurRing(Ring,Symbol,ZZ) := SchurRing => opts -> (R,p,n) -> (
      S.use = S -> (globalAssign(p,t); S);
      S.use S;
      S)
-schurRing(Thing,ZZ) := (s,n) -> schurRing(ZZ,s,n)
+
+schurRing(Thing,ZZ) := opts -> (s,n) -> schurRing(QQ,s,n,opts)
+schurRing(Thing) := opts -> (s) -> schurRing(QQ,s,-1,opts)
+
+undocumented (schurRing,Ring,Symbol,InfiniteNumber)
 
 SchurRingIndexedVariableTable = new Type of IndexedVariableTable
 SchurRingIndexedVariableTable _ Thing := (x,i) -> x#symbol _ i
@@ -200,9 +220,9 @@ symmRing (Ring,ZZ) := opts -> (A,n) -> (
      	  R := A[e_1..e_n,p_1..p_n,h_1..h_n,
 	    Degrees => toList(1..n,1..n,1..n), MonomialSize => 8];
      	  R.EHPSVariables = opts.EHPSVariables;
-       	  R.eVariable = (i) -> R_(i-1);
-	  R.pVariable = (i) -> R_(n+i-1);
-	  R.hVariable = (i) -> R_(2*n+i-1);
+       	  R.eVariable = (i) -> if 1 <= i and i <= n then R_(i-1) else error"Invalid index";
+       	  R.pVariable = (i) -> if 1 <= i and i <= n then R_(n+i-1) else error"Invalid index";
+       	  R.hVariable = (i) -> if 1 <= i and i <= n then R_(2*n+i-1) else error"Invalid index";
      	  R.dim = n;
 	  
 	  degsEHP := toList(1..n);
@@ -527,6 +547,7 @@ toS(RingElement,SchurRing) := (f, T) ->
 
 
 toS(Thing) := (f) -> f
+undocumented(toS,Thing)
 
 recTrans = method()
 recTrans (RingElement) := (pl) ->
@@ -1198,15 +1219,6 @@ document {
      }
 
 document {
-     Key => {schurRing,(schurRing,Ring,Symbol,ZZ),(schurRing,Ring,Thing,ZZ)},
-     Headline => "Make a Schur ring",
-     TT "schurRing(s,n)", " -- creates a Schur ring of degree n with variables based on the symbol s",
-     PARA{"This is the representation ring for the general linear group of ", TT "n", " by ", TT "n", " matrices."},
-     PARA{"If ", TT "s", " is already assigned a values as a variable in a ring, its base symbol will be used,
-	  if it is possible to determine."},
-     SeeAlso => {"SchurRing", "symmRing"}}
-
-document {
      Key => {SchurRing, (symbol _,SchurRing,List), (symbol _,SchurRing,Sequence), (symbol _,SchurRing,ZZ)},
      Headline => "the class of all Schur rings",
      "A Schur ring is the representation ring for the general linear group of 
@@ -1228,6 +1240,41 @@ document {
      "Multiplication in the ring comes from tensor product of representations.",
      EXAMPLE "s_{3,2,1} * s_{1,1}",
      SeeAlso => {schurRing}}
+
+{*
+document {
+     Key => {schurRing,(schurRing,Ring,Symbol,ZZ),(schurRing,Ring,Thing,ZZ)},
+     Headline => "Make a Schur ring",
+     TT "schurRing(s,n)", " -- creates a Schur ring of degree n with variables based on the symbol s",
+     PARA{"This is the representation ring for the general linear group of ", TT "n", " by ", TT "n", " matrices."},
+     PARA{"If ", TT "s", " is already assigned a values as a variable in a ring, its base symbol will be used,
+	  if it is possible to determine."},
+     SeeAlso => {"SchurRing", "symmRing"}}
+*}
+doc ///
+Key
+  schurRing
+  (schurRing,Ring,Symbol,ZZ)
+  (schurRing,Ring,Thing,ZZ)
+  (schurRing,Ring,Symbol)
+  (schurRing,Ring,Thing)
+  (schurRing,Thing,ZZ)
+  (schurRing,Thing)
+Headline
+  Make a SchurRing
+Description
+  Text
+     {\tt schurRing(s,n)} creates a Schur ring of degree {\tt n} with variables based on 
+     the symbol {\tt s}.
+     
+     This is the representation ring for the general linear group of {\tt n} by {\tt n} matrices.
+
+     If {\tt s} is already assigned a value as a variable in a ring, its base symbol will 
+     be used, if it is possible to determine.
+SeeAlso
+  SchurRing
+  symmRing
+///
 
 doc ///
 Key
@@ -1259,22 +1306,89 @@ document {
 doc ///
 Key
   symmRing
+  (symmRing,Ring,ZZ)
 Headline
   Make a Symmetric ring
 Usage
-  symmRing n
+  symmRing(A,n)
 Inputs
+  A:Ring
   n:ZZ
 Description
   Text
 
-    {\tt symmRing n} creates a Symmetric ring of dimension {\tt n}.
-    This is the subring of the ring of symmetric functions consisting
-    of polynomials in the first {\tt n} elementary (or complete, or power sum)
+    The method {\tt symmRing} creates a Symmetric ring of dimension {\tt n} over a base ring
+    {\tt A}. This is the subring of the ring of symmetric functions over the base {\tt A}
+    consisting of polynomials in the first {\tt n} elementary (or complete, or power sum)
     symmetric functions.
-
+  
+  Example
+    R = symmRing(QQ[x,y,z],4)
+    e_2*x+y*p_3+h_2
+    toS oo
+    
 SeeAlso
   SchurRing
+///
+
+doc ///
+Key
+  eVariable
+Headline
+  Elementary symmetric functions in a Symmetric ring
+Description
+  Text
+    For a Symmetric ring {\tt R} of dimension {\tt n}, {\tt R.eVariable} is a function 
+    which assigns to each index {\tt 1\leq i\leq n} the {\tt i}-th elementary symmetric
+    function. If {\tt i} is outside the given bounds, an error is returned.
+  
+  Example
+    R = symmRing(QQ,5);
+    R.eVariable 3
+
+SeeAlso
+  hVariable
+  pVariable
+///
+
+doc ///
+Key
+  hVariable
+Headline
+  Complete symmetric functions in a Symmetric ring
+Description
+  Text
+    For a Symmetric ring {\tt R} of dimension {\tt n}, {\tt R.hVariable} is a function 
+    which assigns to each index {\tt 1\leq i\leq n} the {\tt i}-th complete symmetric
+    function. If {\tt i} is outside the given bounds, an error is returned.
+  
+  Example
+    R = symmRing(QQ,2);
+    R.hVariable 2
+
+SeeAlso
+  eVariable
+  pVariable
+///
+
+doc ///
+Key
+  pVariable
+Headline
+  Power-sum symmetric functions in a Symmetric ring
+Description
+  Text
+    For a Symmetric ring {\tt R} of dimension {\tt n}, {\tt R.pVariable} is a function 
+    which assigns to each index {\tt 1\leq i\leq n} the {\tt i}-th power-sum symmetric
+    function. If {\tt i} is outside the given bounds, an error is returned.
+  
+  Example
+    R = symmRing(QQ,4);
+    R.pVariable 2
+
+SeeAlso
+  eVariable
+  hVariable
 ///
 
 doc ///
@@ -1880,6 +1994,7 @@ Description
 doc ///
   Key
     schurLevel
+    (schurLevel,Ring)
   Headline
     Number of SchurRings the ring is a tensor product of.
   Usage
