@@ -51,12 +51,12 @@ export {schurRing, SchurRing, symmRing,
      jacobiTrudi, plethysm,
      centralizerSize, classFunction, symmetricFunction, 
      scalarProduct, internalProduct,
-     SchurRingIndexedVariableTable, EHPSVariables,
+     SchurRingIndexedVariableTable, EHPVariables, SVariable,
      ClassFunction, schurLevel,
      schurResolution,
      
      Memoize, Schur, EorH,
-     eVariable, pVariable, hVariable, getSchur
+     eVariable, pVariable, hVariable --, getSchur
 --     cauchy, wedge, preBott, bott, doBott, weyman
      }
 
@@ -120,7 +120,7 @@ symmetricRingOf (Ring) := R -> (
 	          error"symmetric ring expects finite schurRings";
      	       if coefficientRing R === ZZ then
 	       	  error"base ring has to be QQ";
-     	       R.symmRing = symmRing(symmetricRingOf coefficientRing R,numgens R);
+     	       R.symmRing = symmRing(symmetricRingOf coefficientRing R,numgens R,EHPVariables => R.EHPVariables);
      	       R.symmRing.Schur = R;
 	       R.symmRing
 	       )
@@ -134,7 +134,8 @@ schurRingOf (Ring) := R -> (
 	  (
 	       if instance(R, SchurRing) then R else
 	       (
-		    s := getSymbol "s";
+		    --s := getSymbol "s";
+		    s := R.SVariable;
      	       	    R.Schur = schurRing(symmetricRingOf coefficientRing R,s,R.dim);
      	       	    R.Schur.symmRing = R;
 	       	    R.Schur
@@ -180,7 +181,7 @@ newSchur2(Ring,Symbol,ZZ) := (A,p,n) -> (
      SR
      )
 
-schurRing = method(Options => {EHPSVariables => (getSymbol"e",getSymbol"h",getSymbol"p",getSymbol"s")})
+schurRing = method(Options => {EHPVariables => (getSymbol"e",getSymbol"h",getSymbol"p"), SVariable => getSymbol"s"})
 schurRing(Ring,Thing,ZZ) := SchurRing => opts -> (A,p,n) -> (
      try p = baseName p else error "schurRing: can't use provided thing as variable";
      if class p === Symbol then schurRing(A,p,n,opts)
@@ -197,6 +198,8 @@ schurRing(Ring,Symbol,InfiniteNumber) :=
 schurRing(Ring,Symbol,ZZ) := SchurRing => opts -> (R,p,n) -> (
      S := local S;
      if n == infinity then S = newSchur2(R,p,-1) else S = newSchur2(R,p,n);
+     S.EHPVariables = opts.EHPVariables;
+     --S.SVariable = opts.SVariable;
      dim S := s -> dimSchur(s);
      dim(Thing,S) := (n,s) -> dimSchur(n, s);
      t := new SchurRingIndexedVariableTable from p;
@@ -215,11 +218,13 @@ SchurRingIndexedVariableTable = new Type of IndexedVariableTable
 SchurRingIndexedVariableTable _ Thing := (x,i) -> x#symbol _ i
 
 symmRing = method(Options => options schurRing)
+--symmRing = method(Options => (options schurRing ++ {SVariable => getSymbol"s"}))
 symmRing (Ring,ZZ) := opts -> (A,n) -> (
-     	  (e,h,p,s) := opts.EHPSVariables;
+     	  (e,h,p) := opts.EHPVariables;
      	  R := A[e_1..e_n,p_1..p_n,h_1..h_n,
 	    Degrees => toList(1..n,1..n,1..n), MonomialSize => 8];
-     	  R.EHPSVariables = opts.EHPSVariables;
+     	  R.EHPVariables = opts.EHPVariables;
+	  R.SVariable = opts.SVariable;
        	  R.eVariable = (i) -> if 1 <= i and i <= n then R_(i-1) else error"Invalid index";
        	  R.pVariable = (i) -> if 1 <= i and i <= n then R_(n+i-1) else error"Invalid index";
        	  R.hVariable = (i) -> if 1 <= i and i <= n then R_(2*n+i-1) else error"Invalid index";
@@ -1180,8 +1185,7 @@ dimSchur(RingElement) := (F) -> (
 
 beginDocumentation()
 
---undocumented (wedge,List,List)
-undocumented {EorH, Schur}
+undocumented {Schur}
 
 document {
      Key => "SchurRings",
@@ -1189,7 +1193,7 @@ document {
      "This package makes computations in the representation rings of general linear groups and symmetric groups possible.",
      PARA{},
      "Given a positive integer ", TT "n", ", 
-     we may define a polynomial ring over ", TO "ZZ", " (or ", TO "QQ", ") in ", TT "n", " variables, whose
+     we may define a polynomial ring in ", TT "n", " variables over an arbitrary base ring , whose
      monomials correspond to the irreducible representations of GL(n), and where 
      multiplication is given by the decomposition of the tensor product of representations",
      PARA{},
@@ -1241,16 +1245,6 @@ document {
      EXAMPLE "s_{3,2,1} * s_{1,1}",
      SeeAlso => {schurRing}}
 
-{*
-document {
-     Key => {schurRing,(schurRing,Ring,Symbol,ZZ),(schurRing,Ring,Thing,ZZ)},
-     Headline => "Make a Schur ring",
-     TT "schurRing(s,n)", " -- creates a Schur ring of degree n with variables based on the symbol s",
-     PARA{"This is the representation ring for the general linear group of ", TT "n", " by ", TT "n", " matrices."},
-     PARA{"If ", TT "s", " is already assigned a values as a variable in a ring, its base symbol will be used,
-	  if it is possible to determine."},
-     SeeAlso => {"SchurRing", "symmRing"}}
-*}
 doc ///
 Key
   schurRing
@@ -1264,13 +1258,32 @@ Headline
   Make a SchurRing
 Description
   Text
-     {\tt schurRing(s,n)} creates a Schur ring of degree {\tt n} with variables based on 
-     the symbol {\tt s}.
-     
-     This is the representation ring for the general linear group of {\tt n} by {\tt n} matrices.
+    {\tt S = schurRing(A,s,n)} creates a Schur ring of degree {\tt n} over the base ring
+    {\tt A}, with variables based on the symbol {\tt s}. This is the representation ring
+    for the general linear group of {\tt n} by {\tt n} matrices, tensored with the ring
+    {\tt A}. If {\tt s} is already assigned a value as a variable in a ring, its base 
+    symbol will be used, if it is possible to determine.
+   
+  Example
+    S = schurRing(QQ[x],s,3);
+    (x*s_{2,1}+s_3)^2
+    
+  Text
+    If the dimension {\tt n} is not specified, then one should think of {\tt S} as the
+    full ring of symmetric functions over the base {\tt A}, i.e. there is no restriction
+    on the number of parts of the partitions indexing the generators of {\tt S}.
+    
+  Example
+    S = schurRing(ZZ/5,t)
+    (t_(2,1)-t_3)^2
 
-     If {\tt s} is already assigned a value as a variable in a ring, its base symbol will 
-     be used, if it is possible to determine.
+  Text
+    If the base ring {\tt A} is not specified, then @TO QQ@ is used instead.
+
+  Example
+    S = schurRing(r,2,EHPVariables => (re,rh,rp))
+    toH r_(2,1)
+     
 SeeAlso
   SchurRing
   symmRing
@@ -1343,7 +1356,7 @@ Description
     function. If {\tt i} is outside the given bounds, an error is returned.
   
   Example
-    R = symmRing(QQ,5);
+    R = symmRing(QQ,5,EHPVariables => (a,b,c));
     R.eVariable 3
 
 SeeAlso
@@ -1363,7 +1376,7 @@ Description
     function. If {\tt i} is outside the given bounds, an error is returned.
   
   Example
-    R = symmRing(QQ,2);
+    R = symmRing(QQ,2,EHPVariables => (x,y,z));
     R.hVariable 2
 
 SeeAlso
@@ -1771,6 +1784,7 @@ Description
 
 doc///
    Key
+     EorH
      [jacobiTrudi,EorH]
    Headline
      e- or h- representation of Jacobi-Trudi determinant
@@ -1782,11 +1796,11 @@ doc///
    Description
      Text
        This option allows one to choose between evaluating the
-       Jacobi-Trudi determinant in the {\tt e}- or {\tt h}- basis.
+       Jacobi-Trudi determinant in the {\tt e}- or {\tt h}- basis.        
        If the length of the conjugate partition {\tt lambda'} is
-       smaller than the length of {\tt lambda}, then it is
+       larger than the length of {\tt lambda}, then it is
        computationally less expensive to set the option {\tt EorH}
-       to {\tt E}. Otherwise, the default value {\tt H} is more
+       to {\tt "H"}. Otherwise, the default value {\tt "E"} is more
        efficient.
 ///   
 
@@ -2456,6 +2470,51 @@ doc ///
       computations.
 ///
 
+doc ///
+Key
+  SVariable
+  [schurRing,SVariable]
+  [symmRing,SVariable]
+Headline
+  Symbol representing s-functions
+Description
+  Text
+    This is an optional argument for the constructor of a Symmetric ring. It indicates the
+    symbol to be used to denote s-functions in the associated Schur ring. The default value
+    is {\tt s}.
+   
+  Example
+    R = symmRing(QQ,5,SVariable => getSymbol"s");
+    S = schurRingOf R
+    s_2^2
+
+SeeAlso
+  EHPVariables
+///
+
+doc ///
+Key
+  EHPVariables
+  [schurRing,EHPVariables]
+  [symmRing,EHPVariables]
+Headline
+  Sequence of symbols representing e-, h-, and p-functions
+Description
+  Text
+    This is an optional argument for the constructor of a Symmetric or Schur ring. It indicates the
+    symbols to be used to denote e-, h-, and p-functions in the associated Symmetric ring. The
+    default values are {\tt (e,h,p)}.
+   
+  Example
+    S = schurRing(QQ,s,4,EHPVariables => (getSymbol"a",getSymbol"b",getSymbol"c"));
+    epol = toE s_{2,2,2}
+    R = symmetricRingOf S
+    toS epol
+
+SeeAlso
+  SVariable
+///
+
 --------------------
 -- test Jacobi-Trudi
 --------------------
@@ -2845,7 +2904,7 @@ time toS ple;
 restart
 loadPackage"SchurRings"
 
-S = schurRing(QQ,s,3,EHPSVariables => {es,hs,ps,s})
+S = schurRing(QQ,s,3,EHPVariables => {es,hs,ps})
 T = schurRing(S,t,2)
 
 symmetricPower(3,S_{1}*1_T)
