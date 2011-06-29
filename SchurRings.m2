@@ -23,7 +23,7 @@ newPackage(
     	Authors => {
 	     {Name => "Michael Stillman", Email => "mike@math.cornell.edu", HomePage => "http://www.math.cornell.edu/~mike/"},
 	     {Name => "Hal Schenck"},
-	     {Name => "Claudiu Raicu"}
+	     {Name => "Claudiu Raicu", Email => "claudiu@math.berkeley.edu", HomePage => "http://math.berkeley.edu/~claudiu/"}
 	     },
     	Headline => "representation rings of general linear groups and of symmetric groups",
     	DebuggingMode => true,
@@ -1256,6 +1256,239 @@ beginDocumentation()
 
 undocumented {Schur}
 
+doc ///
+Key
+  SchurRings
+Headline
+  Rings representing irreducible representations of general linear or symmetric groups
+Description
+  Text
+    This package makes computations in the representation rings of general linear groups 
+    and symmetric groups possible.
+    
+    Given a positive integer {\tt n} we may define a polynomial ring in {\tt n}
+    variables over an arbitrary base ring , whose monomials correspond to the irreducible 
+    representations of {\tt GL(n)}, and where multiplication is given by the decomposition of 
+    the tensor product of representations. For {\tt k\leq n}, one may interpret the degree
+    {\tt k} homogeneous component of this ring as the representation ring of the symmetric
+    group {\tt S_k}. Of course, the multiplication is different than the one on {\tt GL(n)},
+    given by the @TO internalProduct@ function.
+    
+    Note that in the above, {\tt n} is allowed to be equal to {\tt \infty}. However, in this
+    version of the package, many of the features from the case {\tt n} finite are missing
+    from the infinite case, so the user is advised to use large values for {\tt n} as a
+    substitute, whenever necessary.
+    
+    We create such a ring in Macaulay2 using the @TO schurRing@ function, and determine
+    its relative dimension over the base using the @TO numgens@ function:
+
+  Example 
+    S = schurRing(QQ,s,4);
+    numgens S
+    R = schurRing(r);
+    numgens R
+   
+  Text
+  
+    A monomial represents the irreducible representation with a given highest weight. 
+    The standard {\tt GL(4)}-representation is
+   
+  Example
+    V = s_1
+
+  Text
+    
+    We may see the dimension of the corresponding irreducible representation using @TO dim@:
+
+  Example
+    dim V
+
+  Text
+    Multiplication of elements corresponds to tensor product of representations. The 
+    value is computed using a variant of the Littlewood-Richardson rule.
+  
+  Example
+    V * V
+    V^3
+
+  Text 
+    
+    The third symmetric power of {\tt V} is obtained by
+     
+  Example
+    W = s_{3}
+    dim W
+   
+  Text
+    
+    and the third exterior power of {\tt V} can be obtained using
+
+  Example
+    U = s_{1,1,1}
+    dim U
+    
+  Text
+  
+    Alternatively, one can use the functions @TO symmetricPower@ and @TO exteriorPower@:
+    
+  Example
+    W = symmetricPower(3,V)
+    U = exteriorPower(3,V)
+    
+  Text
+  
+    We can in fact take symmetric powers and exterior powers of any representation:
+    
+  Example
+    exteriorPower(2,W)
+    symmetricPower(2,U)
+
+  Text
+  
+    and compute even more general forms of @TO plethysm@:
+    
+  Example
+     plethysm(W+U,W+U)
+
+  Text
+  
+    All the above calculations assume that we're dealing with representations of {\tt GL(4)}.
+    But {\tt W} and {\tt U}, having degree {\tt 3}, can be thought as characters of the
+    symmetric group {\tt S_3}. More precisely, {\tt W} corresponds to the trivial representation,
+    and {\tt U} to the sign representation. As such, we can tensor them together
+    
+  Example
+    internalProduct(W,U)
+    
+  Text
+  
+    or compute a plethystic composition (note how the option @TO GroupActing@ is set to
+    indicate that we're working with representations of a symmetric group):
+    
+  Example
+    plethysm(W+U,W+U,GroupActing => "Sn")
+
+  Text
+  
+    We can generate the class function corresponding to an {\tt S_n}-representation, using
+    the function @TO classFunction@:
+    
+  Example
+    cfW = classFunction(W)
+    cfU = classFunction(U)
+    
+  Text
+    
+    We can multiply class functions together, and transform class functions into symmetric
+    functions using the function @TO symmetricFunction@:
+    
+  Example
+    cfWU = cfW * cfU
+    symmetricFunction(cfWU,S)
+    
+  Text
+  
+    The result of the last computation is of course the same as that of taking the
+    @TO internalProduct@ of {\tt W} and {\tt U}.
+    
+    We can also write any symmetric function in terms of the standard {\tt e}-, {\tt h}- and
+    {\tt p}- bases, using the functions @TO toE@, @TO toH@, @TO toP@ respectively:
+    
+  Example
+    toE U
+    toH U
+    toP W
+    
+  Text
+    
+    These expressions live in the Symmetric ring associated to {\tt S}, which can be obtained
+    using the function @TO symmetricRingOf@:
+    
+  Example
+    A = symmetricRingOf S
+    
+  Text
+  
+    Similarly, any Symmetric ring has a Schur ring attached to it, which can be obtained using
+    the function @TO schurRingOf@:
+    
+  Example
+    schurRingOf A === S
+  
+  Text  
+  
+    We construct tensor products of Schur rings iteratively by allowing Schur rings over
+    base rings that are also Schur rings:
+    
+  Example
+    T = schurRing(S,t,3)
+    
+  Text
+    
+    The Schur ring {\tt T} can thus be thought of as the representation ring of 
+    {\tt GL(V)\times GL(V')}, where {\tt V} is as before a vector space of dimension 
+    {\tt 4}, and {\tt V'} is a vector space of dimension {\tt 3}. The representation 
+    corresponding to {\tt V'} is
+  
+  Example
+    V' = t_1
+  
+  Text
+   
+    The function @TO schurLevel@ indicates the number of Schur rings that have been
+    tensored together to obtain any given ring:
+    
+  Example
+    schurLevel T
+    schurLevel S
+    schurLevel QQ
+    
+  Text
+    
+    We can now check Cauchy's formula for decomposing symmetric/exterior powers of a
+    tensor product:
+    
+  Example
+    symmetricPower(3,V*V')
+    exteriorPower(3,V*V')
+  
+  Text
+  
+    We end with the computation of the {\tt GL(n)}- and {\tt S_n}-equivariant resolutions
+    of the residue field of a polynomial ring in {\tt n} variables. The function that does
+    this calculation, @TO schurResolution@, is based on an empirical method, which gives
+    the correct answer in surprisingly many situations.
+    
+    In the {\tt GL(n)} situation, we are resolving the residue field which as a representation
+    has character {\tt 1_S}. The space of linear forms in the polynomial ring 
+    considered as a {\tt GL}-representation has character {\tt V = s_1}.
+    
+  Example
+    n = 4
+    M = {1_S}
+    schurResolution(V,M,n)
+    
+  Text
+  
+    Not surprisingly, the syzygy modules are generated by the exterior powers of {\tt V}.
+
+    In the {\tt S_n} situation, the residue field which as a representation
+    has character {\tt s_n}. The space of linear forms in the polynomial ring 
+    considered as a {\tt S_n}-representation coincides with the permutation representation
+    of {\tt S_n}, thus has character {\tt s_n + s_{n-1,1}}.
+
+  Example
+    rep = s_n + s_(n-1,1)
+    M = {s_n}
+    schurResolution(rep,M,n,GroupActing => "Sn")
+  
+  Text
+    
+    Notice that we had to specify again, as in the case of the plethysm computation, that
+    the group which is acting is the symmetric group.
+///
+
+{*
 document {
      Key => "SchurRings",
      Headline => "rings representing irreducible representations of GL(n)",
@@ -1290,7 +1523,7 @@ document {
      "One cannot make quotients of this ring, and Groebner bases and related computations
      do not work, but I'm not sure what they would mean..."
      }
-
+*}
 document {
      Key => {SchurRing, (symbol _,SchurRing,List), (symbol _,SchurRing,Sequence), (symbol _,SchurRing,ZZ)},
      Headline => "The class of all Schur rings",
