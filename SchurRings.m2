@@ -705,29 +705,38 @@ recsyz (RingElement) := (el) ->
      listForm el/((u,v)->T_u*recsyz(v))//sum
      )
 
-schurResolution = method()
-schurResolution(RingElement,List,ZZ,ZZ) := (rep,M,d,c) ->
+schurResolution = method(Options => options plethysm)
+schurResolution(RingElement,List,ZZ,ZZ) := opts -> (rep,M,d,c) ->
 (
-     schurRes(rep,M,d,c)
+     schurRes(rep,M,d,c,opts)
      )
 
-schurResolution(RingElement,List,ZZ) := (rep,M,d) ->
+schurResolution(RingElement,List,ZZ) := opts -> (rep,M,d) ->
 (
-     schurRes(rep,M,d,0)
-     )
-schurResolution(RingElement,List) := (rep,M) ->
-(
-     schurRes(rep,M,#M,0)
+     schurRes(rep,M,d,0,opts)
      )
 
-schurRes = method()
-schurRes(RingElement,List,ZZ,ZZ) := (rep,M,d,c) ->
+schurResolution(RingElement,List) := opts -> (rep,M) ->
+(
+     schurRes(rep,M,#M-1,0,opts)
+     )
+
+auxProd = method(Options => options schurResolution)
+auxProd(RingElement,RingElement) := opts -> (f,g) ->
+(
+     if opts.GroupActing == "GL" then f*g else
+     if opts.GroupActing == "Sn" then internalProduct(f,g) else
+     error"Invalid option"
+     )
+
+schurRes = method(Options => options schurResolution)
+schurRes(RingElement,List,ZZ,ZZ) := opts -> (rep,M,d,c) ->
 (
      T := ring rep;
      n := schurLevel T;
      plets := new MutableList;
      plets#0 = 1_T;
-     for i from 1 to d do plets#i = plethysm({i},rep);
+     for i from 1 to d do plets#i = plethysm({i},rep,opts);
      
      mods := new MutableList from (M | toList((d+1-#M):0));
      notdone := true;
@@ -743,7 +752,7 @@ schurRes(RingElement,List,ZZ,ZZ) := (rep,M,d,c) ->
 	  (
      	       mo = 0_T;	       
 	       for sy in syzy#k do
-	       	    if sy#0 <= i then mo = mo + sy#1 * plets#(i-sy#0)
+	       	    if sy#0 <= i then mo = mo + auxProd(sy#1, plets#(i-sy#0),opts)
 		    else break;
 	       mo = mo - mods#i;
 	       newsyz = recsyz(mo);
@@ -1961,12 +1970,15 @@ Description
 doc ///
 Key
   schurResolution
+  (schurResolution,RingElement,List,ZZ,ZZ)
   (schurResolution,RingElement,List,ZZ)
---  (schurResolution,RingElement,List,ZZ,ZZ)
+  (schurResolution,RingElement,List)
 Headline
   Compute an ``approximate'' equivariant resolution of a module.
 Usage
+  resol = schurResolution(rep,M,d,c)
   resol = schurResolution(rep,M,d)
+  resol = schurResolution(rep,M)
 Inputs
   rep:RingElement
       element of a SchurRing
@@ -1974,33 +1986,43 @@ Inputs
     list of representations, corresponding to the homogeneous components of a module {\tt M}.
   d:ZZ
     degree limit
+  c:ZZ
+    syzygy limit
 Outputs
   resol:List
 Description
   Text
   
      Given a representation {\tt rep} of a (product of) general linear
-     group(s) {\tt G}, we consider the symmetric algebra {\tt S = Sym(rep)}
+     or symmetric group(s) {\tt G}, we consider the symmetric algebra {\tt S = Sym(rep)}
      and an {\tt S}-module {\tt M} which is also a {\tt G}-module in such
      a way that the {\tt S}-module structure on {\tt M} respects the 
      {\tt G}-action. We are interested in computing an equivariant 
-     resolution of {\tt M}. This depends on the {\tt S}-module structure 
-     of {\tt M} in general, but in many examples that occur in practice, 
+     resolution of {\tt M}. This depends on both the {\tt G}- and {\tt S}-module structure 
+     of {\tt M} in general, but in many examples that occur in practice, it turns out that
      the differentials in the resolution have maximal rank among all 
-     {\tt G}-module homomorphisms between the modules in the resolution.
-     We will assume that this is the case for the module {\tt M} we are
-     trying to resolve, and therefore disregard its {\tt S}-module structure.
+     {\tt G}-module homomorphisms between the free modules in the resolution.
+     We will therefore assume that this is the case for the module {\tt M} that we are
+     trying to resolve, and thus disregard its {\tt S}-module structure.
      
-     The assumptions that we make about {\tt M} are as follows: {\tt M} is a
-     graded {\tt S}-module of finite length (since the {\tt G}-structure on an
-     {\tt S}-module {\tt M} of infinite length would involve an infinite amount
-     of data), where the grading on {\tt S} is
-     given by setting the degree of the elements of {\tt rep} equal to 1. {\tt M}
-     is given as a list of representations, corresponding to the homogeneous 
-     components. The function {\tt schurResolution} takes as inputs the 
-     representation {\tt rep}, the module {\tt M} and a degree bound {\tt d}.
-     It outputs the generators of the syzygy modules, as a sequence of 
-     {\tt G}-representations, together with the degree in which they live.
+     More precisely, the assumptions that we make about {\tt M} are as follows: {\tt M} is 
+     a graded {\tt S}-module, with {\tt M_i = 0} for {\tt i<0}, where the grading on {\tt S} is standard,
+     given by setting the degrees of the elements of {\tt rep} equal to 1. Since we assumed
+     that the {\tt G}-structure of {\tt M} determines the syzygies, all the relevant
+     information is concentrated in finitely many homogeneous components of {\tt M} (namely
+     up to {\tt reg(M)+pd(M)}, the sum of the regularity and the projective dimension of
+     {\tt M}). We will thus assume that {\tt M}
+     is given as a list of {\tt G}-representations, corresponding to (a subset of) the
+     relevant homogeneous components. The function {\tt schurResolution} takes as 
+     inputs the representation {\tt rep}, the module {\tt M}, a degree bound {\tt d}, and
+     a syzygy bound {\tt c}. It outputs the generators of degree at most {\tt d} of the 
+     first {\tt c+1} syzygy modules (from {\tt 0} to {\tt c}). They are listed as a 
+     sequence of pairs, consisting of the degree of the generators of the syzygy modules 
+     together with the characters of the {\tt G}-representations they correspond to. 
+     If the syzygy bound {\tt c} is not given,
+     then all syzygy modules are computed. If the degree bound {\tt d} is not given, then
+     it is assumed to be equal to the largest degree among the homogeneous components of
+     {\tt M} in the input, i.e. one less than the length of the @TO List@ {\tt M}.
      
      The example below computes the resolution of the quadratic Veronese 
      surface in {\tt P^5}.
@@ -2009,20 +2031,46 @@ Description
     S = schurRing(QQ,s,3)
     rep = s_{2}
     M = {1_S,s_{2},s_{4},s_{6},s_{8},s_{10},s_{12}}
-    d = 6
-    schurResolution(rep,M,d)
+    schurResolution(rep,M)
 
   Text
   
-    The example below computes the resolution of the cubic Veronese
-    embedding of {\tt P^2}.
+    The example below computes the syzygies of degree at most {\tt 7} in the resolution 
+    of the cubic Veronese embedding of {\tt P^2}.
     
   Example
     S = schurRing(QQ,s,3)
     rep = s_{3}
     M = {1_S,s_{3},s_{6},s_{9},s_{12},s_{15},s_{18},s_{21},s_{24},s_{27}}
-    d = 9
+    d = 7
     schurResolution(rep,M,d)
+
+  Text
+  
+    The following example computes the equivariant resolution of the residue field of a 
+    polynomial ring in {\tt n=5} variables, with respect to the action of the symmetric 
+    group {\tt S_n}.
+  
+  Example
+    n = 5;
+    S = schurRing(QQ,s,n);
+    rep = s_n + s_{n-1,1};
+    M = {s_n}
+    schurResolution(rep,M,n,GroupActing => "Sn")    
+
+  Text
+  
+    The next example computes the equivariant resolution of the quotient of the
+    polynomial ring in {\tt n=5} variables by the ideal of square free monomials of
+    degree two, with respect to the action of the symmetric group {\tt S_n}.
+  
+  Example
+    n = 5;
+    S = schurRing(QQ,s,n);
+    rep = s_n + s_{n-1,1};
+    M = {s_n} | splice{n:rep};
+    schurResolution(rep,M,GroupActing => "Sn")    
+
 ///
 
 doc ///
@@ -2556,15 +2604,17 @@ doc ///
 Key
   GroupActing
   [plethysm,GroupActing]
+  [schurResolution,GroupActing]
 Headline
   Specifies the group that is acting
 Description
   Text
-    This is an optional argument for the @TO plethysm@ function. When a plethystic operation
-    is applied to a symmetric function {\tt g}, the output depends on whether {\tt g} is
-    interpreted as a virtual representation of a general linear or symmetric group. The
-    option {\tt GroupActing} specifies the interpretation to be considered. Its possible
-    values are {\tt "GL"} and {\tt "Sn"}, with the former being the default.
+    This is an optional argument for the @TO plethysm@ and @TO schurResolution@ functions. 
+    When a plethystic operation is applied to a symmetric function {\tt g}, the result
+    depends on whether {\tt g} is interpreted as a virtual representation of a general 
+    linear or symmetric group. The option {\tt GroupActing} specifies the interpretation 
+    to be considered. Its possible values are {\tt "GL"} and {\tt "Sn"}, with the former 
+    being the default.
     
   Example
     S = schurRing(s,2);
@@ -2573,7 +2623,8 @@ Description
   
   Text
   
-    The first example computes {\tt Sym^2(Sym^2(V))}, while the second one computes the
+    The first example computes the decomposition of {\tt Sym^2(Sym^2(V))} into irreducible
+    {\tt GL(V)}-representations, while the second one computes the
     second symmetric power of the trivial representation of {\tt S_2}.
 ///
 
