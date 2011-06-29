@@ -55,7 +55,7 @@ export {schurRing, SchurRing, symmRing,
      ClassFunction, schurLevel,
      schurResolution,
      
-     Memoize, Schur, EorH,
+     Memoize, Schur, EorH, GroupActing,
      eVariable, pVariable, hVariable --, getSchur
 --     cauchy, wedge, preBott, bott, doBott, weyman
      }
@@ -83,6 +83,8 @@ protect symbol sFunction
 
 SchurRing = new Type of EngineRing
 SchurRing.synonym = "Schur ring"
+ClassFunction = new Type of HashTable
+ClassFunction.synonym = "Class function"
 
 expression SchurRing := S -> new FunctionApplication from { schurRing, (expression last S.baseRings, S.Symbol, S.numgens ) }
 undocumented (expression, SchurRing)
@@ -136,7 +138,8 @@ schurRingOf (Ring) := R -> (
 	       (
 		    --s := getSymbol "s";
 		    s := R.SVariable;
-     	       	    R.Schur = schurRing(symmetricRingOf coefficientRing R,s,R.dim);
+     	       	    if schurLevel R == 1 then R.Schur = schurRing(coefficientRing R,s,R.dim)
+		       else R.Schur = schurRing(schurRingOf coefficientRing R,s,R.dim); --symmetricRingOf is wrong, right?
      	       	    R.Schur.symmRing = R;
 	       	    R.Schur
 		    )
@@ -259,6 +262,7 @@ symmRing (Ring,ZZ) := opts -> (A,n) -> (
 	  if (A.?schurLevel) then R.schurLevel = A.schurLevel + 1
      	  else R.schurLevel = 1;
      	  R)
+symmRing(ZZ) := opts -> n -> symmRing(QQ,n,opts)
 ---------------------------------------------------------------
 --------------Jacobi-Trudi-------------------------------------
 ---------------------------------------------------------------
@@ -346,6 +350,12 @@ jT = (lambda) ->
 ---------------------------------------------------------------
 --------------Plethysm-----------------------------------------
 ---------------------------------------------------------------
+powerCycleType := method()
+powerCycleType(ZZ,List) := (k,cyc) ->
+(
+     rsort(flatten (for i in cyc list (g := gcd(i,k);splice{g:i//g})))
+     )
+
 plethysmMap = (d,maxg,R) -> (
      -- d is an integer
      -- R is symmRing n
@@ -374,8 +384,8 @@ plethysmMap = (d,maxg,R) -> (
 --     R.plethysmMaps#d
      )
 
-plethysm = method()
-plethysm(RingElement,RingElement) := (f,g) -> (
+plethysmGL = method()
+plethysmGL(RingElement,RingElement) := (f,g) -> (
      -- f is a polynomial in symmRing N / SchurRing SA
      -- g is a polynomial in symmRing n / SchurRing SB
      -- result is in symmRing n / SchurRing SB
@@ -416,12 +426,53 @@ plethysm(RingElement,RingElement) := (f,g) -> (
      if issy then pl else toS pl
 )
 
-plethysm(BasicList,RingElement) := (lambda,g) -> (
+plethysmSn = method()
+plethysmSn(RingElement,RingElement) := (f,g) ->
+(
+     symmetricFunction(plethysm(f,classFunction g), ring g)
+     )
+
+plethysm = method(Options => {GroupActing => "GL"}) --alternative is Group => "Sn"
+plethysm(RingElement,RingElement) := opts -> (f,g) ->
+(
+     if opts.GroupActing == "GL" then plethysmGL(f,g)
+        else if opts.GroupActing == "Sn" then plethysmSn(f,g)
+	else error"Invalid option"
+     )
+
+plethysm(BasicList,RingElement) := opts -> (lambda,g) -> (
      d := sum toList lambda;
      Rf := symmRing(QQ,d);
      f := jacobiTrudi(lambda,Rf);
-     plethysm(f,g))
+     plethysm(f,g,opts)
+     )
 
+plethysm(RingElement,ClassFunction) := opts -> (f,cF) ->
+(
+     pf := toP f;
+     n := degree cF;
+     k := (ring pf).dim;
+     pvars := (ring pf).pVariable;
+     parsn := toList \ partitions(n);  
+     newHT := new MutableHashTable;
+     for sig in parsn do
+     (
+	  sublist := for i from 1 to k list
+	  (
+	       pct := powerCycleType(i,sig);     
+	       if cF#?pct then pvars i => cF#pct else pvars i => 0
+	       );
+	  newv := sub(pf,sublist);
+	  if newv != 0 then newHT#sig = lift(newv,QQ);
+	  );
+     new ClassFunction from newHT
+     )
+
+plethysm(BasicList,ClassFunction) := opts -> (lambda,cF) -> (
+     d := sum toList lambda;
+     Rf := symmRing(QQ,d);
+     f := jacobiTrudi(lambda,Rf);
+     plethysm(f,cF))
 
 --degree of a polynomial in a SchurRing
 degSchurPol = method()
@@ -664,6 +715,10 @@ schurResolution(RingElement,List,ZZ) := (rep,M,d) ->
 (
      schurRes(rep,M,d,0)
      )
+schurResolution(RingElement,List) := (rep,M) ->
+(
+     schurRes(rep,M,#M,0)
+     )
 
 schurRes = method()
 schurRes(RingElement,List,ZZ,ZZ) := (rep,M,d,c) ->
@@ -743,7 +798,11 @@ centralizerSize(List) := lambda ->
      product for i from 0 to #lambda-1 list((i+1)^(lambda#i)*(lambda#i)!)
      )
 
-ClassFunction = new Type of HashTable
+degree(ClassFunction) := ch ->
+(
+     ke := keys ch;
+     if #ke == 0 then -1 else sum(first ke)
+     )
 
 classFunction = method()
 classFunction(RingElement) := (f)->
@@ -815,13 +874,14 @@ ClassFunction == ClassFunction := (ch1,ch2) ->
      )
 
 symmetricFunction = method()
-symmetricFunction(ClassFunction,Ring) := (ch,R)->
+symmetricFunction(ClassFunction,Ring) := (ch,S)->
 (
+     R := symmetricRingOf S;
      rez := 0_R;
      n := R.dim;
      for lam in keys ch do
      	  rez = rez + ch#lam * (product for i from 0 to #lam-1 list R_(n-1+lam#i)) / centralizerSize(seqToMults lam);
-     rez
+     if instance(S, SchurRing) then toS rez else rez
      )
 
 scalarProduct = method()
@@ -1224,7 +1284,7 @@ document {
 
 document {
      Key => {SchurRing, (symbol _,SchurRing,List), (symbol _,SchurRing,Sequence), (symbol _,SchurRing,ZZ)},
-     Headline => "the class of all Schur rings",
+     Headline => "The class of all Schur rings",
      "A Schur ring is the representation ring for the general linear group of 
      n by n matrices, and one can be constructed with ", TO schurRing, ".",
      EXAMPLE "R = schurRing(QQ, s, 4)",
@@ -1320,10 +1380,12 @@ doc ///
 Key
   symmRing
   (symmRing,Ring,ZZ)
+  (symmRing,ZZ)
 Headline
   Make a Symmetric ring
 Usage
   symmRing(A,n)
+  symmRing n
 Inputs
   A:Ring
   n:ZZ
@@ -1333,7 +1395,7 @@ Description
     The method {\tt symmRing} creates a Symmetric ring of dimension {\tt n} over a base ring
     {\tt A}. This is the subring of the ring of symmetric functions over the base {\tt A}
     consisting of polynomials in the first {\tt n} elementary (or complete, or power sum)
-    symmetric functions.
+    symmetric functions. If {\tt A} is not specified, then it is assumed to be @TO QQ@.
   
   Example
     R = symmRing(QQ[x,y,z],4)
@@ -1420,6 +1482,8 @@ doc ///
       Example
       	  R = schurRing(QQ,r,6);
 	  numgens R
+	  S = schurRing(s);
+	  numgens S
 ///
 
 doc ///
@@ -1452,6 +1516,8 @@ doc ///
 	  Q = symmRing(QQ,3);
 	  A = schurRingOf Q;	
 	  schurRingOf Q
+   SeeAlso
+     symmetricRingOf
 ///
 
 doc ///
@@ -1482,42 +1548,48 @@ doc ///
 	  B = schurRing(A,b,3);
 	  symmetricRingOf B
 	  symmetricRingOf ZZ
+   SeeAlso
+     schurRingOf
 ///
-
 
 doc ///
    Key
      toS
-   Headline 
+     (toS,RingElement)
+     (toS,RingElement,SchurRing)
+   Headline
      Schur (s-) basis representation
+   Usage
+     fs = toS f
+     fs = toS(f,S)
    Description
       Text
-      
-     	  Given a symmetric function {\tt f}, the function 
-	  {\tt toS} yields a representation of {\tt f} as a linear
-	  combination of Schur functions. 
-      
+
+    	Given a symmetric function {\tt f}, the function 
+        {\tt toS} yields a representation of {\tt f} as a linear
+	combination of Schur functions. 
+
+     	If {\tt f} is an element of a Symmetric ring {\tt R} and the output Schur ring {\tt S}
+	is not specified, then the output {\tt fs} is an element of the Schur ring 
+	associated to {\tt R} (see @TO schurRingOf@).
+        
       Example
-      	  R = symmRing(QQ,6);
-	  toS(h_3*e_3)
-      
-      Text	  
+        R = symmRing(QQ,4);
+        fs = toS(e_1*h_2+p_3)
+        S = schurRing(s,2);
+	toS(fs,S)
 	
-	  If a {\tt SchurRing S} is provided as input, then one interprets
-	  the input function {\tt f} as a (virtual) character of a certain general linear
-	  group, and the output as a representation of {\tt f} as a sum of characters.
-      
-      Example
-      	  R = symmRing(QQ,6);
-	  toS(h_3*e_3)
-      
       Text
       
-      	  One can notice that the outputs of two examples above 
-	  do not coincide. This is because the former example gives
-	  an actual symmetric function, while the latter gives an 
-	  element of the representation ring of GL_3, which is a quotient
-	  of the ring of symmetric functions.
+        This also works over tensor products of Symmetric/Schur rings.
+	
+      Example
+        R = symmRing(4, EHPVariables => (a,b,c), SVariable => r);
+	S = symmRing(R, 2, EHPVariables => (x,y,z), SVariable => s);
+	T = symmRing(S, 3, SVariable => t);
+	f = a_3*x_2*e_1 - b_1*z_2*p_3
+	toS f
+	
    SeeAlso
      toH
      toE
@@ -1525,61 +1597,19 @@ doc ///
 ///
 
 doc ///
-   Key
-     (toS,RingElement)
-   Headline
-     Represents a symmetric function in the s-basis
-   Usage
-     fs = toS f
-   Inputs
-     f:RingElement
-       element of a Symmetric ring
-   Outputs
-     fs:RingElement
-        element of a Schur ring
-   Description
-      Text
-
-        The input function {\tt f} should be interpreted as a symmetric
-	function, as well as the output, which is an element of the Schur
-	ring attached to the Symmetric ring {\tt R} of {\tt f}. 
-
-      Example
-        R = symmRing(QQ,4);
-        toS(e_1*h_2+p_3)
-///
-
-doc ///
-   Key
-     (toS,RingElement,SchurRing)
-   Headline
-     Represents a symmetric function in the s-basis
-   Usage
-     fs = toS(f,S)
-   Inputs
-     f:RingElement
-       element of a Symmetric ring
-     S:SchurRing
-   Outputs
-     fs:RingElement
-        element of a Schur ring
-   Description
-      Text
-
-        The input function {\tt f} should be interpreted as a symmetric
-	function, as well as the output, which is an element of {\tt S}.
-
-      Example
-        R = symmRing(QQ,4);
-	S = schurRing(QQ,s,2);
-     	toS(e_1*h_2+p_3,S)
-///
-
-doc ///
   Key
     toE
+    (toE,RingElement)
   Headline
      Elementary symmetric (e-) basis representation
+  Usage
+     fe = toE f
+  Inputs
+     f:RingElement
+       element of a Symmetric or Schur ring
+  Outputs
+     fe:RingElement
+        element of a Symmetric ring
   Description
       Text
 
@@ -1587,20 +1617,26 @@ doc ///
           {\tt toE} yields a representation of {\tt f} as a polynomial
 	  in the elementary symmetric functions.
 
+  	  If {\tt f} is an element of a Schur ring {\tt S} then the output {\tt fe} is an 
+	  element of the Symmetric ring associated to {\tt S} (see @TO symmetricRingOf@).
+
       Example
-      	  R = symmRing(QQ,7);
-	  toE(h_3*e_3+p_2*h_5+h_1^2*p_3)
-      
-      Text	  
+      	  R = symmRing 7;
+	  toE(h_3*e_3)
+	  S = schurRing(s,4)
+	  toE S_{3,2,1}
+
+      Text
+
+        This also works over tensor products of Symmetric/Schur rings.
 	
-	  The symmetric function {\tt f} need not be an element of a Symmetric
-	  ring. It may be an element of a Schur ring, in which case one needs
-	  to specify a Symmetric ring to carry the e-representation of {\tt f}.
-      
       Example
-      	  R = symmRing(QQ,9);
-	  S = schurRingOf R
-	  toE(S_{3,2,1}*S_{2}+S_{4,2})
+        R = schurRing(r, 4, EHPVariables => (a,b,c));
+	S = schurRing(R, s, 2, EHPVariables => (x,y,z));
+	T = schurRing(S, t, 3);
+	f = (r_1+s_1+t_1)^2
+	toE f
+	
   SeeAlso
     toH
     toS
@@ -1608,36 +1644,19 @@ doc ///
 ///
 
 doc ///
-   Key
-     (toE,RingElement)
-   Headline
-     Represents a symmetric function in the e-basis
-   Usage
-     fe = toE f
-   Inputs
-     f:RingElement
-       element of a Symmetric ring
-   Outputs
-     fe:RingElement
-        element of a Symmetric ring
-   Description
-      Text
-
-        If the input {\tt f} is a symmetric function, element of a 
-	Symmetric ring {\tt R}, then the output {\tt fe} is
-	the representation of {\tt f} as a polynomial in the 
-	elementary symmetric functions in {\tt R}.
-
-      Example
-        R = symmRing(QQ,4);
-        toE(e_1*h_2+p_3)
-///
-
-doc ///
   Key
     toH
+    (toH,RingElement)
   Headline
      Complete symmetric (h-) basis representation
+  Usage
+     fh = toH f
+  Inputs
+     f:RingElement
+       element of a Symmetric or Schur ring
+  Outputs
+     fh:RingElement
+        element of a Symmetric ring
   Description
       Text
 
@@ -1645,20 +1664,26 @@ doc ///
           {\tt toH} yields a representation of {\tt f} as a polynomial
 	  in the complete symmetric functions.
 
+  	  If {\tt f} is an element of a Schur ring {\tt S} then the output {\tt fh} is an 
+	  element of the Symmetric ring associated to {\tt S} (see @TO symmetricRingOf@).
+
       Example
-      	  R = symmRing(QQ,7);
-	  toH(h_3*e_3+p_2*h_5+h_1^2*p_3)
-      
-      Text	  
+      	  R = symmRing 7;
+	  toH(h_3*e_3)
+	  S = schurRing(s,4)
+	  toH S_{3,2,1}
+
+      Text
+
+        This also works over tensor products of Symmetric/Schur rings.
 	
-	  The symmetric function {\tt f} need not be an element of a Symmetric
-	  ring. It may be an element of a Schur ring, in which case one needs
-	  to specify a Symmetric ring to carry the h-representation of {\tt f}.
-      
       Example
-      	  R = symmRing(QQ,9);
-	  S = schurRingOf R
-	  toH(S_{3,2,1}*S_{2}+S_{4,2})
+        R = schurRing(r, 4, EHPVariables => (a,b,c));
+	S = schurRing(R, s, 2, EHPVariables => (x,y,z));
+	T = schurRing(S, t, 3);
+	f = (r_1+s_1+t_1)^2
+	toH f
+	
   SeeAlso
     toE
     toS
@@ -1666,36 +1691,19 @@ doc ///
 ///
 
 doc ///
-   Key
-     (toH,RingElement)
-   Headline
-     Represents a symmetric function in the h-basis
-   Usage
-     fh = toH f
-   Inputs
-     f:RingElement
-       element of a Symmetric ring
-   Outputs
-     fh:RingElement
-        element of a Symmetric ring
-   Description
-      Text
-
-        If the input {\tt f} is a symmetric function, element of a 
-	Symmetric ring {\tt R}, then the output {\tt fh} is
-	the representation of {\tt f} as a polynomial in the 
-	complete symmetric functions in {\tt R}.
-
-      Example
-        R = symmRing(QQ,4);
-        toH(e_1*h_2+p_3)
-///
-
-doc ///
   Key
     toP
+    (toP,RingElement)
   Headline
      Power-sum (p-) basis representation
+  Usage
+     fp = toP f
+  Inputs
+     f:RingElement
+       element of a Symmetric or Schur ring
+  Outputs
+     fp:RingElement
+        element of a Symmetric ring
   Description
       Text
 
@@ -1703,50 +1711,30 @@ doc ///
           {\tt toP} yields a representation of {\tt f} as a polynomial
 	  in the power-sum symmetric functions.
 
-      Example
-      	  R = symmRing(QQ,7);
-	  toP(2*(e_1^2-e_2))
+  	  If {\tt f} is an element of a Schur ring {\tt S} then the output {\tt fp} is an 
+	  element of the Symmetric ring associated to {\tt S} (see @TO symmetricRingOf@).
 
-      Text	  
-	
-	  The symmetric function {\tt f} need not be an element of a Symmetric
-	  ring. It may be an element of a Schur ring, in which case one needs
-	  to specify a Symmetric ring to carry the p-representation of {\tt f}.
-      
       Example
-      	  R = symmRing(QQ,6);
-	  S = schurRingOf R
-	  toP(2*S_{3}-S_{2,1})
+      	  R = symmRing 7;
+	  toP(h_3*e_3)
+	  S = schurRing(s,4)
+	  toP S_{3,2,1}
+
+      Text
+
+        This also works over tensor products of Symmetric/Schur rings.
+	
+      Example
+        R = schurRing(r, 4, EHPVariables => (a,b,c));
+	S = schurRing(R, s, 2, EHPVariables => (x,y,z));
+	T = schurRing(S, t, 3);
+	f = (r_1+s_1+t_1)^2
+	toP f
+	
   SeeAlso
     toH
     toS
     toE
-///
-
-doc ///
-   Key
-     (toP,RingElement)
-   Headline
-     Represents a symmetric function in the p-basis
-   Usage
-     fp = toP f
-   Inputs
-     f:RingElement
-       element of a Symmetric ring
-   Outputs
-     fp:RingElement
-        element of a Symmetric ring
-   Description
-      Text
-
-        If the input {\tt f} is a symmetric function, element of a 
-	Symmetric ring {\tt R}, then the output {\tt fp} is
-	the representation of {\tt f} as a polynomial in the 
-	power-sum symmetric functions in {\tt R}.
-
-      Example
-        R = symmRing(QQ,4);
-        toP(e_1*h_2+p_3)
 ///
 
 doc ///
@@ -1836,7 +1824,7 @@ Inputs
     element of Symmetric ring or Schur ring
 Outputs
   pl:RingElement
-     element of Symmetric ring or Schur ring
+     element of the ring of {\tt g}
 Description
   Text
     Given two symmetric functions (or virtual characters of a general
@@ -1845,15 +1833,17 @@ Description
     ring, then both {\tt f,g} are regarded as symmetric functions.
     Otherwise they are considered to be virtual characters. The result
     of the composition of {\tt f} and {\tt g} will be an element of
-    the ring of {\tt g}.
+    the ring of {\tt g}. The option
+    @TO GroupActing@ specifies whether {\tt g} should be interpreted as a virtual {\tt GL}-
+    or {\tt S_n}- representation.
     
   Example
     R = symmRing(QQ,5);
-    pl = plethysm(h_2,h_5)
+    pl = plethysm(h_2,h_3)
     toS pl
     S = schurRing(QQ,q,3);
     plethysm(h_2,q_{2,1})
-    plethysm(q_{2,1},q_{2,1})
+    plethysm(q_{2,1},q_{2,1},GroupActing => "Sn")
     
 ///
 
@@ -1871,19 +1861,49 @@ Inputs
     element of Symmetric ring or Schur ring
 Outputs
   pl:RingElement
-     element of Symmetric ring or Schur ring
+     element of the ring of {\tt g}
 Description
   Text
     
     The method computes the plethystic composition of a Schur function
     corresponding to a partition {\tt lambda} and a symmetric function 
-    or virtual character. This is the most commonly used form of plethysm.
+    or virtual character. This is the most commonly used form of plethysm. The option
+    @TO GroupActing@ specifies whether {\tt g} should be interpreted as a virtual {\tt GL}-
+    or {\tt S_n}- representation.
 
   Example
     R = symmRing(QQ,3)
     S = schurRing(QQ,q,3)
-    plethysm({2,1},e_2)
+    toE plethysm({2,1},e_1*e_2-e_3,GroupActing => "Sn")
     plethysm({2,1,1},q_{1,1}) 
+///
+
+doc ///
+Key
+  (plethysm,RingElement,ClassFunction)
+  (plethysm,BasicList,ClassFunction)
+Headline
+  Plethystic operation on class functions
+Usage
+  pl = plethysm(f,cF)
+  pl = plethysm(lambda,cF)
+Description
+  Text
+    
+    These methods describe the result of applying plethystic operations to a virtual
+    character of a symmetric group. These operations are described either via a symmetric
+    function {\tt f}, or a partition {\tt lambda}. Since {\tt cF} corresponds to an {\tt S_n}-
+    representation, the option @TO GroupActing@ is irrelevant in this case.
+    
+  Example
+    cF = new ClassFunction from {{2} => 1, {1,1} => -1};
+    pl1 = plethysm({1,1},cF)
+    R = symmRing 5;
+    pl2 = plethysm(e_1+e_2,cF)
+    S = schurRingOf R;
+    symmetricFunction(cF,S)
+    symmetricFunction(pl1,S)
+    symmetricFunction(pl2,S)
 ///
 
 doc ///
@@ -1944,7 +1964,7 @@ Key
   (schurResolution,RingElement,List,ZZ)
 --  (schurResolution,RingElement,List,ZZ,ZZ)
 Headline
-  Computes an ``approximate'' equivariant resolution of a module.
+  Compute an ``approximate'' equivariant resolution of a module.
 Usage
   resol = schurResolution(rep,M,d)
 Inputs
@@ -2025,9 +2045,9 @@ doc ///
       is not a representation ring, then the function returns 0.
       
     Example
-      R = schurRing(QQ,r,3)
-      S = schurRing(R,s,5)
-      T = schurRing(S,t,2)
+      R = schurRing(QQ,r,3);
+      S = schurRing(R,s,5);
+      T = schurRing(S,t,2);
       schurLevel R
       schurLevel S
       schurLevel T
@@ -2127,6 +2147,13 @@ Description
     classFunction(s_{2,1})
   
   Text
+    The character of the sign representation of {\tt S_5} is
+
+  Example
+    S = schurRing(QQ,s,5);
+    classFunction(s_{1,1,1,1,1})
+  
+  Text
     We can go back and forth between class functions and symmetric functions.
   
   Example
@@ -2135,13 +2162,6 @@ Description
     sF = symmetricFunction(cF,R)
     toS sF
     classFunction sF
-  
-  Text
-    The character of the sign representation of {\tt S_5} is
-
-  Example
-    S = schurRing(QQ,s,5);
-    classFunction(s_{1,1,1,1,1})
   
   Text
     We can add, subtract, multiply, scale class functions:
@@ -2156,6 +2176,21 @@ Description
     
 ///
 
+doc ///
+Key
+  (degree,ClassFunction)
+Headline
+  Degree of virtual character
+Description
+  Text
+    For a virtual character {\tt ch} of a symmetric group on {\tt n} letters, the degree
+    of {\tt ch} is {\tt n}.
+    
+  Example
+    S = schurRing(s,5);
+    ch = classFunction s_(3,1,1)
+    degree ch
+///
 
 doc ///
 Key
@@ -2164,24 +2199,26 @@ Key
 Headline
   Converts virtual character to symmetric function
 Usage
-  f = symmetricFunction(ch,R)
+  f = symmetricFunction(ch,S)
 Inputs
   ch:ClassFunction
-  R:Ring
-    a Symmetric ring
+  S:Ring
+    a Symmetric or Schur ring
 Outputs
   f:RingElement
-    element of a Symmetric ring
+    element of a Symmetric or Schur ring
 Description
   Text
     Given a virtual character {\tt ch} of a
-    symmetric group, and given a Symmetric ring {\tt R}, 
+    symmetric group, and given a Symmetric ring {\tt S}, 
     the method computes the corresponding symmetric function
-    as an element of {\tt R}.
+    as an element of {\tt S}.
     
   Example
-    R = symmRing(QQ,4);
-    symmetricFunction(new ClassFunction from {{1,1,1,1}=>2},R)
+    S = symmRing(QQ,4);
+    cF = new ClassFunction from {{1,1,1,1}=>24};
+    symmetricFunction(cF,S)
+    symmetricFunction(cF,schurRingOf S)
 SeeAlso
   classFunction
 --  chi
@@ -2460,7 +2497,7 @@ doc ///
   Key
     Memoize
   Headline
-    Record values of the jacobiTrudi function
+    Option to record values of the jacobiTrudi function
   Description
     Text
     
@@ -2476,7 +2513,7 @@ Key
   [schurRing,SVariable]
   [symmRing,SVariable]
 Headline
-  Symbol representing s-functions
+  Specifies symbol representing s-functions
 Description
   Text
     This is an optional argument for the constructor of a Symmetric ring. It indicates the
@@ -2498,7 +2535,7 @@ Key
   [schurRing,EHPVariables]
   [symmRing,EHPVariables]
 Headline
-  Sequence of symbols representing e-, h-, and p-functions
+  Specifies sequence of symbols representing e-, h-, and p-functions
 Description
   Text
     This is an optional argument for the constructor of a Symmetric or Schur ring. It indicates the
@@ -2513,6 +2550,31 @@ Description
 
 SeeAlso
   SVariable
+///
+
+doc ///
+Key
+  GroupActing
+  [plethysm,GroupActing]
+Headline
+  Specifies the group that is acting
+Description
+  Text
+    This is an optional argument for the @TO plethysm@ function. When a plethystic operation
+    is applied to a symmetric function {\tt g}, the output depends on whether {\tt g} is
+    interpreted as a virtual representation of a general linear or symmetric group. The
+    option {\tt GroupActing} specifies the interpretation to be considered. Its possible
+    values are {\tt "GL"} and {\tt "Sn"}, with the former being the default.
+    
+  Example
+    S = schurRing(s,2);
+    plethysm(s_2,s_2,GroupActing => "GL")
+    plethysm(s_2,s_2,GroupActing => "Sn")
+  
+  Text
+  
+    The first example computes {\tt Sym^2(Sym^2(V))}, while the second one computes the
+    second symmetric power of the trivial representation of {\tt S_2}.
 ///
 
 --------------------
