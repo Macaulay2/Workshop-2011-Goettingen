@@ -594,16 +594,36 @@ toS(RingElement) := (f) -> (
 	  )
      )
 
+toS(Thing) := (f) -> f
+undocumented(toS,Thing)
+
+{*
 toS(RingElement,SchurRing) := (f, T) ->
 (
      fS := toS f;
      dimT := numgens T;
      (listForm fS)/(i-> if #i#0<=dimT then T_(i#0)*i#1 else 0_T)//sum
      )
+*}
+toS(Thing,Ring) := (f,T) -> try(lift(f,T)) else f
+undocumented(toS,Thing,Ring)
 
-
-toS(Thing) := (f) -> f
-undocumented(toS,Thing)
+toS(RingElement,SchurRing) := (f, T) ->
+(
+     R := ring f;
+     if schurLevel R == 0 then 
+     (
+	  U := T;
+	  while schurLevel U > 0 do U = coefficientRing U;
+	  toS(f,U)
+	  )
+     else
+     (
+     	  fS := toS f;
+     	  dimT := numgens T;
+     	  (listForm fS)/(i-> if #i#0<=dimT then T_(i#0)*toS(i#1,coefficientRing T) else 0_T)//sum
+	  )
+     )
 
 recTrans = method()
 recTrans (RingElement) := (pl) ->
