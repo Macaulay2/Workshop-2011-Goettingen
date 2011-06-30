@@ -18,8 +18,8 @@
 
 newPackage(
 	"SchurRings",
-    	Version => "0.5", 
-    	Date => "February 12, 2011",
+    	Version => "1.0", 
+    	Date => "June 30, 2011",
     	Authors => {
 	     {Name => "Michael Stillman", Email => "mike@math.cornell.edu", HomePage => "http://www.math.cornell.edu/~mike/"},
 	     {Name => "Hal Schenck"},
@@ -433,6 +433,7 @@ plethysmSn(RingElement,RingElement) := (f,g) ->
      )
 
 plethysm = method(Options => {GroupActing => "GL"}) --alternative is Group => "Sn"
+
 plethysm(RingElement,RingElement) := opts -> (f,g) ->
 (
      if opts.GroupActing == "GL" then plethysmGL(f,g)
@@ -943,6 +944,7 @@ internalProduct(ClassFunction,ClassFunction) := (ch1,ch2)->
      new ClassFunction from iProd
      )
 
+RingElement ** RingElement :=
 internalProduct(RingElement,RingElement) := (f1,f2)->
 (
      R2 := ring f2;
@@ -1291,8 +1293,9 @@ Description
     representations of {\tt GL(n)}, and where multiplication is given by the decomposition of 
     the tensor product of representations. For {\tt k\leq n}, one may interpret the degree
     {\tt k} homogeneous component of this ring as the representation ring of the symmetric
-    group {\tt S_k}. Of course, the multiplication is different than the one on {\tt GL(n)},
-    given by the @TO internalProduct@ function.
+    group {\tt S_k}. In this ring, the multiplication is different than the one in 
+    the representation ring of {\tt GL(n)}, and is implemented by the 
+    @TO internalProduct@ function.
     
     Note that in the above, {\tt n} is allowed to be equal to {\tt \infty}. However, in this
     version of the package, many of the features from the case {\tt n} finite are missing
@@ -1408,7 +1411,7 @@ Description
     
   Text
   
-    The result of the last computation is of course the same as that of taking the
+    The result of the previous computation is of course the same as that of taking the
     @TO internalProduct@ of {\tt W} and {\tt U}.
     
     We can also write any symmetric function in terms of the standard {\tt e}-, {\tt h}- and
