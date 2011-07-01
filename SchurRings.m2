@@ -205,6 +205,9 @@ schurRing(Ring,Symbol,ZZ) := SchurRing => opts -> (R,p,n) -> (
      --S.SVariable = opts.SVariable;
      dim S := s -> dimSchur(s);
      dim(Thing,S) := (n,s) -> dimSchur(n, s);
+     S ** RingElement := RingElement ** S := (f1,f2) -> internalProduct(f1,f2);
+     S @ RingElement := RingElement @ S := (f1,f2) -> plethysm(f1,f2);
+     S @@ RingElement := RingElement @@ S := (f1,f2) -> plethysm(f1,f2,GroupActing=>"Sn");
      t := new SchurRingIndexedVariableTable from p;
      t.SchurRing = S;
      t#symbol _ = a -> ( S _ a);
@@ -232,7 +235,10 @@ symmRing (Ring,ZZ) := opts -> (A,n) -> (
        	  R.pVariable = (i) -> if 1 <= i and i <= n then R_(n+i-1) else error"Invalid index";
        	  R.hVariable = (i) -> if 1 <= i and i <= n then R_(2*n+i-1) else error"Invalid index";
      	  R.dim = n;
-	  
+     	  R ** RingElement := RingElement ** R := (f1,f2) -> internalProduct(f1,f2);
+     	  R @ RingElement := RingElement @ R := (f1,f2) -> plethysm(f1,f2);
+     	  R @@ RingElement := RingElement @@ R := (f1,f2) -> plethysm(f1,f2,GroupActing=>"Sn");
+     	  	  
 	  degsEHP := toList(1..n);
      	  blocks := {toList(0..(n-1)),toList(n..(2*n-1)),toList(2*n..(3*n-1))};
      	  vrs := symbol vrs;
@@ -944,7 +950,6 @@ internalProduct(ClassFunction,ClassFunction) := (ch1,ch2)->
      new ClassFunction from iProd
      )
 
-RingElement ** RingElement :=
 internalProduct(RingElement,RingElement) := (f1,f2)->
 (
      R2 := ring f2;
@@ -1372,24 +1377,41 @@ Description
     
   Example
      plethysm(W+U,W+U)
+     
+  Text
+    
+    Alternatively, we can use the binary operator @TO symbol \@ @ to compute plethystic
+    compositions of {\tt GL}-representations:
+  
+  Example
+    s_2 @ s_3
 
   Text
   
     All the above calculations assume that we're dealing with representations of {\tt GL(4)}.
     But {\tt W} and {\tt U}, having degree {\tt 3}, can be thought as characters of the
     symmetric group {\tt S_3}. More precisely, {\tt W} corresponds to the trivial representation,
-    and {\tt U} to the sign representation. As such, we can tensor them together
+    and {\tt U} to the sign representation. As such, we can tensor them together using the
+    function @TO internalProduct@, or the binary operator @TO symbol **@.
     
   Example
-    internalProduct(W,U)
+    W ** U
     
   Text
   
-    or compute a plethystic composition (note how the option @TO GroupActing@ is set to
+    We can also compute plethystic compositions (note how the option @TO GroupActing@ is set to
     indicate that we're working with representations of a symmetric group):
     
   Example
     plethysm(W+U,W+U,GroupActing => "Sn")
+
+  Text
+  
+    The shorthand for plethystic compositions when the group that is acting is the symmetric
+    group is given by the binary operator @TO symbol \@\@ @.
+    
+  Example
+    (W+U) @@ (W+U)
 
   Text
   
@@ -2082,6 +2104,8 @@ Headline
   Plethystic composition of symmetric functions/characters
 Usage
   pl = plethysm(f,g)
+  pl = f @ g
+  pl = f @@ g
 Inputs
   f:RingElement
     element of Symmetric ring or Schur ring
@@ -2102,13 +2126,17 @@ Description
     @TO GroupActing@ specifies whether {\tt g} should be interpreted as a virtual {\tt GL}-
     or {\tt S_n}- representation.
     
+    If the group that is acting is {\tt GL}, then we use the binary operator @TO symbol \@ @ to
+    denote the plethysm operation. If the group is {\tt S_n} then we use the operator @TO symbol \@\@ @.
+
   Example
     R = symmRing(QQ,5);
     pl = plethysm(h_2,h_3)
     toS pl
     S = schurRing(QQ,q,3);
-    plethysm(h_2,q_{2,1})
+    h_2 @ q_{2,1}
     plethysm(q_{2,1},q_{2,1},GroupActing => "Sn")
+    q_{1,1} @@ q_{2,1}
     
 ///
 
@@ -2690,7 +2718,8 @@ Description
     functions of the same degree. If we think of these functions as being
     virtual characters of some symmetric group, then their internal product
     is just the character of the tensor product of the corresponding virtual
-    representations.
+    representations. We use the binary operator @TO symbol **@ as a shorthand for
+    @TO internalProduct@.
 
     The complete symmetric function of degree {\tt n} corresponds
     to the trivial {\tt S_n}-representation and is therefore
@@ -2700,6 +2729,7 @@ Description
     R = symmRing(QQ,5);
     S = schurRing(QQ,s,3);
     internalProduct(h_3,s_{2,1})
+    toE(h_3 ** e_3)
   Text
   
     The square of the sign representation is the trivial representation:
@@ -2736,7 +2766,7 @@ Description
   Example
      R = symmRing(QQ,6);
      S = schurRing(QQ,s,6);
-     internalProduct(s_{3},e_3)
+     toE(s_{3}**e_3)
      Q = schurRing(QQ,q,6);
      internalProduct(s_{3,3},q_{4,2})   
   Text
