@@ -55,7 +55,7 @@ export {schurRing, SchurRing, symmRing,
      ClassFunction, schurLevel,
      schurResolution,
      
-     Memoize, Schur, EorH, GroupActing,
+     Memoize, Schur, EorH, GroupActing, PlethysmType,
      eVariable, pVariable, hVariable --, getSchur
 --     cauchy, wedge, preBott, bott, doBott, weyman
      }
@@ -122,7 +122,7 @@ symmetricRingOf (Ring) := R -> (
 	          error"symmetric ring expects finite schurRings";
      	       if coefficientRing R === ZZ then
 	       	  error"base ring has to be QQ";
-     	       R.symmRing = symmRing(symmetricRingOf coefficientRing R,numgens R,EHPVariables => R.EHPVariables);
+     	       R.symmRing = symmRing(symmetricRingOf coefficientRing R,numgens R,EHPVariables => R.EHPVariables, SVariable => R.Symbol, GroupActing => R.GroupActing);
      	       R.symmRing.Schur = R;
 	       R.symmRing
 	       )
@@ -138,8 +138,8 @@ schurRingOf (Ring) := R -> (
 	       (
 		    --s := getSymbol "s";
 		    s := R.SVariable;
-     	       	    if schurLevel R == 1 then R.Schur = schurRing(coefficientRing R,s,R.dim)
-		       else R.Schur = schurRing(schurRingOf coefficientRing R,s,R.dim); --symmetricRingOf is wrong, right?
+     	       	    if schurLevel R == 1 then R.Schur = schurRing(coefficientRing R,s,R.dim,EHPVariables => R.EHPVariables, GroupActing => R.GroupActing)
+		       else R.Schur = schurRing(schurRingOf coefficientRing R,s,R.dim,EHPVariables => R.EHPVariables, GroupActing => R.GroupActing); --symmetricRingOf is wrong, right?
      	       	    R.Schur.symmRing = R;
 	       	    R.Schur
 		    )
@@ -184,7 +184,7 @@ newSchur2(Ring,Symbol,ZZ) := (A,p,n) -> (
      SR
      )
 
-schurRing = method(Options => {EHPVariables => (getSymbol"e",getSymbol"h",getSymbol"p"), SVariable => getSymbol"s"})
+schurRing = method(Options => {EHPVariables => (getSymbol"e",getSymbol"h",getSymbol"p"), SVariable => getSymbol"s", GroupActing => "GL"})
 schurRing(Ring,Thing,ZZ) := SchurRing => opts -> (A,p,n) -> (
      try p = baseName p else error "schurRing: can't use provided thing as variable";
      if class p === Symbol then schurRing(A,p,n,opts)
@@ -203,11 +203,23 @@ schurRing(Ring,Symbol,ZZ) := SchurRing => opts -> (R,p,n) -> (
      if n == infinity then S = newSchur2(R,p,-1) else S = newSchur2(R,p,n);
      S.EHPVariables = opts.EHPVariables;
      --S.SVariable = opts.SVariable;
+     S.GroupActing = opts.GroupActing;
      dim S := s -> dimSchur(s);
      dim(Thing,S) := (n,s) -> dimSchur(n, s);
      S ** RingElement := RingElement ** S := (f1,f2) -> internalProduct(f1,f2);
-     S @ RingElement := RingElement @ S := (f1,f2) -> plethysm(f1,f2);
-     S @@ RingElement := RingElement @@ S := (f1,f2) -> plethysm(f1,f2,GroupActing=>"Sn");
+     S @ RingElement := RingElement @ S := (f1,f2) -> plethysmGL(f1,f2);
+     S @@ RingElement := RingElement @@ S := (f1,f2) -> plethysmSn(f1,f2);
+     if opts.GroupActing == "GL" then
+     (
+	  symmetricPower(ZZ,S) := (n,s) -> plethysm({n},s,PlethysmType => "outer");
+	  exteriorPower(ZZ,S) := opts -> (n,s) -> plethysm(splice{n:1},s,PlethysmType => "outer");
+	  )
+     else if opts.GroupActing == "Sn" then
+     (
+	  symmetricPower(ZZ,S) := (n,s) -> plethysm({n},s,PlethysmType => "inner");
+	  exteriorPower(ZZ,S) := opts -> (n,s) -> plethysm(splice{n:1},s,PlethysmType => "inner");
+	  );
+
      t := new SchurRingIndexedVariableTable from p;
      t.SchurRing = S;
      t#symbol _ = a -> ( S _ a);
@@ -234,10 +246,21 @@ symmRing (Ring,ZZ) := opts -> (A,n) -> (
        	  R.eVariable = (i) -> if 1 <= i and i <= n then R_(i-1) else error"Invalid index";
        	  R.pVariable = (i) -> if 1 <= i and i <= n then R_(n+i-1) else error"Invalid index";
        	  R.hVariable = (i) -> if 1 <= i and i <= n then R_(2*n+i-1) else error"Invalid index";
+     	  R.GroupActing = opts.GroupActing;
      	  R.dim = n;
      	  R ** RingElement := RingElement ** R := (f1,f2) -> internalProduct(f1,f2);
-     	  R @ RingElement := RingElement @ R := (f1,f2) -> plethysm(f1,f2);
-     	  R @@ RingElement := RingElement @@ R := (f1,f2) -> plethysm(f1,f2,GroupActing=>"Sn");
+     	  R @ RingElement := RingElement @ R := (f1,f2) -> plethysmGL(f1,f2);
+     	  R @@ RingElement := RingElement @@ R := (f1,f2) -> plethysmSn(f1,f2);
+     	  if opts.GroupActing == "GL" then
+     	  (
+	       symmetricPower(ZZ,R) := (n,s) -> plethysm({n},s,PlethysmType => "outer");
+	       exteriorPower(ZZ,R) := opts -> (n,s) -> plethysm(splice{n:1},s,PlethysmType => "outer");
+	       )
+     	  else if opts.GroupActing == "Sn" then
+     	  (
+	       symmetricPower(ZZ,R) := (n,s) -> plethysm({n},s,PlethysmType => "inner");
+	       exteriorPower(ZZ,R) := opts -> (n,s) -> plethysm(splice{n:1},s,PlethysmType => "inner");
+	       );
      	  	  
 	  degsEHP := toList(1..n);
      	  blocks := {toList(0..(n-1)),toList(n..(2*n-1)),toList(2*n..(3*n-1))};
@@ -378,9 +401,9 @@ plethysmMap = (d,maxg,R) -> (
           nSd = nS//d; 
      	  fs = join(fs,splice{nS:0_auxS});
 	  topf := min(maxg#(lev-1),nSd);
-	  fs = join(fs, apply(1..topf, j -> auxS_(nS-1+d*j)));
+          fs = join(fs, apply(1..topf, j -> auxS_(nS-1+d*j)));
 	  if maxg#(lev-1)>nSd then fs = join(fs, apply(topf+1..maxg#(lev-1),j-> auxS.mapFromE auxS.PtoETable#(d*j)));
-	  fs = join(fs, 2*nS-maxg#(lev-1):0_auxS);
+          fs = join(fs, 2*nS-maxg#(lev-1):0_auxS);
 	  auxS = coefficientRing auxS;
 	  lev = schurLevel auxS;
 	  );
@@ -438,12 +461,12 @@ plethysmSn(RingElement,RingElement) := (f,g) ->
      symmetricFunction(plethysm(f,classFunction g), ring g)
      )
 
-plethysm = method(Options => {GroupActing => "GL"}) --alternative is Group => "Sn"
+plethysm = method(Options => {PlethysmType => "outer"}) --alternative is Group => "inner"
 
 plethysm(RingElement,RingElement) := opts -> (f,g) ->
 (
-     if opts.GroupActing == "GL" then plethysmGL(f,g)
-        else if opts.GroupActing == "Sn" then plethysmSn(f,g)
+     if opts.PlethysmType == "outer" then plethysmGL(f,g)
+        else if opts.PlethysmType == "inner" then plethysmSn(f,g)
 	else error"Invalid option"
      )
 
@@ -456,6 +479,7 @@ plethysm(BasicList,RingElement) := opts -> (lambda,g) -> (
 
 plethysm(RingElement,ClassFunction) := opts -> (f,cF) ->
 (
+     R := ring(cF#(first keys cF));
      pf := toP f;
      n := degree cF;
      k := (ring pf).dim;
@@ -467,10 +491,13 @@ plethysm(RingElement,ClassFunction) := opts -> (f,cF) ->
 	  sublist := for i from 1 to k list
 	  (
 	       pct := powerCycleType(i,sig);     
-	       if cF#?pct then pvars i => cF#pct else pvars i => 0
+--	       if cF#?pct then pvars i => cF#pct else pvars i => 0
+	       if cF#?pct then cF#pct else 0
 	       );
-	  newv := sub(pf,sublist);
-	  if newv != 0 then newHT#sig = lift(newv,QQ);
+	  --newv := sub(pf,sublist);
+	  --newv := (map(R,ring pf,splice{k:0} | sublist | splice{k:0})) pf;
+	  --if newv != 0 then newHT#sig = lift(newv,QQ);
+	  newHT#sig = (map(R,ring pf,splice{k:0} | sublist | splice{k:0})) pf;
 	  );
      new ClassFunction from newHT
      )
@@ -732,38 +759,43 @@ recsyz (RingElement) := (el) ->
      listForm el/((u,v)->T_u*recsyz(v))//sum
      )
 
-schurResolution = method(Options => options plethysm)
-schurResolution(RingElement,List,ZZ,ZZ) := opts -> (rep,M,d,c) ->
+schurResolution = method()
+schurResolution(RingElement,List,ZZ,ZZ) := (rep,M,d,c) ->
 (
-     schurRes(rep,M,d,c,opts)
+     schurRes(rep,M,d,c)
      )
 
-schurResolution(RingElement,List,ZZ) := opts -> (rep,M,d) ->
+schurResolution(RingElement,List,ZZ) := (rep,M,d) ->
 (
-     schurRes(rep,M,d,0,opts)
+     schurRes(rep,M,d,0)
      )
 
-schurResolution(RingElement,List) := opts -> (rep,M) ->
+schurResolution(RingElement,List) := (rep,M) ->
 (
-     schurRes(rep,M,#M-1,0,opts)
+     schurRes(rep,M,#M-1,0)
      )
 
-auxProd = method(Options => options schurResolution)
+{*auxProd = method(Options => options schurResolution)
 auxProd(RingElement,RingElement) := opts -> (f,g) ->
 (
      if opts.GroupActing == "GL" then f*g else
      if opts.GroupActing == "Sn" then internalProduct(f,g) else
      error"Invalid option"
      )
+*}
 
-schurRes = method(Options => options schurResolution)
-schurRes(RingElement,List,ZZ,ZZ) := opts -> (rep,M,d,c) ->
+schurRes = method()
+schurRes(RingElement,List,ZZ,ZZ) := (rep,M,d,c) ->
 (
      T := ring rep;
      n := schurLevel T;
      plets := new MutableList;
      plets#0 = 1_T;
-     for i from 1 to d do plets#i = plethysm({i},rep,opts);
+     for i from 1 to d do plets#i = symmetricPower(i,rep);
+     
+     auxProd := method();
+     if T.GroupActing == "GL" then auxProd(RingElement,RingElement) := (f,g) -> f*g
+     else auxProd(RingElement,RingElement) := (f,g) -> internalProduct(f,g);
      
      mods := new MutableList from (M | toList((d+1-#M):0));
      notdone := true;
@@ -779,7 +811,7 @@ schurRes(RingElement,List,ZZ,ZZ) := opts -> (rep,M,d,c) ->
 	  (
      	       mo = 0_T;	       
 	       for sy in syzy#k do
-	       	    if sy#0 <= i then mo = mo + auxProd(sy#1, plets#(i-sy#0),opts)
+	       	    if sy#0 <= i then mo = mo + auxProd(sy#1, plets#(i-sy#0))
 		    else break;
 	       mo = mo - mods#i;
 	       newsyz = recsyz(mo);
@@ -834,9 +866,13 @@ centralizerSize(List) := lambda ->
      product for i from 0 to #lambda-1 list((i+1)^(lambda#i)*(lambda#i)!)
      )
 
+keysCF := method()
+--keysCF(ClassFunction) := (cF) -> drop(keys cF,1)
+keysCF(ClassFunction) := (cF) -> keys cF
+
 degree(ClassFunction) := ch ->
 (
-     ke := keys ch;
+     ke := keysCF ch;
      if #ke == 0 then -1 else sum(first ke)
      )
 
@@ -845,7 +881,7 @@ classFunction(RingElement) := (f)->
 (
      Rf := ring f;
 
-     R :=symmetricRingOf Rf;
+     R := symmetricRingOf Rf;
      pf := toP f;
      n := R.dim;
      
@@ -859,6 +895,7 @@ classFunction(RingElement) := (f)->
      	  par := multsToSeq(degs);
 	  ch#par = lift(coe#j,coefficientRing R) * centralizerSize(degs);
 	  );
+--     ch.Ring = Rf;
      new ClassFunction from ch
      )
 
@@ -873,23 +910,25 @@ classFunction(BasicList) := (lambda)->
 ClassFunction + ClassFunction := (ch1,ch2)->
 (
      clSum := new MutableHashTable;
-     l1 := sum((keys ch1)#0);
-     l2 := sum((keys ch2)#0);
+     l1 := sum((keysCF ch1)#0);
+     l2 := sum((keysCF ch2)#0);
      if l1 != l2 then error("The symmetric functions/characters must have the same degree");
-     for i in unique(keys(ch1)|keys(ch2)) do
+     for i in unique(keysCF(ch1)|keysCF(ch2)) do
      	  (
 	       a := b := 0;
 	       if ch1#?i then a = ch1#i;
 	       if ch2#?i then b = ch2#i;
 	       if (a+b != 0) then clSum#i = a + b;
 	       );
+--     clSum.Ring = ch2.Ring;
      new ClassFunction from clSum
      )
 
 ZZ * ClassFunction := (n,ch) ->
 (
      clProd := new MutableHashTable;
-     for i in keys ch do clProd#i = n*ch#i;
+     for i in keysCF ch do clProd#i = n*ch#i;
+--     clProd.Ring = ch.Ring;
      new ClassFunction from clProd     
      )
 
@@ -900,7 +939,7 @@ ClassFunction - ClassFunction := (ch1,ch2)-> ch1 + (-1)*ch2;
 ClassFunction == ClassFunction := (ch1,ch2) ->
 (
      equ := true;
-     for i in unique(keys ch1 | keys ch2) do
+     for i in unique(keysCF ch1 | keysCF ch2) do
      	  if not ((not ch1#?i and not ch2#?i) or (ch1#?i and ch2#?i and ch1#i == ch2#i)) then 
      	  (
 	       equ = false;
@@ -915,17 +954,18 @@ symmetricFunction(ClassFunction,Ring) := (ch,S)->
      R := symmetricRingOf S;
      rez := 0_R;
      n := R.dim;
-     for lam in keys ch do
-     	  rez = rez + ch#lam * (product for i from 0 to #lam-1 list R_(n-1+lam#i)) / centralizerSize(seqToMults lam);
+     for lam in keysCF ch do
+     	  rez = rez + ch#lam * (product for i from 0 to #lam-1 list R.pVariable(lam#i)) / centralizerSize(seqToMults lam);
      if instance(S, SchurRing) then toS rez else rez
      )
+--symmetricFunction(ClassFunction) := (ch) -> symmetricFunction(ch,ch.Ring)
 
 scalarProduct = method()
 scalarProduct(ClassFunction,ClassFunction) := (ch1,ch2)->
 (
      scProd := 0;
      chProd := internalProduct(ch1,ch2);
-     for i in keys(chProd) do
+     for i in keysCF(chProd) do
      	  scProd = scProd + chProd#i / centralizerSize(seqToMults i);
      scProd
      )
@@ -942,11 +982,12 @@ ClassFunction * ClassFunction :=
 internalProduct(ClassFunction,ClassFunction) := (ch1,ch2)->
 (
      iProd := new MutableHashTable;
-     l1 := sum((keys ch1)#0);
-     l2 := sum((keys ch2)#0);
+     l1 := sum((keysCF ch1)#0);
+     l2 := sum((keysCF ch2)#0);
      if l1 != l2 then error("The symmetric functions/characters must have the same degree");
-     for i in keys(ch1) do
+     for i in keysCF(ch1) do
      	  if ch2#?i then iProd#i = ch1#i * ch2#i;
+ --    iProd.Ring = ch2.Ring;
      new ClassFunction from iProd
      )
 
@@ -1056,16 +1097,6 @@ L = {(a_{1},b_{1}), (a_{3}+a_{2,1},b_{2,2})}
 
 ----end wedge powers
 *}
-
-exteriorPower (ZZ,RingElement) := opts -> (r,rep) ->
-(
-     plethysm(splice{r:1},rep)
-     )
-
-symmetricPower (ZZ,RingElement) := (r,rep) ->
-(
-     plethysm({r},rep)
-     )
 
 {*cauchy := method(Options => {SymmOrSkew => Symmetric}) --Symmetric, Skewsymmetric
 cauchy(ZZ,RingElement,RingElement) := opts -> (i,f,g) -> (
@@ -1214,6 +1245,9 @@ weyman (ZZ,List) := (i,L) -> (
      B := preBott(i,L);
      doBott(i,B))
 *}
+---------------------------------------------------------------
+--------End old stuff----------------------------------------------
+---------------------------------------------------------------
 
 --------------------------------
 -- Dimension -------------------
@@ -1276,7 +1310,7 @@ dimSchur(RingElement) := (F) -> (
      dimSchur(ns,F)
      )
 ---------------------------------------------------------------
---------End old stuff----------------------------------------------
+--------End dimension----------------------------------------------
 ---------------------------------------------------------------
 
 beginDocumentation()
@@ -1317,8 +1351,19 @@ Description
     numgens R
    
   Text
+    
+    By default, the elements of a @TO schurRing@ are interpreted as (virtual) characters of 
+    a general linear group. This interpretation is controlled by the option @TO GroupActing@,
+    whose default value is "GL". To indicate that the elements of a Schur ring should
+    be interpreted as characters of the symmetric group, one has to set the option @TO GroupActing@
+    to "Sn".
   
-    A monomial represents the irreducible representation with a given highest weight. 
+  Example
+    Q = schurRing(q,4,GroupActing => "Sn")
+    
+  Text
+    
+    A monomial in {\tt S} represents the irreducible representation with a given highest weight. 
     The standard {\tt GL(4)}-representation is
    
   Example
@@ -1377,50 +1422,68 @@ Description
     
   Example
      plethysm(W+U,W+U)
-     
+   
   Text
     
-    Alternatively, we can use the binary operator @TO symbol \@ @ to compute plethystic
-    compositions of {\tt GL}-representations:
+    By default, the function @TO plethysm@ computes outer pletyhsm of symmetric functions.
+    In the case of {\tt GL}-representations, this corresponds to composition of Schur functors.
+    In order to compute inner plethysm, one has to set the option @TO PlethysmType@ to "inner".
+    Its default value is "outer".
+    
+  Example
+     plethysm(W+U,W+U,PlethysmType => "inner")
+      
+  Text
+    
+    Alternatively, we can use the binary operator @TO symbol \@ @ to compute outer plethysm:
   
   Example
     s_2 @ s_3
 
   Text
   
-    All the above calculations assume that we're dealing with representations of {\tt GL(4)}.
-    But {\tt W} and {\tt U}, having degree {\tt 3}, can be thought as characters of the
-    symmetric group {\tt S_3}. More precisely, {\tt W} corresponds to the trivial representation,
-    and {\tt U} to the sign representation. As such, we can tensor them together using the
-    function @TO internalProduct@, or the binary operator @TO symbol **@.
-    
-  Example
-    W ** U
-    
-  Text
-  
-    We can also compute plethystic compositions (note how the option @TO GroupActing@ is set to
-    indicate that we're working with representations of a symmetric group):
-    
-  Example
-    plethysm(W+U,W+U,GroupActing => "Sn")
-
-  Text
-  
-    The shorthand for plethystic compositions when the group that is acting is the symmetric
-    group is given by the binary operator @TO symbol \@\@ @.
+    and the binary operator @TO symbol \@\@ @ to compute inner plethysm:
     
   Example
     (W+U) @@ (W+U)
 
   Text
   
+    All the above calculations assume that we're dealing with representations of {\tt GL(4)}.
+    But {\tt W} and {\tt U}, having degree {\tt 3}, can be thought as characters of the
+    symmetric group {\tt S_3}. Let us first ``move'' these symmetric functions into a Schur ring
+    designed to deal with characters of symmetric groups (like the ring {\tt Q} defined
+    above):
+    
+  Example
+    W' = toS(W,Q)
+    U' = toS(U,Q)
+    
+  Text
+    
+    Now {\tt W'} corresponds to the trivial representation of {\tt S_3},
+    and {\tt U'} to the sign representation. As such, we can tensor them together using the
+    function @TO internalProduct@, or the binary operator @TO symbol **@.
+    
+  Example
+    W' ** U'
+    
+  Text
+    Note that for the user's convenience we have installed the function @TO internalProduct@
+    and the binary operator @TO symbol **@ also for Schur rings meant to deal with 
+    {\tt GL}-representations:
+    
+  Example
+    W ** U
+    
+  Text
+  
     We can generate the class function corresponding to an {\tt S_n}-representation, using
     the function @TO classFunction@:
     
   Example
-    cfW = classFunction(W)
-    cfU = classFunction(U)
+    cfW = classFunction(W')
+    cfU = classFunction(U')
     
   Text
     
@@ -1429,15 +1492,25 @@ Description
     
   Example
     cfWU = cfW * cfU
-    symmetricFunction(cfWU,S)
+    symmetricFunction(cfWU,Q)
     
   Text
   
     The result of the previous computation is of course the same as that of taking the
-    @TO internalProduct@ of {\tt W} and {\tt U}.
+    @TO internalProduct@ of {\tt W'} and {\tt U'}.
     
-    We can also write any symmetric function in terms of the standard {\tt e}-, {\tt h}- and
-    {\tt p}- bases, using the functions @TO toE@, @TO toH@, @TO toP@ respectively:
+    We can take exterior and symmetric powers of {\tt S_n}-representations, just as for
+    {\tt GL}-modules (compare to {\tt o16} and {\tt o17}):
+    
+  Example
+    exteriorPower(2,W')
+    symmetricPower(2,U')
+
+  Text
+      
+    We can write any symmetric function in terms of the standard {\tt e}- (elementary
+    symmetric), {\tt h}- (complete) and {\tt p}- (power sum) bases, using the functions 
+    @TO toE@, @TO toH@, @TO toP@ respectively:
     
   Example
     toE U
@@ -1519,18 +1592,13 @@ Description
 
     In the {\tt S_n} situation, the residue field which as a representation
     has character {\tt s_n}. The space of linear forms in the polynomial ring 
-    considered as a {\tt S_n}-representation coincides with the permutation representation
+    considered as an {\tt S_n}-representation coincides with the permutation representation
     of {\tt S_n}, thus has character {\tt s_n + s_{n-1,1}}.
 
   Example
-    rep = s_n + s_(n-1,1)
-    M = {s_n}
-    schurResolution(rep,M,n,GroupActing => "Sn")
-  
-  Text
-    
-    Notice that we had to specify again, as in the case of the plethysm computation, that
-    the group which is acting is the symmetric group.
+    rep = q_n + q_(n-1,1)
+    M = {q_n}
+    schurResolution(rep,M,n)
 ///
 
 {*
@@ -1569,6 +1637,79 @@ document {
      do not work, but I'm not sure what they would mean..."
      }
 *}
+doc ///
+Key
+  SchurRing
+  (symbol _,SchurRing,List)
+  (symbol _,SchurRing,Sequence)
+  (symbol _,SchurRing,ZZ)
+Headline
+  The class of all Schur rings
+Description
+  Text
+    A Schur ring is the representation ring for the general linear group of {\tt n\times n}
+    matrices, and one can be constructed with @TO schurRing@.
+  
+  Example
+    S = schurRing(QQ,s,4)
+  
+  Text
+  
+    Alternatively, its elements can be interpreted as virtual characters of symmetric groups,
+    by setting the value of the option @TO GroupActing@ to {\tt "Sn"}.
+    
+  Example
+    Q = schurRing(QQ,q,4,GroupActing => "Sn")
+  Text
+  
+    The element corresponding to the Young diagram {\tt \{3,2,1\}}, is obtained as follows.
+   
+  Example
+    s_{3,2,1}
+
+  Text
+  
+    Alternatively, we can use a @TO Sequence@ instead of a @TO List@ as the index of a Schur
+    function.
+
+  Example
+    s_(3,2,1)
+
+  Text
+  
+    For Young diagrams with only one row one can use positive integers as subscripts.
+    
+  Example
+    q_4
+     
+  Text  
+    
+    The name of the Schur ring can be used with a subscript to describe a symmetric 
+    function.
+  
+  Example
+    Q_{2,2}
+    S_5
+  
+  Text
+  
+    The dimension of the underlying virtual {\tt GL}-representation can be obtained
+    with @TO dim@.
+  
+  Example
+    dim s_{3,2,1}
+    
+  Text
+  
+    Multiplication in the ring comes from tensor product of representations.
+  
+  Example
+    s_{3,2,1} * s_{1,1}
+
+SeeAlso
+  schurRing
+///
+{*
 document {
      Key => {SchurRing, (symbol _,SchurRing,List), (symbol _,SchurRing,Sequence), (symbol _,SchurRing,ZZ)},
      Headline => "The class of all Schur rings",
@@ -1585,13 +1726,13 @@ document {
      "The name of the Schur ring can be used with a subscript to describe a symmetric function",
      EXAMPLE "R_{2,2}",
      EXAMPLE "R_5",
-     "The dimension of the underlying virtual representation can be obtained
+     "The dimension of the underlying virtual ", TT "GL", "-representation can be obtained
      with ", TO "dim", ".",
      EXAMPLE "dim s_{3,2,1}",
      "Multiplication in the ring comes from tensor product of representations.",
      EXAMPLE "s_{3,2,1} * s_{1,1}",
      SeeAlso => {schurRing}}
-
+*}
 doc ///
 Key
   schurRing
@@ -1615,6 +1756,15 @@ Description
     S = schurRing(QQ[x],s,3);
     (x*s_{2,1}+s_3)^2
     
+  Text
+    Alternatively, the elements of a Schur ring may be interpreted as characters of
+    symmetric groups. To indicate this interpretation, one has to set the value of the option 
+    @TO GroupActing@ to "Sn".
+    
+  Example
+    S = schurRing(s,4,GroupActing => "Sn");
+    exteriorPower(2,s_(3,1))
+      
   Text
     If the dimension {\tt n} is not specified, then one should think of {\tt S} as the
     full ring of symmetric functions over the base {\tt A}, i.e. there is no restriction
@@ -1688,6 +1838,17 @@ Description
     R = symmRing(QQ[x,y,z],4)
     e_2*x+y*p_3+h_2
     toS oo
+
+  Text
+    
+    The elements of a Symmetric ring can be interpreted as characters of either symmetric or
+    general linear groups. This is controlled by the value of the option @TO GroupActing@, whose
+    default value is "GL" (general linear group). The other possibility for its value is 
+    "Sn" (symmetric group).
+    
+  Example
+    R = symmRing(QQ,3,GroupActing => "Sn")
+    toE symmetricPower(2,e_2)
     
 SeeAlso
   SchurRing
@@ -2101,7 +2262,7 @@ Key
   plethysm
   (plethysm,RingElement,RingElement)
 Headline
-  Plethystic composition of symmetric functions/characters
+  Plethystic operations on symmetric functions
 Usage
   pl = plethysm(f,g)
   pl = f @ g
@@ -2116,18 +2277,15 @@ Outputs
      element of the ring of {\tt g}
 Description
   Text
-    Given two symmetric functions (or virtual characters of a general
-    linear group) {\tt f} and {\tt g}, the method computes their
-    plethystic composition. If {\tt g} is an element of a symmetric
-    ring, then both {\tt f,g} are regarded as symmetric functions.
-    Otherwise they are considered to be virtual characters. The result
-    of the composition of {\tt f} and {\tt g} will be an element of
-    the ring of {\tt g}. The option
-    @TO GroupActing@ specifies whether {\tt g} should be interpreted as a virtual {\tt GL}-
-    or {\tt S_n}- representation.
+    Given two symmetric functions  {\tt f} and {\tt g}, the method computes their
+    plethystic composition. The result of this operation will be an element of
+    the ring of {\tt g}. The option @TO PlethysmType@ specifies which type
+    of plethysm is computed: inner or outer. Most commonly, outer plethysm is
+    interpreted as composition of Schur functors of {\tt GL}-representations. Inner
+    plethysm corresponds to applying Schur functors to {\tt S_n}-representations.
     
-    If the group that is acting is {\tt GL}, then we use the binary operator @TO symbol \@ @ to
-    denote the plethysm operation. If the group is {\tt S_n} then we use the operator @TO symbol \@\@ @.
+    We use the binary operator @TO symbol \@ @ to denote outer plethysm. The 
+    operator @TO symbol \@\@ @ is used for inner plethysm.
 
   Example
     R = symmRing(QQ,5);
@@ -2135,7 +2293,7 @@ Description
     toS pl
     S = schurRing(QQ,q,3);
     h_2 @ q_{2,1}
-    plethysm(q_{2,1},q_{2,1},GroupActing => "Sn")
+    plethysm(q_{2,1},q_{2,1},PlethysmType => "inner")
     q_{1,1} @@ q_{2,1}
     
 ///
@@ -2144,7 +2302,7 @@ doc ///
 Key
   (plethysm,BasicList,RingElement)
 Headline
-  Plethystic composition of Schur function and symmetric function/character
+  Plethystic operations on symmetric functions
 Usage
   pl = plethysm(lambda,g)
 Inputs
@@ -2158,16 +2316,15 @@ Outputs
 Description
   Text
     
-    The method computes the plethystic composition of a Schur function
-    corresponding to a partition {\tt lambda} and a symmetric function 
-    or virtual character. This is the most commonly used form of plethysm. The option
-    @TO GroupActing@ specifies whether {\tt g} should be interpreted as a virtual {\tt GL}-
-    or {\tt S_n}- representation.
+    The method computes the inner/outer plethysm of {\tt s_{\lambda}} with {\tt g}, where
+    {\tt \lambda} is a partition and {\tt g} a symmetric function. This is the most 
+    commonly used form of plethysm. The option @TO PlethysmType@ specifies which type
+    of plethysm is computed: inner or outer.
 
   Example
     R = symmRing(QQ,3)
     S = schurRing(QQ,q,3)
-    toE plethysm({2,1},e_1*e_2-e_3,GroupActing => "Sn")
+    toE plethysm({2,1},e_1*e_2-e_3,PlethysmType => "inner")
     plethysm({2,1,1},q_{1,1}) 
 ///
 
@@ -2199,7 +2356,7 @@ Description
     symmetricFunction(pl2,S)
 ///
 
-doc ///
+{*doc ///
 Key
   (exteriorPower,ZZ,RingElement)
 Headline
@@ -2250,6 +2407,7 @@ Description
      T = schurRing(S,t,3)
      symmetricPower(4,s_{1}+t_{1})
 ///
+*}
 
 doc ///
 Key
@@ -2319,15 +2477,25 @@ Description
 
   Text
   
-    The example below computes the syzygies of degree at most {\tt 7} in the resolution 
+    Next, we compute the syzygies of degree at most {\tt 7} in the resolution 
     of the cubic Veronese embedding of {\tt P^2}.
     
   Example
-    S = schurRing(QQ,s,3)
     rep = s_{3}
     M = {1_S,s_{3},s_{6},s_{9},s_{12},s_{15},s_{18},s_{21},s_{24},s_{27}}
     d = 7
     schurResolution(rep,M,d)
+
+  Text
+    
+    We can compute the resolution of the ideal of {\tt 2\times 2} minors of a {\tt 3\times 4}
+    matrix, which corresponds to the Segre embedding of {\tt P^2\times P^3}:
+    
+  Example
+    T = schurRing(S,t,4)
+    rep = s_1 * t_1
+    M = {1_T} | apply(splice{1..8},i -> s_i * t_i)
+    schurResolution(rep,M)
 
   Text
   
@@ -2337,23 +2505,20 @@ Description
   
   Example
     n = 5;
-    S = schurRing(QQ,s,n);
+    S = schurRing(QQ,s,n,GroupActing => "Sn");
     rep = s_n + s_{n-1,1};
     M = {s_n}
-    schurResolution(rep,M,n,GroupActing => "Sn")    
+    schurResolution(rep,M,n)    
 
   Text
   
-    The next example computes the equivariant resolution of the quotient of the
+    Generalizing this, we can compute the equivariant resolution of the quotient of the
     polynomial ring in {\tt n=5} variables by the ideal of square free monomials of
     degree two, with respect to the action of the symmetric group {\tt S_n}.
   
   Example
-    n = 5;
-    S = schurRing(QQ,s,n);
-    rep = s_n + s_{n-1,1};
     M = {s_n} | splice{n:rep};
-    schurResolution(rep,M,GroupActing => "Sn")    
+    schurResolution(rep,M)    
 
 ///
 
@@ -2889,14 +3054,14 @@ SeeAlso
 doc ///
 Key
   GroupActing
-  [plethysm,GroupActing]
-  [schurResolution,GroupActing]
+  [schurRing,GroupActing]
+  [symmRing,GroupActing]
 Headline
   Specifies the group that is acting
 Description
   Text
-    This is an optional argument for the @TO plethysm@ and @TO schurResolution@ functions. 
-    When a plethystic operation is applied to a symmetric function {\tt g}, the result
+    This is an optional argument for the @TO schurRing@ and @TO symmRing@ functions. 
+    When the exterior or symmetric powers of a symmetric function {\tt g} are computed, the result
     depends on whether {\tt g} is interpreted as a virtual representation of a general 
     linear or symmetric group. The option {\tt GroupActing} specifies the interpretation 
     to be considered. Its possible values are {\tt "GL"} and {\tt "Sn"}, with the former 
@@ -2904,14 +3069,34 @@ Description
     
   Example
     S = schurRing(s,2);
-    plethysm(s_2,s_2,GroupActing => "GL")
-    plethysm(s_2,s_2,GroupActing => "Sn")
-  
+    exteriorPower(3,s_2)
+    T = schurRing(t,2,GroupActing => "Sn");
+    symmetricPower(2,t_{1,1})
+      
   Text
   
-    The first example computes the decomposition of {\tt Sym^2(Sym^2(V))} into irreducible
+    The first example computes the decomposition of {\tt \Lambda^3(Sym^2(V))} into irreducible
     {\tt GL(V)}-representations, while the second one computes the
-    second symmetric power of the trivial representation of {\tt S_2}.
+    second symmetric power of the sign representation of the symmetric group {\tt S_2}.
+///
+
+doc ///
+Key
+  PlethysmType
+  [plethysm,PlethysmType]
+Headline
+  Specifies which type of plethysm (inner/outer) to be computed
+Description
+  Text
+    This is an optional argument for the @TO plethysm@ function. It specifies which of the
+    inner or outer plethysm operations is to be computed. Its possible values are
+    {\tt "inner"} and {\tt "outer"}, with the latter being the default.
+  
+  Example
+    S = schurRing(s,4);
+    plethysm(s_3,s_{1,1})
+    plethysm(s_3,s_{1,1},PlethysmType => "inner")
+
 ///
 
 --------------------
